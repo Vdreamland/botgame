@@ -2,7 +2,13 @@
   "agents": [
     {
       "agent_name": "Extravaro1",
-      "api_key": "mr_live_3JiEDObzgek3V3tRE6M4AAmFr3oDCUgX",
+      "api_key": "xxxxx",
+      "private_key": "",
+      "room_preference": "free"
+    },
+    {
+      "agent_name": "Extravaro2",
+      "api_key": "xxxxx",
       "private_key": "",
       "room_preference": "free"
     }

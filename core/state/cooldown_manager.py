@@ -26,7 +26,10 @@ class CooldownManager:
         """
         self._can_act_server = server_can_act
         if server_can_act:
-            self._cooldown_end_time = 0.0
+            # PENGAMAN RASIAL: Jangan reset lock lokal jika cooldown baru saja diaktifkan (> 20s sisa)
+            # Ini mencegah frame canAct=true usang dari awal turn menghapus cooldown aksi yang baru saja dikirim.
+            if self.get_remaining_cooldown() < 20.0:
+                self._cooldown_end_time = 0.0
 
     def get_remaining_cooldown(self) -> float:
         """

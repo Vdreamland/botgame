@@ -19,7 +19,7 @@ class GameState:
         self.hp: float = 100.0
         self.ep: float = 10.0
         
-        # Dipertahaman bernilai 0 hanya untuk kompatibilitas impor modul lain agar tidak memicu AttributeError
+        # Dipertahankan bernilai 0 hanya untuk kompatibilitas impor modul lain agar tidak memicu AttributeError
         self.q: int = 0
         self.r: int = 0
 
@@ -142,6 +142,12 @@ class GameState:
             for p in other_players:
                 p_id = p.get("id") or p.get("agentId") or ""
                 p_name = p.get("name") or p.get("agentName") or ""
+
+                # PENGAMAN MUTLAK: Lewati dan abaikan musuh yang sudah mati (isAlive == False atau HP <= 0)
+                p_is_alive = p.get("isAlive")
+                p_hp = p.get("hp")
+                if p_is_alive is False or (p_hp is not None and float(p_hp) <= 0.0):
+                    continue
 
                 if p_id == self.player_id:
                     continue

@@ -99,8 +99,8 @@ class DecisionEngine:
             enemy_hp = float(enemy.get("hp", 100.0))
             win_rate = battle_eval.get("win_rate", 0.0)
 
-            # Jika musuh sekarat (HP < 50%) atau peluang menang mutlak (Win Rate >= 70%)
-            if enemy_hp < 50.0 or win_rate >= 0.70:
+            # Hanya kunci jika musuh terbukti hidup (0 < HP < 50) atau peluang menang mutlak (Win Rate >= 70)
+            if 0.0 < enemy_hp < 50.0 or win_rate >= 0.70:
                 if not self.hunter.locked_target_id:
                     self.logger.warning(
                         f"PREDATOR LOCK: Target {enemy.get('name')} is highly vulnerable "
@@ -108,7 +108,20 @@ class DecisionEngine:
                     )
                     self.hunter.lock_target(enemy)
 
-        # 6. PENANGANAN MOBS SEKITAR (MONSTER ENGAGEMENT RULE)
+        # 6. PENGAWAS STATUS KUNCI BURUAN (PENGAMAN KEMATIAN TARGET)
+        # Jika target perburuan terdeteksi mati atau hilang dari sensor sekitar, segera lepaskan kunci target!
+        if self.hunter.locked_target_id:
+            locked_enemy_still_alive = False
+            for p in self.game_state.enemies:
+                if p.get("id") == self.hunter.locked_target_id:
+                    locked_enemy_still_alive = True
+                    break
+            
+            if not locked_enemy_still_alive:
+                self.logger.warning(f"Target '{self.hunter.locked_target_name}' is dead or escaped. Releasing hunter lock!")
+                self.hunter.release_target()
+
+        # 7. PENANGANAN MOBS SEKITAR (MONSTER ENGAGEMENT RULE)
         # Mobs hanya diserang jika berada di wilayah kita, HP kita > 60%, dan kita memegang senjata
         if self.game_state.visible_monsters and self.game_state.hp > 60.0 and self.game_state.equipped_weapon:
             closest_mob = self.game_state.visible_monsters[0]
@@ -121,7 +134,7 @@ class DecisionEngine:
                 await self.dispatcher.execute_attack(mob_id)
                 return
 
-        # 7. EVAKUASI DINI DEAD ZONE WARNING
+        # 8. EVAKUASI DINI DEAD ZONE WARNING
         if self.deadzone_warning.is_warning_active():
             self.logger.warning("Dead Zone warning received. Day 2 expansion is imminent [14].")
             if self.game_state.connections:
@@ -130,7 +143,7 @@ class DecisionEngine:
                 await self.dispatcher.execute_move(escape_region)
                 return
 
-        # 8. JALANKAN PERBURUAN AKTIF JIKA LOCK AKTIF
+        # 9. JALANKAN PERBURUAN AKTIF JIKA LOCK AKTIF
         if self.hunter.locked_target_id:
             if self.hunter.verify_hunt_safety(battle_eval):
                 self.logger.info(f"Target lock active on player: {self.hunter.locked_target_name}.")
@@ -161,7 +174,7 @@ class DecisionEngine:
                 self.logger.warning("Hunter Mode deactivated. Target escaped or HP dropped to critical limit.")
                 self.hunter.release_target()
 
-        # 9. JALANKAN LOGIKA PHASE-BASED KONDISIONAL (JIKA TIDAK SEDANG BERBURU)
+        # 10. JALANKAN LOGIKA PHASE-BASED KONDISIONAL (JIKA TIDAK SEDANG BERBURU)
         day = self.game_state.day
         if day == 1:
             action_type, details = self.early_strategy.determine_early_action()

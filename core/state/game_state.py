@@ -115,19 +115,23 @@ class GameState:
             self.turn = new_turn
             self.current_weather = data.get("weather", self.current_weather)
 
-        # Sinkronisasi Darah (HP) secara instan
+        # Hanya urai dan catat perubahan darah jika ID cocok dengan bot kita sendiri
         elif frame_type == "hp_changed":
-            new_hp = float(data.get("hp", frame.get("hp", self.hp)))
-            self.hp = new_hp
-            self.logger.info(f"Health update received: {self.hp:.1f}%")
+            target_player_id = data.get("id", data.get("playerId", frame.get("id", "")))
+            if not target_player_id or target_player_id == self.player_id:
+                new_hp = float(data.get("hp", frame.get("hp", self.hp)))
+                self.hp = new_hp
+                self.logger.info(f"Health update received: {self.hp:.1f}%")
 
-        # Sinkronisasi Posisi Koordinat (q, r) setelah sukses melangkah [8]
+        # Hanya urai dan catat perpindahan koordinat jika ID cocok dengan bot kita sendiri [8]
         elif frame_type == "agent_moved":
-            new_q = int(data.get("q", frame.get("q", self.q)))
-            new_r = int(data.get("r", frame.get("r", self.r)))
-            self.q = new_q
-            self.r = new_r
-            self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")
+            moving_player_id = data.get("id", data.get("playerId", frame.get("id", "")))
+            if not moving_player_id or moving_player_id == self.player_id:
+                new_q = int(data.get("q", frame.get("q", self.q)))
+                new_r = int(data.get("r", frame.get("r", self.r)))
+                self.q = new_q
+                self.r = new_r
+                self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")
 
     def clean_session_data(self) -> None:
         """

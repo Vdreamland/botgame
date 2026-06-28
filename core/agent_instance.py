@@ -66,27 +66,28 @@ class AgentInstance:
         """
         frame_type = message.get("type")
         
-        # Buka saringan untuk memproses 'hp_changed' dan 'agent_moved' [8, 12]
         allowed_frames = ["agent_view", "turn_advanced", "can_act_changed", 
                           "deathzone_warning", "deathzone_expanded", "hp_changed", "agent_moved"]
         
         if frame_type not in allowed_frames:
             return
 
-        # Saring log sampah: Hanya tayangkan log jika bertipe turn_advanced, hp_changed, atau agent_moved
-        if frame_type in ["turn_advanced", "hp_changed", "agent_moved"]:
-            self.logger.info(f"Dynamic game event received: '{frame_type}'")
+        # Pengaman: Hanya cetak aktivitas penting pergantian turn untuk mencegah kebanjiran log tak berguna [11]
+        if frame_type == "turn_advanced":
+            self.logger.info("Dynamic game event received: 'turn_advanced'")
 
-        # Sinkronisasikan state permainan lokal dari server [8, 10]
+        # AKTIVASI DINAMIS: Jika mendeteksi datangnya frame pertempuran, seketika ubah status menjadi gameplay aktif [5]
+        if frame_type in ["agent_view", "turn_advanced"]:
+            self.ws_client.is_gameplay_active = True
+            self.game_state.current_action = "ENTERING GAMEPLAY"
+
+        # Sinkronisasikan HP, koordinat, dan musuh secara aman [8, 10]
         self.game_state.update_from_server_frame(message)
 
         # Urai ketersediaan aksi dari tipe bingkai 'can_act_changed' [12]
         if frame_type == "can_act_changed":
             can_act_val = message.get("canAct", message.get("data", {}).get("canAct", True))
             self.cooldown_manager.update_server_can_act(bool(can_act_val))
-
-        if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
-            self.game_state.current_action = "ENTERING GAMEPLAY"
 
         # Picu pemikiran otonom jika canAct lokal terpenuhi [12]
         if (self.cooldown_manager.can_execute_action() and 

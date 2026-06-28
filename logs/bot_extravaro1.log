@@ -1,0 +1,67 @@
+[2026-06-29 02:19:18] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 02:19:18] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 02:19:18] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 02:19:25] [WARNING] Active game session detected (Match ID: None). Routing directly to IN_GAME state.
+[2026-06-29 02:19:25] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 02:19:25] [INFO] Transitioning to Gameplay Socket: wss://cdn.clawroyale.ai/ws/agent
+[2026-06-29 02:19:25] [INFO] Successfully entered Gameplay Socket.
+[2026-06-29 02:19:25] [INFO] Planning move execution to hex coordinates (-1, 0) [8].
+[2026-06-29 02:19:25] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 02:19:54] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:19:54] [INFO] === NEW GAME TURN: DAY 1 | TURN 11 ===
+[2026-06-29 02:19:54] [INFO] Health update received: 100.0%
+[2026-06-29 02:19:54] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:19:54] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:19:54] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:19:54] [INFO] Health update received: 100.0%
+[2026-06-29 02:19:54] [INFO] Health update received: 100.0%
+[2026-06-29 02:20:24] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:20:24] [INFO] === NEW GAME TURN: DAY 1 | TURN 12 ===
+[2026-06-29 02:20:24] [INFO] Planning move execution to hex coordinates (1, 0) [8].
+[2026-06-29 02:20:24] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 02:20:24] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:24] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:24] [INFO] Health update received: 100.0%
+[2026-06-29 02:20:24] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:24] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:24] [INFO] Health update received: 100.0%
+[2026-06-29 02:20:24] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:55] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:20:55] [INFO] === NEW GAME TURN: DAY 1 | TURN 13 ===
+[2026-06-29 02:20:55] [INFO] Planning move execution to hex coordinates (0, 1) [8].
+[2026-06-29 02:20:55] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 02:20:55] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:55] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:55] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:55] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:55] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:20:55] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:21:25] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:21:25] [INFO] === NEW GAME TURN: DAY 1 | TURN 14 ===
+[2026-06-29 02:21:25] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:21:25] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:21:25] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:21:25] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:21:25] [INFO] Planning move execution to hex coordinates (-1, 0) [8].
+[2026-06-29 02:21:25] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 02:21:25] [INFO] Planning move execution to hex coordinates (1, 0) [8].
+[2026-06-29 02:21:25] [WARNING] Action rejection: Tried to execute 'move' but cooldown is still locked. Remaining time: 30.00s.
+[2026-06-29 02:21:25] [INFO] Planning move execution to hex coordinates (0, -1) [8].
+[2026-06-29 02:21:25] [WARNING] Action rejection: Tried to execute 'move' but cooldown is still locked. Remaining time: 30.00s.
+[2026-06-29 02:21:25] [INFO] Planning move execution to hex coordinates (-1, 1) [8].
+[2026-06-29 02:21:25] [WARNING] Action rejection: Tried to execute 'move' but cooldown is still locked. Remaining time: 30.00s.
+[2026-06-29 02:21:25] [INFO] Planning move execution to hex coordinates (1, 0) [8].
+[2026-06-29 02:21:25] [WARNING] Action rejection: Tried to execute 'move' but cooldown is still locked. Remaining time: 30.00s.
+[2026-06-29 02:21:25] [INFO] Planning move execution to hex coordinates (1, 0) [8].
+[2026-06-29 02:21:25] [WARNING] Action rejection: Tried to execute 'move' but cooldown is still locked. Remaining time: 30.00s.
+[2026-06-29 02:21:25] [INFO] Planning move execution to hex coordinates (0, -1) [8].
+[2026-06-29 02:21:25] [WARNING] Action rejection: Tried to execute 'move' but cooldown is still locked. Remaining time: 30.00s.
+[2026-06-29 02:21:54] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 02:21:54] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 02:21:54] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 02:21:54] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 02:21:54] [INFO] Local GameState session successfully cleared.
+[2026-06-29 02:21:54] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 02:21:54] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 02:21:54] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 02:21:54] [INFO] Local GameState session successfully cleared.

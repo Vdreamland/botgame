@@ -32,7 +32,7 @@ class AgentLogger:
         # Bersihkan handler lama jika ada untuk mencegah logging ganda (duplicate logging) akibat inisialisasi ulang
         logger.handlers.clear()
 
-        # 1. Handler untuk menulis ke Berkas Log Akun masing-masing bot
+        # 1. Handler untuk menulis ke Berkas Log Akun masing-masing instansi (Bot atau Orchestrator)
         log_file_path = os.path.join("logs", f"bot_{safe_name}.log")
         file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
         file_formatter = logging.Formatter(
@@ -42,15 +42,17 @@ class AgentLogger:
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
-        # 2. Handler untuk menulis ke Berkas Log Sistem Global (Dibaca oleh Dashboard TUI)
-        system_log_path = os.path.join("logs", "system.log")
-        sys_handler = logging.FileHandler(system_log_path, encoding="utf-8")
-        sys_formatter = logging.Formatter(
-            fmt="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        sys_handler.setFormatter(sys_formatter)
-        logger.addHandler(sys_handler)
+        # 2. Handler untuk menulis ke Berkas Log Sistem Global (HANYA untuk Orchestrator)
+        # Log bot individu tidak dimasukkan ke system.log agar data audit bersih dan tidak bercampur
+        if safe_name == "orchestrator":
+            system_log_path = os.path.join("logs", "system.log")
+            sys_handler = logging.FileHandler(system_log_path, encoding="utf-8")
+            sys_formatter = logging.Formatter(
+                fmt="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
+            )
+            sys_handler.setFormatter(sys_formatter)
+            logger.addHandler(sys_handler)
 
         cls._loggers[safe_name] = logger
         return logger

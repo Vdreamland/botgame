@@ -27,6 +27,7 @@ class GameState:
         self.current_region_name: str = "Plains"
         self.connections: List[str] = []
         self.visible_ruins: List[Dict[str, Any]] = []
+        self.visible_monsters: List[Dict[str, Any]] = []
 
         self.alert_gauge: int = 0
         self.current_terrain: str = "plains"
@@ -47,7 +48,7 @@ class GameState:
         self.current_action = "Waiting in Queue"
         self.current_target = "None"
 
-    def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
+    def [update_from_server_frame](file:///core/state/game_state.py#L40)(self, frame: Dict[str, Any]) -> None:
         """
         Parses incoming game state updates from the WebSocket server [8, 10, 11].
         Supports both REST payload shapes and official /ws/agent WebSocket view structures.
@@ -98,8 +99,9 @@ class GameState:
             self.current_region_name = current_region.get("name") or data.get("currentRegionName") or self.current_region_name
             self.connections = current_region.get("connections") or data.get("connections") or []
             self.visible_ruins = view.get("visibleRuins") or data.get("visibleRuins") or []
+            self.visible_monsters = view.get("visibleMonsters") or data.get("visibleMonsters") or []
 
-            # Cetak log sinkronisasi jika bot sukses berpindah wilayah secara fisik
+            # Cetak log sinkronisasi jika bot sukses berpindah wilayah
             if old_region_id != self.current_region_id and self.player_id:
                 self.logger.info(f"Coordinates synchronized: Moved to region {self.current_region_name} ({self.current_region_id}) [8].")
 
@@ -211,6 +213,7 @@ class GameState:
         self.items_on_ground.clear()
         self.enemies.clear()
         self.allies_nearby.clear()
+        self.visible_monsters.clear()
         self.current_action = "Waiting in Queue"
         self.current_target = "None"
         self.connections.clear()

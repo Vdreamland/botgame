@@ -54,12 +54,13 @@ class DecisionEngine:
         self.blocked_coordinates: Set[str] = set()
         self.deadzone_coordinates: Set[str] = set()
 
-    async def execute_thought_cycle(self) -> None:
+    async def [execute_thought_cycle](file:///brain/decision_engine.py#L52)(self) -> None:
         """
         Executes one complete hierarchical decision/thought cycle [12].
         """
         bot_pos = self.game_state.current_region_id
 
+        # 1. EVAKUASI DARURAT DEAD ZONE
         if self.deadzone_active.is_in_danger():
             self.logger.critical("EMERGENCY: Agent is inside the active Dead Zone! Overriding strategies [14].")
             if self.game_state.connections:
@@ -67,18 +68,21 @@ class DecisionEngine:
                 await self.dispatcher.execute_move(escape_region)
             return
 
+        # 2. PEMULIHAN MEDICAL FACILITY GRATIS
         current_facility = getattr(self.game_state, "current_facility", "")
         if current_facility == "Medical Facility" and self.game_state.hp < 70.0:
             self.logger.warning("Standing on a Medical Facility. Initiating free healing interaction [11, 12].")
             await self.dispatcher.execute_interact()
             return
 
+        # 3. KONTROL PERLENGKAPAN OTOMATIS (FREE ACTION)
         optimal_equip = self.equip_selector.determine_optimal_equips()
         if optimal_equip:
             item_id, slot_name = optimal_equip
             self.logger.warning(f"Optimization trigger: Equipping {item_id} onto slot '{slot_name}' [9].")
             await self.dispatcher.execute_equip(item_id, slot_name)
 
+        # 4. KONTROL LOOTING & PEMBERSIHAN TAS (FREE ACTION)
         inv_action, target_id, details_id = self.inventory_manager.determine_pickup_and_cleanup()
         if inv_action == "PICKUP" and target_id:
             await self.dispatcher.execute_pickup(target_id)
@@ -86,6 +90,37 @@ class DecisionEngine:
             await self.dispatcher.execute_equip(details_id, "drop")
             await self.dispatcher.execute_pickup(target_id)
 
+        # 5. PEMICU PREDATOR GLOBAL (GLOBAL PREDATOR OVERRIDE)
+        # Jika mendeteksi musuh sekarat atau peluang menang mutlak, bot langsung aktif mengejar
+        battle_eval = self.analyzer.evaluate_combat_situation()
+        if battle_eval.get("recommendation") == "FIGHT" and battle_eval.get("target"):
+            enemy = battle_eval["target"]
+            enemy_hp = float(enemy.get("hp", 100.0))
+            win_rate = battle_eval.get("win_rate", 0.0)
+
+            # Jika musuh sekarat (HP < 50%) atau peluang menang mutlak (Win Rate >= 70%)
+            if enemy_hp < 50.0 or win_rate >= 0.70:
+                if not self.hunter.locked_target_id:
+                    self.logger.warning(
+                        f"PREDATOR LOCK: Target {enemy.get('name')} is highly vulnerable "
+                        f"(HP: {enemy_hp}%, Win Rate: {win_rate:.1f}%). Overriding current phase strategy!"
+                    )
+                    self.hunter.lock_target(enemy)
+
+        # 6. PENANGANAN MOBS SEKITAR (MONSTER ENGAGEMENT RULE)
+        # Mobs hanya diserang jika berada di wilayah kita, HP kita > 60%, dan kita memegang senjata
+        if self.game_state.visible_monsters and self.game_state.hp > 60.0 and self.game_state.equipped_weapon:
+            closest_mob = self.game_state.visible_monsters[0]
+            mob_id = closest_mob.get("id")
+            mob_name = closest_mob.get("name", "Monster")
+            
+            # Guardian tidak dilawan kecuali fullSet terpasang lengkap
+            if "guardian" not in mob_name.lower() or self.game_state.has_full_set:
+                self.logger.warning(f"PREY ALERT: Clearing hostile mob '{mob_name}' in current region [11].")
+                await self.dispatcher.execute_attack(mob_id)
+                return
+
+        # 7. EVAKUASI DINI DEAD ZONE WARNING
         if self.deadzone_warning.is_warning_active():
             self.logger.warning("Dead Zone warning received. Day 2 expansion is imminent [14].")
             if self.game_state.connections:
@@ -94,9 +129,7 @@ class DecisionEngine:
                 await self.dispatcher.execute_move(escape_region)
                 return
 
-        battle_eval = self.analyzer.evaluate_combat_situation()
-        enemies_count = len(self.game_state.enemies)
-
+        # 8. JALANKAN PERBURUAN AKTIF JIKA LOCK AKTIF
         if self.hunter.locked_target_id:
             if self.hunter.verify_hunt_safety(battle_eval):
                 self.logger.info(f"Target lock active on player: {self.hunter.locked_target_name}.")
@@ -127,6 +160,7 @@ class DecisionEngine:
                 self.logger.warning("Hunter Mode deactivated. Target escaped or HP dropped to critical limit.")
                 self.hunter.release_target()
 
+        # 9. JALANKAN LOGIKA PHASE-BASED KONDISIONAL (JIKA TIDAK SEDANG BERBURU)
         day = self.game_state.day
         if day == 1:
             action_type, details = self.early_strategy.determine_early_action()

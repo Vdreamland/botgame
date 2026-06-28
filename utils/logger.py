@@ -29,6 +29,9 @@ class AgentLogger:
         logger.setLevel(logging.INFO)
         logger.propagate = False
 
+        # Bersihkan handler lama jika ada untuk mencegah logging ganda (duplicate logging) akibat inisialisasi ulang
+        logger.handlers.clear()
+
         # 1. Handler untuk menulis ke Berkas Log Akun masing-masing bot
         log_file_path = os.path.join("logs", f"bot_{safe_name}.log")
         file_handler = logging.FileHandler(log_file_path, encoding="utf-8")

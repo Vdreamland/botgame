@@ -89,7 +89,6 @@ class AgentInstance:
         while True:
             try:
                 await asyncio.sleep(0.5)
-                # PROTEKSI MUTLAK: Bot hanya boleh mulai berpikir jika ID sudah terdaftar dari server (self.game_state.player_id != "")
                 if (self.cooldown_manager.can_execute_action() and 
                     self.ws_client.is_connected and 
                     self.ws_client.is_gameplay_active and 
@@ -116,7 +115,8 @@ class AgentInstance:
         if frame_type not in allowed_frames:
             return
 
-        if frame_type in ["turn_advanced", "hp_changed", "agent_moved", "error"]:
+        # Saring log redundan: Hanya cetak event dinamis penting tingkat tinggi untuk mencegah flood log
+        if frame_type in ["turn_advanced", "error"]:
             self.logger.info(f"Dynamic game event received: '{frame_type}'")
 
         if frame_type in ["agent_view", "turn_advanced", "can_act_changed"]:
@@ -135,7 +135,6 @@ class AgentInstance:
         if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
             self.game_state.current_action = "ENTERING GAMEPLAY"
 
-        # PROTEKSI MUTLAK: Bot hanya boleh mulai berpikir jika ID sudah terdaftar dari server (self.game_state.player_id != "")
         if (self.cooldown_manager.can_execute_action() and 
             self.ws_client.is_connected and 
             self.ws_client.is_gameplay_active and 

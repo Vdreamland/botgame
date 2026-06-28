@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Multi-Agent Terminal Dashboard (TUI).
-Builds a beautiful CMD/PowerShell dashboard utilizing 'rich' [8, 10].
+Builds a beautiful CMD/PowerShell dashboard utilizing 'rich'.
 """
 
 from typing import List
@@ -23,10 +23,8 @@ class TerminalDashboard:
         """
         Renders the multi-bot monitor dashboard inside PowerShell/CMD.
         """
-        # Bersihkan terminal sebelum menggambar ulang
         self.console.clear()
 
-        # 1. Panel Atas: Ringkasan Server & Status Bot Global
         summary_table = Table(expand=True, border_style="cyan")
         summary_table.add_column("Agent Name", style="bold green")
         summary_table.add_column("Room Pref", justify="center")
@@ -61,10 +59,8 @@ class TerminalDashboard:
                 synergy_str
             )
 
-        # 2. Panel Kiri: Peta Heksagonal ASCII dari Bot Pertama
         map_string = ""
         if active_instances:
-            # Tampilkan peta real-time milik bot pertama yang aktif bermain
             map_string = ASCIIMapRenderer.render_local_map(active_instances[0].game_state)
         
         map_panel = Panel(
@@ -74,8 +70,8 @@ class TerminalDashboard:
             expand=True
         )
 
-        # 3. Gambar Tampilan Gabungan
-        self.console.print(Panel("[bold white]CLAWROYALE MULTI-BOT SYSTEM MONITOR v1.11.2[/bold white]", style="blue", justify="center"))
+        # Perbaikan parameter: justify diletakkan sebagai argumen console.print di luar konstruktor Panel
+        self.console.print(Panel("[bold white]CLAWROYALE MULTI-BOT SYSTEM MONITOR v1.11.2[/bold white]", style="blue"), justify="center")
         self.console.print(Panel(summary_table, title="Active Bots Registry", border_style="cyan"))
         self.console.print(map_panel)
         self.console.print("[dim white]Press CTRL+C to safely exit and disconnect all bots.[/dim white]", justify="center")

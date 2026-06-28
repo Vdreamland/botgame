@@ -1,0 +1,55 @@
+[2026-06-29 00:24:19] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 00:24:19] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 00:24:19] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:24:24] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 00:24:24] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 00:24:24] [ERROR] HTTP Error on POST api/redeem: Status 404
+[2026-06-29 00:24:24] [ERROR] Failed to execute onboarding Welcome redeem: API Error 404: 404 page not found
+[2026-06-29 00:24:24] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 00:24:24] [INFO] User preference: Free Room selected.
+[2026-06-29 00:24:24] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 00:24:24] [ERROR] WebSocket Queue Connection failed: BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'
+[2026-06-29 00:24:24] [CRITICAL] Fatal crash inside Autonomous Loop (Consecutive: 1): BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'. Backing off execution for 5s...
+[2026-06-29 00:24:24] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:24:29] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:24:34] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 00:24:34] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 00:24:35] [ERROR] HTTP Error on POST api/redeem: Status 404
+[2026-06-29 00:24:35] [ERROR] Failed to execute onboarding Welcome redeem: API Error 404: 404 page not found
+[2026-06-29 00:24:35] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 00:24:35] [INFO] User preference: Free Room selected.
+[2026-06-29 00:24:35] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 00:24:35] [ERROR] WebSocket Queue Connection failed: BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'
+[2026-06-29 00:24:35] [CRITICAL] Fatal crash inside Autonomous Loop (Consecutive: 1): BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'. Backing off execution for 5s...
+[2026-06-29 00:24:35] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:24:40] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:24:45] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 00:24:45] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 00:24:45] [ERROR] HTTP Error on POST api/redeem: Status 404
+[2026-06-29 00:24:45] [ERROR] Failed to execute onboarding Welcome redeem: API Error 404: 404 page not found
+[2026-06-29 00:24:45] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 00:24:45] [INFO] User preference: Free Room selected.
+[2026-06-29 00:24:45] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 00:24:45] [ERROR] WebSocket Queue Connection failed: BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'
+[2026-06-29 00:24:45] [CRITICAL] Fatal crash inside Autonomous Loop (Consecutive: 1): BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'. Backing off execution for 5s...
+[2026-06-29 00:24:45] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:24:50] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:24:55] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 00:24:55] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 00:24:55] [ERROR] HTTP Error on POST api/redeem: Status 404
+[2026-06-29 00:24:55] [ERROR] Failed to execute onboarding Welcome redeem: API Error 404: 404 page not found
+[2026-06-29 00:24:55] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 00:24:55] [INFO] User preference: Free Room selected.
+[2026-06-29 00:24:55] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 00:24:55] [ERROR] WebSocket Queue Connection failed: BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'
+[2026-06-29 00:24:55] [CRITICAL] Fatal crash inside Autonomous Loop (Consecutive: 1): BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'. Backing off execution for 5s...
+[2026-06-29 00:24:55] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:25:00] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:25:04] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:25:04] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:25:04] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:25:04] [INFO] Local GameState session successfully cleared.
+[2026-06-29 00:25:04] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:25:04] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:25:04] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:25:04] [INFO] Local GameState session successfully cleared.

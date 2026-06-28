@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Multi-Agent Terminal Dashboard (TUI).
-Builds a beautiful CMD/PowerShell dashboard utilizing 'rich'.
+Builds a beautiful CMD/PowerShell dashboard utilizing 'rich' with real-time log monitoring.
 """
 
+import os
 from typing import List
 from rich.console import Console
 from rich.layout import Layout
@@ -19,12 +20,27 @@ class TerminalDashboard:
         self.console = Console()
         self.layout = Layout()
 
+    def _get_last_logs(self, filepath: str = "logs/system.log", count: int = 6) -> str:
+        """
+        Safely reads the last few lines of the system log to display on the terminal.
+        """
+        if not os.path.exists(filepath):
+            return "No logs generated yet."
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                # Ambil baris terakhir sesuai jumlah count dan gabungkan kembali
+                return "".join(lines[-count:]).strip()
+        except Exception:
+            return "Failed to read logs dynamically."
+
     def draw_dashboard(self, active_instances: List[AgentInstance]) -> None:
         """
-        Renders the multi-bot monitor dashboard inside PowerShell/CMD.
+        Renders the multi-bot monitor dashboard with live log feed inside PowerShell/CMD.
         """
         self.console.clear()
 
+        # 1. Tabel Registry Aktif
         summary_table = Table(expand=True, border_style="cyan")
         summary_table.add_column("Agent Name", style="bold green")
         summary_table.add_column("Room Pref", justify="center")
@@ -59,6 +75,7 @@ class TerminalDashboard:
                 synergy_str
             )
 
+        # 2. Mini Map Visual Heksagonal
         map_string = ""
         if active_instances:
             map_string = ASCIIMapRenderer.render_local_map(active_instances[0].game_state)
@@ -70,8 +87,18 @@ class TerminalDashboard:
             expand=True
         )
 
-        # Perbaikan parameter: justify diletakkan sebagai argumen console.print di luar konstruktor Panel
+        # 3. Live Log Feed Panel (Membaca logs/system.log secara dinamis)
+        last_logs_content = self._get_last_logs()
+        log_panel = Panel(
+            last_logs_content,
+            title="Live Activity Log Feed",
+            border_style="green",
+            expand=True
+        )
+
+        # 4. Cetak Seluruh Komponen ke Terminal PowerShell
         self.console.print(Panel("[bold white]CLAWROYALE MULTI-BOT SYSTEM MONITOR v1.11.2[/bold white]", style="blue"), justify="center")
         self.console.print(Panel(summary_table, title="Active Bots Registry", border_style="cyan"))
         self.console.print(map_panel)
+        self.console.print(log_panel)
         self.console.print("[dim white]Press CTRL+C to safely exit and disconnect all bots.[/dim white]", justify="center")

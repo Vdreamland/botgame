@@ -4,6 +4,7 @@ ClawRoyale REST API Client.
 Manages HTTP connection logic, retries, and document caching.
 """
 
+import uuid
 import httpx
 import asyncio
 from typing import Dict, Any, Optional
@@ -44,6 +45,10 @@ class APIClient:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         headers = self._get_headers(headers_override)
         
+        # Otomatisasi Idempotency-Key untuk mengamankan request POST [3]
+        if method.upper() == "POST":
+            headers["Idempotency-Key"] = str(uuid.uuid4())
+        
         for attempt in range(1, retries + 1):
             await self.rest_limiter.consume(1.0)
             try:
@@ -82,7 +87,6 @@ class APIClient:
         return await self.safe_request("GET", "accounts/me")
 
     async def claim_welcome_pack(self) -> Dict[str, Any]:
-        # Koreksi endpoint agar mengarah ke 'redeem' (tanpa duplikasi kata 'api') [3]
         return await self.safe_request("POST", "redeem", data={"code": "WELCOME"})
 
     async def fetch_cached_document(self, document_path: str) -> str:

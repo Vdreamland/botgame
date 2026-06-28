@@ -82,7 +82,8 @@ class APIClient:
         return await self.safe_request("GET", "accounts/me")
 
     async def claim_welcome_pack(self) -> Dict[str, Any]:
-        return await self.safe_request("POST", "api/redeem", data={"code": "WELCOME"})
+        # Koreksi endpoint agar mengarah ke 'redeem' (tanpa duplikasi kata 'api') [3]
+        return await self.safe_request("POST", "redeem", data={"code": "WELCOME"})
 
     async def fetch_cached_document(self, document_path: str) -> str:
         url = f"{self.base_url}/{document_path.lstrip('/')}"

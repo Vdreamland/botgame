@@ -49,9 +49,13 @@ class AgentInstance:
         )
 
         self.ws_client.on_message_callback = self._on_websocket_message
+        
+        # PENGAMAN MUTLAK: Kunci asinkron untuk mencegah Race Condition & Spam Request [12]
+        self._is_thinking = False
 
     async def start(self) -> None:
         self.logger.info(f"Launching Agent Instance for '{self.agent_name}'...")
+        self.game_state.current_action = "MATCHMAKING QUEUE"
         await self.runtime.start()
 
     async def stop(self) -> None:
@@ -60,6 +64,16 @@ class AgentInstance:
         await self.api_client.close()
         self.game_state.clean_session_data()
 
+    async def _safe_thought_cycle(self) -> None:
+        """
+        Wrapper to ensure thought cycle executes safely without parallel race conditions.
+        """
+        try:
+            await self.decision_engine.execute_thought_cycle()
+        finally:
+            # Lepaskan kunci setelah proses berpikir dan transmisi aksi selesai
+            self._is_thinking = False
+
     async def _on_websocket_message(self, message: Dict[str, Any]) -> None:
         """
         Processes incoming JSON frames from the WebSocket connection [5, 8, 12].
@@ -67,30 +81,30 @@ class AgentInstance:
         frame_type = message.get("type")
         
         allowed_frames = ["agent_view", "turn_advanced", "can_act_changed", 
-                          "deathzone_warning", "deathzone_expanded", "hp_changed", "agent_moved"]
+                          "deathzone_warning", "deathzone_expanded", "hp_changed", 
+                          "agent_moved", "error", "action_result"]
         
         if frame_type not in allowed_frames:
             return
 
-        # Pengaman: Hanya cetak aktivitas penting pergantian turn untuk mencegah kebanjiran log tak berguna [11]
-        if frame_type == "turn_advanced":
-            self.logger.info("Dynamic game event received: 'turn_advanced'")
+        if frame_type in ["turn_advanced", "hp_changed", "agent_moved", "error"]:
+            self.logger.info(f"Dynamic game event received: '{frame_type}'")
 
-        # AKTIVASI DINAMIS: Jika mendeteksi datangnya frame pertempuran, seketika ubah status menjadi gameplay aktif [5]
-        if frame_type in ["agent_view", "turn_advanced"]:
-            self.ws_client.is_gameplay_active = True
-            self.game_state.current_action = "ENTERING GAMEPLAY"
-
-        # Sinkronisasikan HP, koordinat, dan musuh secara aman [8, 10]
+        # Sinkronisasikan state permainan lokal dari server
         self.game_state.update_from_server_frame(message)
 
-        # Urai ketersediaan aksi dari tipe bingkai 'can_act_changed' [12]
         if frame_type == "can_act_changed":
             can_act_val = message.get("canAct", message.get("data", {}).get("canAct", True))
             self.cooldown_manager.update_server_can_act(bool(can_act_val))
 
-        # Picu pemikiran otonom jika canAct lokal terpenuhi [12]
+        if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
+            self.game_state.current_action = "ENTERING GAMEPLAY"
+
+        # Picu pemikiran otonom hanya jika: Cooldown siap, Terkoneksi, di Arena, dan TIDAK SEDANG BERPIKIR [12]
         if (self.cooldown_manager.can_execute_action() and 
                 self.ws_client.is_connected and 
-                self.ws_client.is_gameplay_active):
-            asyncio.create_task(self.decision_engine.execute_thought_cycle())
+                self.ws_client.is_gameplay_active and 
+                not self._is_thinking):
+            
+            self._is_thinking = True
+            asyncio.create_task(self._safe_thought_cycle())

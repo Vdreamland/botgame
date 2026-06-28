@@ -43,11 +43,16 @@ class GameState:
 
     def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
         """
-        Parses incoming game state updates from the WebSocket server.
-        Synchronizes HP, EP, coordinates, ground items, weather, and filters teammates [8, 10, 11].
+        Parses incoming game state updates from the WebSocket server [8, 10, 11].
         """
         frame_type = frame.get("type")
         data = frame.get("data", {}) if frame.get("data") else frame
+
+        # TANGKAP ERROR: Cetak pesan penolakan dari server agar terlihat di PowerShell
+        if frame_type == "error":
+            err_msg = frame.get("message", data.get("message", "Unknown server error"))
+            self.logger.error(f"SERVER REJECTION: {err_msg}")
+            return
 
         if frame_type == "agent_view":
             self_state = data.get("self", data.get("agent", {}))
@@ -115,7 +120,6 @@ class GameState:
             self.turn = new_turn
             self.current_weather = data.get("weather", self.current_weather)
 
-        # Hanya urai dan catat perubahan darah jika ID cocok dengan bot kita sendiri
         elif frame_type == "hp_changed":
             target_player_id = data.get("id", data.get("playerId", frame.get("id", "")))
             if not target_player_id or target_player_id == self.player_id:
@@ -123,7 +127,6 @@ class GameState:
                 self.hp = new_hp
                 self.logger.info(f"Health update received: {self.hp:.1f}%")
 
-        # Hanya urai dan catat perpindahan koordinat jika ID cocok dengan bot kita sendiri [8]
         elif frame_type == "agent_moved":
             moving_player_id = data.get("id", data.get("playerId", frame.get("id", "")))
             if not moving_player_id or moving_player_id == self.player_id:
@@ -134,9 +137,6 @@ class GameState:
                 self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")
 
     def clean_session_data(self) -> None:
-        """
-        Cleans dynamic state info when leaving active gameplay matches.
-        """
         if self.player_id:
             self.team_registry.unregister_ally(self.player_id, self.agent_name)
             

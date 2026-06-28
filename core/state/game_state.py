@@ -119,6 +119,7 @@ class GameState:
             else:
                 resolved_terrain = "plains"
 
+            # Gabungkan parsing data wilayah dari dokumentasi resmi / legacy
             self.current_terrain = (
                 current_region.get("terrain") or 
                 map_context.get("terrain") or 
@@ -162,7 +163,7 @@ class GameState:
             
             # PENINGKATAN LOG: Cetak daftar musuh beserta wilayah penemuannya agar terlihat jelas di lobi
             if len(self.enemies) > 0:
-                enemy_details = [f"{e.get('name', 'Unknown')} (Region: {e.get('regionId', 'Unknown')})" for e in self.enemies]
+                enemy_details = [f"'{e.get('name', 'Unknown')}' (Region: {e.get('regionId', 'Unknown')})" for e in self.enemies]
                 self.logger.warning(
                     f"Sync completed: Detected {len(self.enemies)} active enemies: {', '.join(enemy_details)}."
                 )

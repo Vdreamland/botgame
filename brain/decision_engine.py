@@ -132,7 +132,7 @@ class DecisionEngine:
             
             # Guardian tidak dilawan kecuali fullSet terpasang lengkap
             if "guardian" not in mob_name.lower() or self.game_state.has_full_set:
-                self.logger.warning(f"TACTICAL DECISION: Clearing hostile mob '{mob_name}' in current region to secure area [11].")
+                self.logger.warning(f"PREY ALERT: Clearing hostile mob '{mob_name}' in current region [11].")
                 await self.dispatcher.execute_attack(mob_id)
                 return
 

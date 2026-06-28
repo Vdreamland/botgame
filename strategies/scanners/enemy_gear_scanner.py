@@ -26,19 +26,35 @@ class EnemyGearScanner:
         weapon_range = 0
         weapon_type = "melee"
 
-        if weapon_id in ITEM_DATABASE:
-            w_info = ITEM_DATABASE[weapon_id]
-            weapon_bonus = float(w_info.get("atk_bonus", 0.0))
-            weapon_range = int(w_info.get("range", 0))
-            weapon_type = w_info.get("sub_category", "melee")
+        if weapon_id:
+            # Normalisasi pencarian tipe senjata secara case-insensitive dan spasi
+            normalized_weapon = weapon_id.lower().replace("_", " ").strip()
+            matched_weapon = None
+            for db_key, db_info in ITEM_DATABASE.items():
+                if db_key.lower().replace("_", " ").strip() == normalized_weapon:
+                    matched_weapon = db_info
+                    break
+
+            if matched_weapon:
+                weapon_bonus = float(matched_weapon.get("atk_bonus", 0.0))
+                weapon_range = int(matched_weapon.get("range", 0))
+                weapon_type = matched_weapon.get("sub_category", "melee")
 
         effective_atk = BASE_ATK + weapon_bonus
 
         # 2. Hitung Nilai Pertahanan Dasar + Armor
         armor_bonus = 0.0
-        if armor_id in ITEM_DATABASE:
-            a_info = ITEM_DATABASE[armor_id]
-            armor_bonus = float(a_info.get("def_bonus", 0.0))
+        if armor_id:
+            # Normalisasi pencarian tipe armor secara case-insensitive
+            normalized_armor = armor_id.lower().replace("_", " ").strip()
+            matched_armor = None
+            for db_key, db_info in ITEM_DATABASE.items():
+                if db_key.lower().replace("_", " ").strip() == normalized_armor:
+                    matched_armor = db_info
+                    break
+
+            if matched_armor:
+                armor_bonus = float(matched_armor.get("def_bonus", 0.0))
 
         effective_def = BASE_DEF + armor_bonus
 
@@ -49,10 +65,16 @@ class EnemyGearScanner:
 
         if has_full_set and relics:
             for r_id in relics:
-                if r_id in ITEM_DATABASE:
-                    r_info = ITEM_DATABASE[r_id]
-                    bonus_type = r_info.get("bonus_type", "")
-                    bonus_val = float(r_info.get("bonus_value", 0.0))
+                normalized_relic = r_id.lower().replace("_", " ").strip()
+                matched_relic = None
+                for db_key, db_info in ITEM_DATABASE.items():
+                    if db_key.lower().replace("_", " ").strip() == normalized_relic:
+                        matched_relic = db_info
+                        break
+
+                if matched_relic:
+                    bonus_type = matched_relic.get("bonus_type", "")
+                    bonus_val = float(matched_relic.get("bonus_value", 0.0))
 
                     if bonus_type == "atk_multiplier":
                         relic_atk_multiplier += bonus_val

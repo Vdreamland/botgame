@@ -25,8 +25,6 @@ async def main():
         await orchestrator.run_system()
     except KeyboardInterrupt:
         print("\nShutdown signal received (KeyboardInterrupt). Safely stopping bots...")
-    finally:
-        await orchestrator.shutdown_system()
 
 
 if __name__ == "__main__":

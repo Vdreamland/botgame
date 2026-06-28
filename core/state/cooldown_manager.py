@@ -25,6 +25,8 @@ class CooldownManager:
         Updates action availability status based on incoming state results from the WS server.
         """
         self._can_act_server = server_can_act
+        if server_can_act:
+            self._cooldown_end_time = 0.0
 
     def get_remaining_cooldown(self) -> float:
         """

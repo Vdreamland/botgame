@@ -48,7 +48,6 @@ class GameState:
         frame_type = frame.get("type")
         data = frame.get("data", {}) if frame.get("data") else frame
 
-        # TANGKAP ERROR: Cetak pesan penolakan dari server agar terlihat di PowerShell
         if frame_type == "error":
             err_msg = frame.get("message", data.get("message", "Unknown server error"))
             self.logger.error(f"SERVER REJECTION: {err_msg}")
@@ -121,15 +120,21 @@ class GameState:
             self.current_weather = data.get("weather", self.current_weather)
 
         elif frame_type == "hp_changed":
-            target_player_id = data.get("id", data.get("playerId", frame.get("id", "")))
-            if not target_player_id or target_player_id == self.player_id:
+            target_player_id = (
+                data.get("agentId") or data.get("playerId") or data.get("id") or
+                frame.get("agentId") or frame.get("playerId") or frame.get("id") or ""
+            )
+            if target_player_id == self.player_id:
                 new_hp = float(data.get("hp", frame.get("hp", self.hp)))
                 self.hp = new_hp
                 self.logger.info(f"Health update received: {self.hp:.1f}%")
 
         elif frame_type == "agent_moved":
-            moving_player_id = data.get("id", data.get("playerId", frame.get("id", "")))
-            if not moving_player_id or moving_player_id == self.player_id:
+            moving_player_id = (
+                data.get("agentId") or data.get("playerId") or data.get("id") or
+                frame.get("agentId") or frame.get("playerId") or frame.get("id") or ""
+            )
+            if moving_player_id == self.player_id:
                 new_q = int(data.get("q", frame.get("q", self.q)))
                 new_r = int(data.get("r", frame.get("r", self.r)))
                 self.q = new_q

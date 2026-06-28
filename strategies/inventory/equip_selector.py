@@ -29,16 +29,21 @@ class EquipSelector:
 
         # Ambil status serangan senjata terpasang saat ini secara case-insensitive [11]
         current_weapon_type = self.game_state.equipped_weapon
-        normalized_current_weapon = current_weapon_type.lower().replace("_", " ").strip()
-        matched_current_weapon = None
         
-        for db_key, db_info in ITEM_DATABASE.items():
-            if db_key.lower().replace("_", " ").strip() == normalized_current_weapon:
-                matched_current_weapon = db_info
-                break
+        # PENGAMAN MUTLAK: Hanya proses jika bot terbukti memegang senjata (bukan None atau string kosong)
+        if current_weapon_type:
+            normalized_current_weapon = current_weapon_type.lower().replace("_", " ").strip()
+            matched_current_weapon_info = None
+            
+            for db_key, db_info in ITEM_DATABASE.items():
+                if db_key.lower().replace("_", " ").strip() == normalized_current_weapon:
+                    matched_current_weapon_info = db_info
+                    break
 
-        if matched_current_weapon:
-            highest_weapon_atk = float(matched_current_weapon.get("atk_bonus", 0.0))
+            if matched_current_weapon_info:
+                highest_weapon_atk = float(matched_current_weapon_info.get("atk_bonus", 0.0))
+        
+        # Jika tidak ada senjata terpasang atau tidak dikenali, highest_weapon_atk tetap 0.0
 
         for item in inventory_items:
             item_id = item.get("id") or item.get("itemId") or ""
@@ -69,13 +74,19 @@ class EquipSelector:
         # Petakan warna relic yang sudah kita pasang saat ini secara case-insensitive
         equipped_colors: Set[str] = set()
         for r_type in equipped_relic_types:
-            normalized_r = r_type.lower().replace("_", " ").strip()
-            for db_key, db_info in ITEM_DATABASE.items():
-                if db_key.lower().replace("_", " ").strip() == normalized_r:
-                    color = db_info.get("slot_color", "")
+            # PENGAMAN MUTLAK: Hanya proses jika relic terbukti ada (bukan None atau string kosong)
+            if r_type:
+                normalized_r = r_type.lower().replace("_", " ").strip()
+                matched_relic_info = None
+                for db_key, db_info in ITEM_DATABASE.items():
+                    if db_key.lower().replace("_", " ").strip() == normalized_r:
+                        matched_relic_info = db_info
+                        break
+
+                if matched_relic_info:
+                    color = matched_relic_info.get("slot_color", "")
                     if color:
                         equipped_colors.add(color.lower())
-                    break
 
         # Coba pasang relic di tas dengan warna yang belum kita miliki [9]
         if len(equipped_colors) < 3:

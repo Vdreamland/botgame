@@ -19,7 +19,7 @@ class GameState:
         self.hp: float = 100.0
         self.ep: float = 10.0
         
-        # Dipertahankan bernilai 0 hanya untuk kompatibilitas impor modul lain agar tidak memicu AttributeError
+        # Dipertahaman bernilai 0 hanya untuk kompatibilitas impor modul lain agar tidak memicu AttributeError
         self.q: int = 0
         self.r: int = 0
 
@@ -48,7 +48,7 @@ class GameState:
         self.current_action = "Waiting in Queue"
         self.current_target = "None"
 
-    def [update_from_server_frame](file:///core/state/game_state.py#L40)(self, frame: Dict[str, Any]) -> None:
+    def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
         """
         Parses incoming game state updates from the WebSocket server [8, 10, 11].
         Supports both REST payload shapes and official /ws/agent WebSocket view structures.

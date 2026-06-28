@@ -102,20 +102,22 @@ class DecisionEngine:
 
         # 5. PEMICU PREDATOR GLOBAL (GLOBAL PREDATOR OVERRIDE)
         # Jika mendeteksi musuh sekarat atau peluang menang mutlak, bot langsung aktif mengejar
+        # PROTEKSI MUTLAK: Bot dilarang melakukan PvP jika HP sekarat (<60%) atau tidak memegang senjata!
         battle_eval = self.analyzer.evaluate_combat_situation()
-        if battle_eval.get("recommendation") == "FIGHT" and battle_eval.get("target"):
-            enemy = battle_eval["target"]
-            enemy_hp = float(enemy.get("hp", 100.0))
-            win_rate = battle_eval.get("win_rate", 0.0)
+        if self.game_state.equipped_weapon and self.game_state.hp >= 60.0:
+            if battle_eval.get("recommendation") == "FIGHT" and battle_eval.get("target"):
+                enemy = battle_eval["target"]
+                enemy_hp = float(enemy.get("hp", 100.0))
+                win_rate = battle_eval.get("win_rate", 0.0)
 
-            # Hanya kunci jika musuh terbukti hidup (0 < HP < 50) atau peluang menang mutlak (Win Rate >= 70)
-            if 0.0 < enemy_hp < 50.0 or win_rate >= 0.70:
-                if not self.hunter.locked_target_id:
-                    self.logger.warning(
-                        f"PREDATOR LOCK INITIALIZED: Target {enemy.get('name')} in region {self.game_state.get_region_name(enemy.get('regionId'))} "
-                        f"is highly vulnerable (HP: {enemy_hp}%, Win Rate: {win_rate:.1f}%). Overriding current phase strategy!"
-                    )
-                    self.hunter.lock_target(enemy)
+                # Hanya kunci jika musuh terbukti hidup (0 < HP < 50) atau peluang menang mutlak (Win Rate >= 70)
+                if 0.0 < enemy_hp < 50.0 or win_rate >= 0.70:
+                    if not self.hunter.locked_target_id:
+                        self.logger.warning(
+                            f"PREDATOR LOCK INITIALIZED: Target {enemy.get('name')} in region {self.game_state.get_region_name(enemy.get('regionId'))} "
+                            f"is highly vulnerable (HP: {enemy_hp}%, Win Rate: {win_rate:.1f}%). Overriding current phase strategy!"
+                        )
+                        self.hunter.lock_target(enemy)
 
         # 6. PENGAWAS STATUS KUNCI BURUAN (PENGAMAN KEMATIAN TARGET)
         # Jika target perburuan terdeteksi mati atau hilang dari sensor sekitar, segera lepaskan kunci target!

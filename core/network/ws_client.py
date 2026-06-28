@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale WebSocket Client.
-Manages persistent connections for both the single queue (ws/join) and gameplay socket (ws/agent) [5].
+Manages connections and tracks if the agent is actively inside a gameplay socket [5].
 """
 
 import json
@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional, Callable, Awaitable
 
 from utils.logger import AgentLogger
 from utils.rate_limiter import TokenBucket
+
 
 class WebSocketClient:
     def __init__(self, agent_name: str, api_key: str, ws_join_url: str, ws_agent_url: str, ws_limiter: TokenBucket):
@@ -24,6 +25,9 @@ class WebSocketClient:
         self.connection: Optional[websockets.WebSocketClientProtocol] = None
         self.is_connected = False
         
+        # Bendera keamanan agar bot tidak mengirim aksi lobi saat bertempur, atau sebaliknya [5]
+        self.is_gameplay_active = False
+        
         self.on_message_callback: Optional[Callable[[Dict[str, Any]], Awaitable[None]]] = None
         self._heartbeat_task: Optional[asyncio.Task] = None
         self._listener_task: Optional[asyncio.Task] = None
@@ -35,21 +39,11 @@ class WebSocketClient:
         }
 
     async def _connect_with_fallback(self, url: str) -> websockets.WebSocketClientProtocol:
-        """
-        Attempts connection using new additional_headers parameter (websockets v13+) [5].
-        Falls back to legacy extra_headers if TypeErrors occur due to version mismatches.
-        """
         headers = self._get_headers()
         try:
-            return await websockets.connect(
-                url,
-                additional_headers=headers
-            )
+            return await websockets.connect(url, additional_headers=headers)
         except TypeError:
-            return await websockets.connect(
-                url,
-                extra_headers=headers
-            )
+            return await websockets.connect(url, extra_headers=headers)
 
     async def connect_to_queue(self, room_preference: str) -> None:
         url = f"{self.ws_join_url}?version=1.11.2"
@@ -58,6 +52,7 @@ class WebSocketClient:
         try:
             self.connection = await self._connect_with_fallback(url)
             self.is_connected = True
+            self.is_gameplay_active = False # Belum masuk arena pertempuran [5]
             self.logger.info("Successfully connected to Matchmaking Queue.")
             
             self._heartbeat_task = asyncio.create_task(self._send_heartbeats())
@@ -77,6 +72,7 @@ class WebSocketClient:
         try:
             self.connection = await self._connect_with_fallback(url)
             self.is_connected = True
+            self.is_gameplay_active = True # Resmi memasuki arena pertempuran [5]
             self.logger.info("Successfully entered Gameplay Socket.")
             
             self._heartbeat_task = asyncio.create_task(self._send_heartbeats())
@@ -85,6 +81,7 @@ class WebSocketClient:
         except Exception as e:
             self.logger.error(f"WebSocket Gameplay Connection failed: {str(e)}")
             self.is_connected = False
+            self.is_gameplay_active = False
             raise e
 
     async def send_message(self, payload: Dict[str, Any]) -> None:
@@ -138,6 +135,7 @@ class WebSocketClient:
 
     async def disconnect(self) -> None:
         self.is_connected = False
+        self.is_gameplay_active = False
         
         if self._heartbeat_task:
             self._heartbeat_task.cancel()

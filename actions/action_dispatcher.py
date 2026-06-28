@@ -45,11 +45,22 @@ class ActionDispatcher:
             self.logger.warning(f"Movement canceled: Bot is already standing on target hex ({q}, {r}). Saving EP.")
             return False
 
-        payload = CooldownActionFactory.create_move_payload(q, r)
-        self.logger.info(f"Planning move execution to hex coordinates ({q}, {r}) [8].")
+        # Tentukan target region_id dari koneksi wilayah tetangga secara dinamis
+        target_region_id = f"region_{q}_{r}"
+        if self.game_state and hasattr(self.game_state, "connections"):
+            for conn in self.game_state.connections:
+                # Normalkan string koordinat negatif untuk pencocokan yang aman
+                normalized_conn = conn.replace("minus", "-")
+                # Deteksi format penamaan seperti "region_0_1" atau "0_1" atau format string bersambung
+                if f"_{q}_{r}" in normalized_conn or f"_{q}r{r}" in normalized_conn or normalized_conn == f"region_{q}_{r}":
+                    target_region_id = conn
+                    break
+
+        payload = CooldownActionFactory.create_move_payload(q, r, target_region_id)
+        self.logger.info(f"Planning move execution to hex coordinates ({q}, {r}) [Region ID: {target_region_id}].")
         
         if self.game_state:
-            self.game_state.current_action = f"MOVING TO ({q}, {r})"
+            self.game_state.current_action = f"MOVING TO ({q}, {r}) [{target_region_id}]"
             
         return await self._send_safe_cooldown_action("move", payload)
 

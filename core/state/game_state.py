@@ -28,6 +28,7 @@ class GameState:
         self.is_death_zone: bool = False
         self.day: int = 1
         self.turn: int = 1
+        self.connections: List[str] = []
 
         self.equipped_weapon: str = ""
         self.equipped_armor: str = ""
@@ -99,6 +100,7 @@ class GameState:
             # Ekstrak data wilayah / mapContext
             current_region = view.get("currentRegion", {})
             map_context = data.get("mapContext", {}) or {}
+            self.connections = current_region.get("connections", [])
             
             # Resolusi terrain dari nama region jika key 'terrain' absen di beberapa tipe koneksi
             region_name = current_region.get("name", "").lower()

@@ -1,0 +1,37 @@
+[2026-06-29 02:31:17] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 02:31:17] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 02:31:17] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 02:31:20] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 02:31:20] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 02:31:21] [ERROR] HTTP Error on POST redeem: Status 409
+[2026-06-29 02:31:21] [ERROR] Failed to execute onboarding Welcome redeem: API Error 409: {"success":false,"error":{"code":"CONFLICT","message":"code already redeemed by this account"}}
+[2026-06-29 02:31:21] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 02:31:21] [INFO] User preference: Free Room selected.
+[2026-06-29 02:31:21] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 02:31:21] [INFO] Successfully connected to Matchmaking Queue.
+[2026-06-29 02:31:21] [INFO] Received 'welcome' frame. Joining with preference: free
+[2026-06-29 02:32:04] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:32:04] [INFO] === NEW GAME TURN: DAY 1 | TURN 2 ===
+[2026-06-29 02:32:04] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 02:32:04] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:32:34] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:32:34] [INFO] === NEW GAME TURN: DAY 1 | TURN 3 ===
+[2026-06-29 02:33:13] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:33:13] [INFO] === NEW GAME TURN: DAY 1 | TURN 4 ===
+[2026-06-29 02:33:13] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 02:33:13] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:33:59] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 02:33:59] [INFO] === NEW GAME TURN: DAY 1 | TURN 5 ===
+[2026-06-29 02:33:59] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 02:33:59] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:33:59] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 02:33:59] [INFO] Coordinates synchronized: Moved to hex (0, 0) [8].
+[2026-06-29 02:34:05] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 02:34:05] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 02:34:05] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 02:34:05] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 02:34:05] [INFO] Local GameState session successfully cleared.
+[2026-06-29 02:34:05] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 02:34:05] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 02:34:05] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 02:34:05] [INFO] Local GameState session successfully cleared.

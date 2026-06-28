@@ -7,7 +7,6 @@ Finds and ranks items on the ground based on the agent's real-time tactical need
 from typing import Dict, Any, List, Optional
 from core.state.game_state import GameState
 from config.item_registry import ITEM_DATABASE
-from utils.math_helper import calculate_hex_distance
 
 
 class GroundItemScanner:
@@ -23,7 +22,6 @@ class GroundItemScanner:
         if not items:
             return None
 
-        bot_coord = (self.game_state.q, self.game_state.r)
         best_item: Optional[Dict[str, Any]] = None
         highest_score = -1.0
 
@@ -31,9 +29,8 @@ class GroundItemScanner:
             item_id = item.get("itemId", "")
             item_type = item.get("type", "")  # ID Referensi Kamus
             
-            iq = int(item.get("q", 0))
-            ir = int(item.get("r", 0))
-            distance = calculate_hex_distance(bot_coord, (iq, ir))
+            # Semua item di lantai wilayah yang sama berjarak 0
+            distance = 0
 
             # Hitung skor utilitas item tersebut
             score = self._calculate_item_utility(item_type, distance)

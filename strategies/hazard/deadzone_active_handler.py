@@ -4,7 +4,7 @@ ClawRoyale Dead Zone Emergency Active Handler.
 Overrides all decisions to force immediate escape from active Death Zones (1.34 HP/s) [14].
 """
 
-from typing import Tuple, List, Set, Optional, Any
+from typing import Tuple, List, Set, Optional, Any, Union
 from core.state.game_state import GameState
 from strategies.movement.pathfinder import HexPathfinder
 from strategies.recovery.health_restorer import HealthRestorer
@@ -18,13 +18,13 @@ class DeadZoneActiveHandler:
 
     def is_in_danger(self) -> bool:
         """
-        Checks if the agent's current coordinate is inside the active Death Zone [14].
+        Checks if the agent's current region is inside the active Death Zone [14].
         """
         return self.game_state.is_death_zone
 
-    def determine_emergency_response(self, safe_escape_coord: Tuple[int, int], 
-                                     blocked_coords: Set[Tuple[int, int]], 
-                                     active_deadzone_coords: Set[Tuple[int, int]]) -> Tuple[str, Optional[Any]]:
+    def determine_emergency_response(self, safe_escape: Union[str, Tuple[int, int]], 
+                                  blocked_coords: Set[Union[str, Tuple[int, int]]], 
+                                  active_deadzone_coords: Set[Union[str, Tuple[int, int]]]) -> Tuple[str, Optional[Any]]:
         """
         Calculates the immediate escape action.
         Prioritizes: Emergency auto-healing while executing movement steps to stay alive [14].
@@ -36,17 +36,26 @@ class DeadZoneActiveHandler:
             # Gunakan item medis instan (Free Action) untuk mengompensasi damage 1.34 HP/s [14]
             return "EMERGENCY_HEAL", healing_item
 
-        # 2. Hitung Jalur Evakuasi Tercepat menuju koordinat aman terdekat
-        bot_pos = (self.game_state.q, self.game_state.r)
-        escape_path = self.pathfinder.find_path(
-            start=bot_pos,
-            target=safe_escape_coord,
-            blocked_coords=blocked_coords,
-            deadzone_coords=active_deadzone_coords
-        )
+        # 2. Hitung Jalur Evakuasi Tercepat menuju koordinat/wilayah aman terdekat
+        if isinstance(safe_escape, str):
+            bot_pos = self.game_state.current_region_id
+            escape_path = self.pathfinder.find_path(
+                start=bot_pos,
+                target=safe_escape,
+                blocked_coords=blocked_coords,
+                deadzone_coords=active_deadzone_coords
+            )
+        else:
+            bot_pos_coord = (self.game_state.q, self.game_state.r)
+            escape_path = self.pathfinder.find_path(
+                start=bot_pos_coord,
+                target=safe_escape,
+                blocked_coords=blocked_coords,
+                deadzone_coords=active_deadzone_coords
+            )
 
         if escape_path:
-            # Ambil koordinat langkah berikutnya di jalur evakuasi
+            # Ambil koordinat/wilayah langkah berikutnya di jalur evakuasi
             next_step = escape_path[0]
             return "EMERGENCY_MOVE", next_step
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Dead Zone Warning Handler.
-Plans safe routes to the center coordinates before the Death Zone expands [14].
+Plans safe routes to the center region before the Death Zone expands [14].
 """
 
-from typing import Tuple, List, Set
+from typing import List, Set, Union, Tuple
 from core.state.game_state import GameState
 from strategies.movement.pathfinder import HexPathfinder
 
@@ -26,18 +26,27 @@ class DeadZoneWarningHandler:
             return True
         return False
 
-    def calculate_evacuation_path(self, safe_center_coord: Tuple[int, int], 
-                                  blocked_coords: Set[Tuple[int, int]], 
-                                  active_deadzone_coords: Set[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    def calculate_evacuation_path(self, safe_center: Union[str, Tuple[int, int]], 
+                                  blocked_coords: Set[Union[str, Tuple[int, int]]], 
+                                  active_deadzone_coords: Set[Union[str, Tuple[int, int]]]) -> List[Union[str, Tuple[int, int]]]:
         """
-        Pre-computes the optimal escape path to the designated safe zone coordinates.
+        Pre-computes the optimal escape path to the designated safe zone region ID or coordinate.
+        Supports both string region IDs and legacy coordinate tuples.
         """
-        bot_pos = (self.game_state.q, self.game_state.r)
-        
-        # Panggil pathfinder untuk menyusun rute evakuasi dini
+        if isinstance(safe_center, str):
+            bot_pos = self.game_state.current_region_id
+            return self.pathfinder.find_path(
+                start=bot_pos,
+                target=safe_center,
+                blocked_coords=blocked_coords,
+                deadzone_coords=active_deadzone_coords
+            )
+
+        # Fallback legacy coordinates
+        bot_pos_coord = (self.game_state.q, self.game_state.r)
         return self.pathfinder.find_path(
-            start=bot_pos,
-            target=safe_center_coord,
+            start=bot_pos_coord,
+            target=safe_center,
             blocked_coords=blocked_coords,
             deadzone_coords=active_deadzone_coords
         )

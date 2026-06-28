@@ -28,6 +28,9 @@ class GameState:
         self.connections: List[str] = []
         self.visible_ruins: List[Dict[str, Any]] = []
         self.visible_monsters: List[Dict[str, Any]] = []
+        
+        # Memori dinamis untuk menghafal nama wilayah baru dari server secara real-time
+        self.dynamic_region_names: Dict[str, str] = {}
 
         self.alert_gauge: int = 0
         self.current_terrain: str = "plains"
@@ -47,6 +50,43 @@ class GameState:
 
         self.current_action = "Waiting in Queue"
         self.current_target = "None"
+
+    def get_region_name(self, region_id: str) -> str:
+        """
+        Translates a raw region UUID into its human-readable region name.
+        Uses both static log-based registry and real-time dynamic caching.
+        """
+        if not region_id:
+            return "Unknown"
+        
+        if region_id in self.dynamic_region_names:
+            return self.dynamic_region_names[region_id]
+            
+        # Kamus database pemetaan UUID wilayah sah berdasarkan log lobi Anda
+        STATIC_REGION_MAP = {
+            "268745f0-d5a9-4868-bdcb-89267143c99b": "Alley",
+            "0f0e0bcb-2d48-4930-9b8e-a585b3d3d7f7": "Downtown",
+            "078a7687-005a-44d3-b86d-376090710630": "Lake",
+            "5ee70777-714b-4595-9021-803f226fa779": "Reactor",
+            "d05ec9cf-eff7-410b-b938-23937079f93d": "Lab",
+            "7661219c-8512-42e8-a228-aac2a2fbc075": "Lab",
+            "43dae327-69fc-44ff-80b2-3a66fcbfb0a3": "S:Relic",
+            "5a53e0a9-81b9-4fd2-bcb3-2ffc9bdb336a": "S:Relic",
+            "8ebdb6ab-68bc-45f5-9401-03870f05f0e5": "S:Relic",
+            "a86c6662-fc40-4801-bfda-40559aa0987c": "Suburbs",
+            "6c82c33e-abe3-4491-a048-777bcf2c13da": "Airport",
+            "5803a56c-32ba-4286-9221-8b57ff230a62": "Vault",
+            "7405bf87-4a59-4d6c-881b-cfaf1ee6395c": "Camp",
+            "a16235ed-b5d5-4031-97eb-2790934feb07": "Hospital",
+            "f23cf0df-cb9d-4f2d-9e6e-3dd245160cf1": "Shrine",
+            "30f42196-b933-4bf3-9362-e365c9a5686a": "Cliff",
+            "401eb1a7-4ed4-46b1-9d0b-e20459ac3aff": "Crossroads"
+        }
+        
+        if region_id in STATIC_REGION_MAP:
+            return STATIC_REGION_MAP[region_id]
+            
+        return f"Region {region_id[:8]}"
 
     def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
         """
@@ -100,6 +140,18 @@ class GameState:
             self.connections = current_region.get("connections") or data.get("connections") or []
             self.visible_ruins = view.get("visibleRuins") or data.get("visibleRuins") or []
             self.visible_monsters = view.get("visibleMonsters") or data.get("visibleMonsters") or []
+
+            # Daftarkan secara dinamis ubin yang sedang kita injak saat ini ke memori
+            if self.current_region_id and self.current_region_name:
+                self.dynamic_region_names[self.current_region_id] = self.current_region_name
+
+            # Daftarkan wilayah Dead Zone yang akan meluas secara dinamis dari server
+            pending_zones = view.get("pendingDeathzones") or data.get("pendingDeathzones") or []
+            for zone in pending_zones:
+                z_id = zone.get("id")
+                z_name = zone.get("name")
+                if z_id and z_name:
+                    self.dynamic_region_names[z_id] = z_name
 
             # Cetak log sinkronisasi jika bot sukses berpindah wilayah
             if old_region_id != self.current_region_id and self.player_id:
@@ -160,7 +212,7 @@ class GameState:
             self.enemies = clean_enemies
             self.allies_nearby = clean_allies
             
-            # PENINGKATAN LOG (Transparansi Layer Graf): Kelompokkan musuh berdasarkan jarak Hops wilayah
+            # PENINGKATAN LOG (Transparansi Layer Graf): Terjemahkan UUID wilayah ke nama manusiawi
             if len(self.enemies) > 0:
                 layer_0 = []
                 layer_1 = []
@@ -169,10 +221,12 @@ class GameState:
                 for e in self.enemies:
                     e_region = e.get("regionId") or self.current_region_id
                     e_name = e.get("name", "Unknown")
+                    resolved_name = self.get_region_name(e_region)
+                    
                     if e_region == self.current_region_id:
                         layer_0.append(f"'{e_name}'")
                     elif e_region in self.connections:
-                        layer_1.append(f"'{e_name}' in region {e_region}")
+                        layer_1.append(f"'{e_name}' in {resolved_name}")
                     else:
                         layer_2.append(f"'{e_name}' (Safe)")
 

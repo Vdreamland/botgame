@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale ASCII Map Renderer.
-Converts Hexagonal coordinates (q, r) into a readable terminal string [8].
+Converts Region connections and adjacent entities into a readable terminal graph [8].
 """
 
 from typing import Dict, Any, List, Tuple
@@ -12,54 +12,59 @@ class ASCIIMapRenderer:
     @staticmethod
     def render_local_map(game_state: GameState, view_radius: int = 3) -> str:
         """
-        Draws a visual hexagonal grid representing the agent's nearby surroundings.
+        Draws a visual connectivity graph representing the agent's adjacent surroundings.
         Symbols:
-        [ P ] = Agent (Self)
-        [ E ] = Enemy Player
-        [ A ] = Ally Bot
-        [ * ] = Items on ground
-        [ . ] = Empty hex
+          [ P ] = Agent (Self)
+          (E)   = Enemy Present
+          (*)   = Items on ground
         """
-        bot_q, bot_r = game_state.q, game_state.r
-        grid: Dict[Tuple[int, int], str] = {}
-
-        # 1. Daftarkan diri bot di koordinat pusat
-        grid[(0, 0)] = "[ P ]"
-
-        # 2. Daftarkan musuh-musuh asing
-        for enemy in game_state.enemies:
-            eq = int(enemy.get("q", 0)) - bot_q
-            er = int(enemy.get("r", 0)) - bot_r
-            grid[(eq, er)] = "[ E ]"
-
-        # 3. Daftarkan sekutu bot kita
-        for ally in game_state.allies_nearby:
-            aq = int(ally.get("q", 0)) - bot_q
-            ar = int(ally.get("r", 0)) - bot_r
-            grid[(aq, ar)] = "[ A ]"
-
-        # 4. Daftarkan item di tanah
-        for item in game_state.items_on_ground:
-            iq = int(item.get("q", 0)) - bot_q
-            ir = int(item.get("r", 0)) - bot_r
-            # Cegah penindihan jika ada player berdiri di atas item
-            if (iq, ir) not in grid:
-                grid[(iq, ir)] = "[ * ]"
-
-        # 5. Susun format visual string heksagonal axial
         lines = []
-        for r in range(-view_radius, view_radius + 1):
-            # Indentasi heksagonal agar membentuk grid hex murni
-            indent = "   " * abs(r)
-            line_parts = []
-            
-            for q in range(-view_radius, view_radius + 1):
-                # Validasi jangkauan heksagonal axial (abs(q + r) <= radius)
-                if abs(q + r) <= view_radius:
-                    symbol = grid.get((q, r), "[ . ]")
-                    line_parts.append(symbol)
-            
-            if line_parts:
-                lines.append(f"{indent}{' '.join(line_parts)}")
+        
+        current_name = game_state.current_region_name
+        current_id = game_state.current_region_id
+        
+        # Cari musuh di ruangan sendiri
+        enemies_here = [e.get("name") for e in game_state.enemies if (e.get("regionId") or game_state.current_region_id) == current_id]
+        items_count = len(game_state.items_on_ground)
+        
+        self_status = ""
+        if enemies_here:
+            self_status += f" [bold red](E: {len(enemies_here)} enemies here!)[/bold red]"
+        if items_count > 0:
+            self_status += f" [bold green](*: {items_count} items on ground)[/bold green]"
 
+        # Gambar Node Pusat (Tempat Bot berdiri)
+        lines.append(" [bold yellow]============================================================[/bold yellow]")
+        lines.append(f"  CURRENT REGION: [bold white]{current_name}[/bold white] ({current_id[:18]}...) {self_status}")
+        lines.append(" [bold yellow]============================================================[/bold yellow]")
+        lines.append("        |")
+        lines.append("        +--- ADJACENT CONNECTED REGIONS:")
+
+        # Gambar Node Tetangga (Koneksi aktif)
+        connections = game_state.connections
+        if not connections:
+            lines.append("             [ No connections detected ]")
+        else:
+            for conn_id in connections:
+                # Terjemahkan UUID koneksi ke nama manusiawi secara real-time
+                resolved_conn_name = game_state.get_region_name(conn_id)
+
+                # Cari musuh di region tetangga ini
+                enemies_there = [e.get("name") for e in game_state.enemies if e.get("regionId") == conn_id]
+                status_suffix = ""
+                if enemies_there:
+                    status_suffix += f" [bold red](E: {len(enemies_there)} enemies present)[/bold red]"
+                
+                # Cek jika ada ruins di tetangga ini
+                is_ruins = False
+                for r in game_state.visible_ruins:
+                    if r.get("ruinId") == conn_id:
+                        is_ruins = True
+                        break
+                if is_ruins:
+                    status_suffix += " [bold gold][ Ruins ][/bold gold]"
+
+                lines.append(f"             |--- [cyan]{resolved_conn_name}[/cyan] ({conn_id[:8]}...) {status_suffix}")
+
+        lines.append(" [bold yellow]============================================================[/bold yellow]")
         return "\n".join(lines)

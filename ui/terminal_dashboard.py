@@ -29,7 +29,7 @@ class TerminalDashboard:
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                return "".join(lines[-count:]).strip()
+            return "".join(lines[-count:]).strip()
         except Exception:
             return "Failed to read logs dynamically."
 
@@ -37,7 +37,9 @@ class TerminalDashboard:
         """
         Renders the elite visual dashboard with hex map and active log stream.
         """
-        self.console.clear()
+        # Gunakan Escape Sequence ANSI untuk memindahkan kursor kembali ke pojok kiri atas
+        # Ini mencegah layar PowerShell berkedip, bergetar, atau menumpuk teks ke bawah
+        self.console.print("\033[H", end="")
 
         # 1. Tabel Registrasi Status Bot Aktif
         summary_table = Table(expand=True, border_style="cyan")
@@ -45,7 +47,7 @@ class TerminalDashboard:
         summary_table.add_column("Room Pref", justify="center")
         summary_table.add_column("HP State", justify="center")
         summary_table.add_column("EP State", justify="center")
-        summary_table.add_column("Coords (q, r)", justify="center")
+        summary_table.add_column("Current Region", justify="center")
         summary_table.add_column("Alert", justify="center")
         summary_table.add_column("Active Action Status", style="bold yellow", justify="left")
         summary_table.add_column("Synergy", justify="center")
@@ -58,10 +60,11 @@ class TerminalDashboard:
             
             hp_str = f"[{hp_color}]{gs.hp:.1f}%[/{hp_color}]"
             ep_str = f"[{ep_color}]{gs.ep:.1f} EP[/{ep_color}]"
-            coord_str = f"({gs.q}, {gs.r})"
+            
+            # Tampilkan Nama Wilayah Aktif di dalam tabel (bukan koordinat q, r yang membingungkan)
+            region_str = f"{gs.current_region_name} ({gs.current_region_id[:8]}...)"
             alert_str = f"{gs.alert_gauge}/10"
             
-            # Ambil status aksi dinamis untuk ditayangkan di dasbor [11, 12]
             action_status_str = gs.current_action.upper()
             synergy_str = "RGB fullSet" if gs.has_full_set else "None"
 
@@ -70,20 +73,20 @@ class TerminalDashboard:
                 inst.room_preference.upper(),
                 hp_str,
                 ep_str,
-                coord_str,
+                region_str,
                 alert_str,
                 action_status_str,
                 synergy_str
             )
 
-        # 2. Mini Map Visual Heksagonal
+        # 2. Mini Map Visual Graf Konektivitas Wilayah
         map_string = ""
         if active_instances:
             map_string = ASCIIMapRenderer.render_local_map(active_instances[0].game_state)
         
         map_panel = Panel(
             map_string,
-            title=f"Hex Grid Mini-Map (Active: {active_instances[0].agent_name if active_instances else 'None'})",
+            title=f"Region Connectivity Mini-Map (Active: {active_instances[0].agent_name if active_instances else 'None'})",
             border_style="yellow",
             expand=True
         )

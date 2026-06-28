@@ -28,9 +28,11 @@ class GroundItemScanner:
         for item in items:
             # Pengaman berlapis mencari ID item asli dari server
             item_id = item.get("id") or item.get("itemId") or ""
-            item_type = item.get("type") or item.get("item_type") or ""
             
-            # Semua item di lantai wilayah yang sama berjarak 0
+            # Pengaman berlapis membaca tipe barang asli dari payload WebSocket game
+            item_type = item.get("type") or item.get("name") or item.get("itemType") or item.get("item_type") or ""
+            
+            # Semua item di lobi lurus berada di lantai wilayah yang sama berjarak 0
             distance = 0
 
             # Hitung skor utilitas item tersebut
@@ -41,6 +43,7 @@ class GroundItemScanner:
                 best_item = item.copy()
                 best_item["id"] = item_id
                 best_item["itemId"] = item_id
+                best_item["type"] = item_type
                 best_item["distance"] = distance
                 best_item["utility_score"] = score
 

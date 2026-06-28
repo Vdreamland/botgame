@@ -119,7 +119,6 @@ class GameState:
             else:
                 resolved_terrain = "plains"
 
-            # Gabungkan parsing data wilayah dari dokumentasi resmi / legacy
             self.current_terrain = (
                 current_region.get("terrain") or 
                 map_context.get("terrain") or 
@@ -161,16 +160,39 @@ class GameState:
             self.enemies = clean_enemies
             self.allies_nearby = clean_allies
             
-            # PENINGKATAN LOG: Cetak daftar musuh beserta wilayah penemuannya agar terlihat jelas di lobi
+            # PENINGKATAN LOG (Transparansi Layer Graf): Kelompokkan musuh berdasarkan jarak Hops wilayah
             if len(self.enemies) > 0:
-                enemy_details = [f"'{e.get('name', 'Unknown')}' (Region: {e.get('regionId', 'Unknown')})" for e in self.enemies]
+                layer_0 = []
+                layer_1 = []
+                layer_2 = []
+                
+                for e in self.enemies:
+                    e_region = e.get("regionId") or self.current_region_id
+                    e_name = e.get("name", "Unknown")
+                    if e_region == self.current_region_id:
+                        layer_0.append(f"'{e_name}'")
+                    elif e_region in self.connections:
+                        layer_1.append(f"'{e_name}' in region {e_region}")
+                    else:
+                        layer_2.append(f"'{e_name}' (Safe)")
+
                 self.logger.warning(
-                    f"Sync completed: Detected {len(self.enemies)} active enemies: {', '.join(enemy_details)}."
+                    f"Sync completed: Detected {len(self.enemies)} active enemies. "
+                    f"Layer 0 (Same Region): [{', '.join(layer_0)}]. "
+                    f"Layer 1 (Adjacent Region): [{', '.join(layer_1)}]. "
+                    f"Layer 2+ (Distant Region): {len(layer_2)} enemies."
                 )
 
-            # PENINGKATAN LOG: Cetak daftar barang jatuh di tanah sekitar ubin bot berdiri
+            # PENINGKATAN LOG (Transparansi Loot): Cetak payload mentah jika item bertipe Unknown
             if self.items_on_ground:
-                item_details = [f"{i.get('type', 'Unknown')} (ID: {i.get('id') or i.get('itemId', 'Unknown')})" for i in self.items_on_ground]
+                item_details = []
+                for i in self.items_on_ground:
+                    i_type = i.get("type") or i.get("name") or i.get("itemType") or "Unknown"
+                    i_id = i.get("id") or i.get("itemId") or "Unknown"
+                    if i_type == "Unknown":
+                        item_details.append(f"Unknown (Raw Data: {i})")
+                    else:
+                        item_details.append(f"{i_type} (ID: {i_id})")
                 self.logger.info(f"Loot radar: Detected {len(self.items_on_ground)} items on ground: {', '.join(item_details)}.")
 
         elif frame_type == "hp_changed":

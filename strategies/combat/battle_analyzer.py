@@ -31,9 +31,14 @@ class BattleAnalyzer:
                 "distance": 999
             }
 
-        # Jarak berbasis wilayah (0 = wilayah yang sama, 1 = bersebelahan)
+        # Hitung jarak Hops sesungguhnya berbasis wilayah Graf (0 = ubin sama, 1 = tetangga, 2 = jauh)
         enemy_region = closest_enemy.get("regionId") or self.game_state.current_region_id
-        distance = 0 if enemy_region == self.game_state.current_region_id else 1
+        if enemy_region == self.game_state.current_region_id:
+            distance = 0
+        elif enemy_region in self.game_state.connections:
+            distance = 1
+        else:
+            distance = 2
         
         enemy_id = closest_enemy.get("id", "")
         enemy_hp = float(closest_enemy.get("hp", 100.0))
@@ -57,10 +62,11 @@ class BattleAnalyzer:
             my_combat_stats, enemy_combat_stats, self.game_state.hp, enemy_hp
         )
 
-        # 4. Formulasi Keputusan Berdasarkan Threshold
+        # 4. Formulasi Keputusan Berdasarkan Jarak dan Tingkat Kemenangan
         if win_rate >= 0.60:
             recommendation = "FIGHT"
-        elif win_rate < 0.40:
+        elif win_rate < 0.40 and distance <= 1:
+            # Bot hanya lari kabur jika musuh berada di Jarak Dekat (wilayah tetangga atau wilayah sama)
             recommendation = "FLEE"
         else:
             recommendation = "STANDBY"

@@ -4,6 +4,7 @@ ClawRoyale Single Agent Instance.
 Binds API Clients, WebSockets, State trackers, and Decision Engine into an active async loop [5, 8, 12, 13].
 """
 
+import time
 import asyncio
 import traceback
 from typing import Dict, Any
@@ -52,6 +53,9 @@ class AgentInstance:
         self.ws_client.on_message_callback = self._on_websocket_message
         self._is_thinking = False
         self._ticker_task = None
+        
+        # Monitor waktu pemikiran terakhir untuk mencegah race condition / spamming
+        self._last_thought_time = 0.0
 
     async def start(self) -> None:
         self.logger.info(f"Launching Agent Instance for '{self.agent_name}'...")
@@ -73,6 +77,8 @@ class AgentInstance:
         Wrapper to ensure thought cycle executes safely.
         Catches any logical crash inside the DecisionEngine so the bot doesn't freeze silently.
         """
+        # Catat waktu pemisah awal siklus pemikiran secara aman
+        self._last_thought_time = time.monotonic()
         try:
             await self.decision_engine.execute_thought_cycle()
         except Exception as e:
@@ -89,10 +95,18 @@ class AgentInstance:
         while True:
             try:
                 await asyncio.sleep(0.5)
+                
+                # PROTEKSI UTM: Bot dilarang keras berpikir jika karakternya sudah mati (hp <= 0.0) [AGENT_DEAD]
+                is_agent_dead = self.game_state.hp <= 0.0
+                now = time.monotonic()
+                
+                # Batasi pemikiran agar hanya dipicu jika jarak pemikiran terakhir telah melewati 1.5 detik
                 if (self.cooldown_manager.can_execute_action() and 
                     self.ws_client.is_connected and 
                     self.ws_client.is_gameplay_active and 
                     self.game_state.player_id != "" and
+                    not is_agent_dead and
+                    (now - self._last_thought_time >= 1.5) and
                     not self._is_thinking):
                     
                     self._is_thinking = True
@@ -115,8 +129,7 @@ class AgentInstance:
         if frame_type not in allowed_frames:
             return
 
-        # Saring log redundan: Hanya cetak event dinamis penting tingkat tinggi untuk mencegah flood log
-        if frame_type in ["turn_advanced", "error"]:
+        if frame_type in ["turn_advanced", "hp_changed", "agent_moved", "error"]:
             self.logger.info(f"Dynamic game event received: '{frame_type}'")
 
         if frame_type in ["agent_view", "turn_advanced", "can_act_changed"]:
@@ -135,10 +148,17 @@ class AgentInstance:
         if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
             self.game_state.current_action = "ENTERING GAMEPLAY"
 
+        # PROTEKSI UTM: Bot dilarang keras berpikir jika karakternya sudah mati (hp <= 0.0) [AGENT_DEAD]
+        is_agent_dead = self.game_state.hp <= 0.0
+        now = time.monotonic()
+
+        # Batasi pemikiran agar hanya dipicu jika jarak pemikiran terakhir telah melewati 1.5 detik
         if (self.cooldown_manager.can_execute_action() and 
             self.ws_client.is_connected and 
             self.ws_client.is_gameplay_active and 
             self.game_state.player_id != "" and
+            not is_agent_dead and
+            (now - self._last_thought_time >= 1.5) and
             not self._is_thinking):
             
             self._is_thinking = True

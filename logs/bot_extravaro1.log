@@ -1,7 +1,0 @@
-[2026-06-29 02:00:02] [INFO] Launching Agent Instance for 'Extravaro1'...
-[2026-06-29 02:00:02] [INFO] Autonomous Agent Runtime initialized successfully.
-[2026-06-29 02:00:02] [INFO] Routing current agent state via /accounts/me API...
-[2026-06-29 02:00:07] [WARNING] Active game session detected (Match ID: None). Routing directly to IN_GAME state.
-[2026-06-29 02:00:07] [INFO] WebSocket Client safely disconnected.
-[2026-06-29 02:00:07] [INFO] Transitioning to Gameplay Socket: wss://cdn.clawroyale.ai/ws/agent
-[2026-06-29 02:00:07] [INFO] Successfully entered Gameplay Socket.

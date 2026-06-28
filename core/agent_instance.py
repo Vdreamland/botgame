@@ -36,7 +36,7 @@ class AgentInstance:
         self.cooldown_manager = CooldownManager(agent_name)
 
         self.dispatcher = ActionDispatcher(agent_name, self.ws_client, self.cooldown_manager)
-        self.dispatcher.cooldown_manager = self.cooldown_manager
+        self.dispatcher.game_state = self.game_state
         
         self.decision_engine = DecisionEngine(agent_name, self.game_state, self.dispatcher)
 
@@ -52,6 +52,7 @@ class AgentInstance:
 
     async def start(self) -> None:
         self.logger.info(f"Launching Agent Instance for '{self.agent_name}'...")
+        self.game_state.current_action = "MATCHMAKING QUEUE"
         await self.runtime.start()
 
     async def stop(self) -> None:
@@ -62,23 +63,29 @@ class AgentInstance:
 
     async def _on_websocket_message(self, message: Dict[str, Any]) -> None:
         """
-        Processes incoming JSON frames.
-        Only triggers gameplay thoughts if actively inside a gameplay match [5, 12].
+        Processes incoming JSON frames from the WebSocket connection [5, 8, 12].
         """
         frame_type = message.get("type")
         
-        # Pengaman Mutlak: Hanya proses frame sinkronisasi permainan asli [12]
-        if frame_type not in ["state", "game_state", "tick", "action_result"]:
+        self.logger.info(f"Raw WebSocket frame received: '{frame_type}'")
+        
+        # Validasi pembukaan tipe bingkai resmi pertempuran [8, 11, 12, 14]
+        if frame_type not in ["agent_view", "turn_advanced", "can_act_changed", "deathzone_warning", "deathzone_expanded"]:
             return
 
+        # Sinkronisasikan peta, HP, EP, dan musuh dari 'agent_view' atau 'turn_advanced' [8, 10, 11]
         self.game_state.update_from_server_frame(message)
 
-        if "canAct" in message:
-            self.cooldown_manager.update_server_can_act(bool(message["canAct"]))
+        # Urai ketersediaan aksi dari tipe bingkai 'can_act_changed' [12]
+        if frame_type == "can_act_changed":
+            # Ekstrak bool canAct dari data payload [12]
+            can_act_val = message.get("canAct", message.get("data", {}).get("canAct", True))
+            self.cooldown_manager.update_server_can_act(bool(can_act_val))
 
         if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
             self.game_state.current_action = "ENTERING GAMEPLAY"
 
+        # Picu pemikiran otonom jika canAct lokal terpenuhi [12]
         if (self.cooldown_manager.can_execute_action() and 
                 self.ws_client.is_connected and 
                 self.ws_client.is_gameplay_active):

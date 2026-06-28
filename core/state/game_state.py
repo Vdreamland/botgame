@@ -44,78 +44,86 @@ class GameState:
     def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
         """
         Parses incoming game state updates from the WebSocket server.
-        Synchronizes HP, EP, coordinates, ground items, weather, and filters teammates.
+        Synchronizes HP, EP, coordinates, ground items, weather, and filters teammates [8, 10, 11].
         """
         frame_type = frame.get("type")
         
-        if frame_type not in ["state", "game_state", "tick", "action_result"]:
+        # Validasi tipe bingkai resmi [8, 11, 12]
+        if frame_type not in ["agent_view", "turn_advanced", "can_act_changed", "deathzone_warning", "deathzone_expanded"]:
             return
 
         data = frame.get("data", {})
         if not data:
             return
 
-        self_state = data.get("self", {})
-        if self_state:
-            if not self.player_id and self_state.get("id"):
-                self.player_id = self_state.get("id")
-                self.team_registry.register_ally(self.player_id, self.agent_name)
-                self.logger.info(f"Registered Player ID: {self.player_id} into the Team Registry.")
+        # 1. Urai Bingkai Pandangan Agen ('agent_view') [8, 10]
+        if frame_type == "agent_view":
+            self_state = data.get("self", data.get("agent", {}))
+            if self_state:
+                if not self.player_id and self_state.get("id"):
+                    self.player_id = self_state.get("id")
+                    self.team_registry.register_ally(self.player_id, self.agent_name)
+                    self.logger.info(f"Registered Player ID: {self.player_id} into the Team Registry.")
 
-            self.hp = float(self_state.get("hp", self.hp))
-            self.ep = float(self_state.get("ep", self.ep))
-            
-            self.q = int(self_state.get("q", self.q))
-            self.r = int(self_state.get("r", self.r))
+                self.hp = float(self_state.get("hp", self.hp))
+                self.ep = float(self_state.get("ep", self.ep))
+                
+                self.q = int(self_state.get("q", self.q))
+                self.r = int(self_state.get("r", self.r))
 
-            loadout = self_state.get("loadout", {})
-            self.equipped_weapon = loadout.get("weapon", "")
-            self.equipped_armor = loadout.get("armor", "")
-            self.equipped_relics = loadout.get("relics", [])
-            self.has_full_set = loadout.get("fullSet", False)
+                loadout = self_state.get("loadout", {})
+                self.equipped_weapon = loadout.get("weapon", "")
+                self.equipped_armor = loadout.get("armor", "")
+                self.equipped_relics = loadout.get("relics", [])
+                self.has_full_set = loadout.get("fullSet", False)
 
-        map_context = data.get("mapContext", {})
-        if map_context:
-            new_day = int(map_context.get("day", self.day))
-            new_turn = int(map_context.get("turn", self.turn))
+            map_context = data.get("mapContext", {})
+            if map_context:
+                self.alert_gauge = int(map_context.get("alertGauge", self.alert_gauge))
+                self.current_terrain = map_context.get("terrain", self.current_terrain)
+                self.current_weather = map_context.get("weather", self.current_weather)
+                self.is_death_zone = bool(map_context.get("isDeathZone", self.is_death_zone))
+                self.day = int(map_context.get("day", self.day))
+                self.turn = int(map_context.get("turn", self.turn))
+
+            self.items_on_ground = data.get("items", [])
+
+            other_players = data.get("players", [])
+            clean_enemies = []
+            clean_allies = []
+
+            for p in other_players:
+                p_id = p.get("id", "")
+                p_name = p.get("name", "")
+
+                if p_id == self.player_id:
+                    continue
+
+                if self.team_registry.is_ally(p_id, p_name):
+                    clean_allies.append(p)
+                else:
+                    clean_enemies.append(p)
+
+            self.enemies = clean_enemies
+            self.allies_nearby = clean_allies
             
-            # LOGIKA UTAMA: Cetak garis indikator turn baru secara instan di terminal PowerShell Anda [11]
-            if new_turn != self.turn or new_day != self.day:
-                self.logger.info(f"=== NEW GAME TURN: DAY {new_day} | TURN {new_turn} ===")
+            if len(self.enemies) > 0:
+                self.logger.warning(
+                    f"Sync completed: Detected {len(self.enemies)} actual enemies "
+                    f"and {len(self.allies_nearby)} ally bots nearby."
+                )
+
+        # 2. Urai Bingkai Waktu / Turn ('turn_advanced') [11]
+        elif frame_type == "turn_advanced":
+            new_day = int(data.get("day", self.day))
+            new_turn = int(data.get("turn", self.turn))
             
-            self.alert_gauge = int(map_context.get("alertGauge", self.alert_gauge))
-            self.current_terrain = map_context.get("terrain", self.current_terrain)
-            self.current_weather = map_context.get("weather", self.current_weather)
-            self.is_death_zone = bool(map_context.get("isDeathZone", self.is_death_zone))
+            # Cetak log pembatas turn asinkron di terminal [11]
+            self.logger.info(f"=== NEW GAME TURN: DAY {new_day} | TURN {new_turn} ===")
+            
             self.day = new_day
             self.turn = new_turn
-
-        self.items_on_ground = data.get("items", [])
-
-        other_players = data.get("players", [])
-        clean_enemies = []
-        clean_allies = []
-
-        for p in other_players:
-            p_id = p.get("id", "")
-            p_name = p.get("name", "")
-
-            if p_id == self.player_id:
-                continue
-
-            if self.team_registry.is_ally(p_id, p_name):
-                clean_allies.append(p)
-            else:
-                clean_enemies.append(p)
-
-        self.enemies = clean_enemies
-        self.allies_nearby = clean_allies
-        
-        if len(self.enemies) > 0:
-            self.logger.warning(
-                f"Sync completed: Detected {len(self.enemies)} actual enemies "
-                f"and {len(self.allies_nearby)} ally bots nearby."
-            )
+            self.current_weather = data.get("weather", self.current_weather)
 
     def clean_session_data(self) -> None:
         """

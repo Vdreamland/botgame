@@ -1,0 +1,21 @@
+[2026-06-29 00:56:37] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 00:56:37] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 00:56:37] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:56:42] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 00:56:42] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 00:56:42] [ERROR] HTTP Error on POST redeem: Status 409
+[2026-06-29 00:56:42] [ERROR] Failed to execute onboarding Welcome redeem: API Error 409: {"success":false,"error":{"code":"CONFLICT","message":"code already redeemed by this account"}}
+[2026-06-29 00:56:42] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 00:56:42] [INFO] User preference: Free Room selected.
+[2026-06-29 00:56:42] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 00:56:42] [INFO] Successfully connected to Matchmaking Queue.
+[2026-06-29 00:56:42] [INFO] Received 'welcome' frame. Joining with preference: free
+[2026-06-29 00:58:47] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:58:47] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:58:47] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:58:47] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:58:47] [INFO] Local GameState session successfully cleared.
+[2026-06-29 00:58:47] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:58:47] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:58:47] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:58:47] [INFO] Local GameState session successfully cleared.

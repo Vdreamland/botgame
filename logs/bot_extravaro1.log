@@ -1,0 +1,86 @@
+[2026-06-29 05:11:37] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 05:11:37] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 05:11:37] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 05:11:42] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 05:11:42] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 05:11:42] [ERROR] HTTP Error on POST redeem: Status 409
+[2026-06-29 05:11:42] [WARNING] Redeem API reported that this welcome bundle was already claimed. Syncing...
+[2026-06-29 05:11:42] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 05:11:42] [INFO] User preference: Free Room selected.
+[2026-06-29 05:11:42] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 05:11:43] [INFO] Successfully connected to Matchmaking Queue.
+[2026-06-29 05:11:43] [INFO] Received 'welcome' frame. Joining with preference: free
+[2026-06-29 05:11:46] [WARNING] Gameplay mode activated! Brain functions online.
+[2026-06-29 05:11:46] [INFO] Registered Player ID: 9536d801-374d-4f18-a858-b37924d974f8 into the Team Registry.
+[2026-06-29 05:11:46] [INFO] Coordinates synchronized: Moved to region Windmill (0ff29a70-70d5-40d0-a4e8-46ee2c85e4fe) [8].
+[2026-06-29 05:11:46] [WARNING] Sync completed: Detected 10 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:11:46] [INFO] Planning move execution to region ID: a16235ed-b5d5-4031-97eb-2790934feb07 [8].
+[2026-06-29 05:11:46] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 05:11:46] [INFO] Coordinates synchronized: Moved to region Hospital (a16235ed-b5d5-4031-97eb-2790934feb07) [8].
+[2026-06-29 05:11:46] [WARNING] Sync completed: Detected 5 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:12:17] [INFO] Planning move execution to region ID: 0ff29a70-70d5-40d0-a4e8-46ee2c85e4fe [8].
+[2026-06-29 05:12:17] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 05:12:19] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:12:19] [INFO] === NEW GAME TURN: DAY 1 | TURN 2 ===
+[2026-06-29 05:12:19] [WARNING] Sync completed: Detected 6 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:12:47] [INFO] Planning move execution to region ID: 0ff29a70-70d5-40d0-a4e8-46ee2c85e4fe [8].
+[2026-06-29 05:12:47] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 05:12:47] [INFO] Coordinates synchronized: Moved to region Windmill (0ff29a70-70d5-40d0-a4e8-46ee2c85e4fe) [8].
+[2026-06-29 05:12:47] [WARNING] Sync completed: Detected 12 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:13:01] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:13:01] [INFO] === NEW GAME TURN: DAY 1 | TURN 3 ===
+[2026-06-29 05:13:01] [WARNING] Sync completed: Detected 11 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:13:01] [INFO] Planning move execution to region ID: a16235ed-b5d5-4031-97eb-2790934feb07 [8].
+[2026-06-29 05:13:01] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 05:13:01] [INFO] Coordinates synchronized: Moved to region Hospital (a16235ed-b5d5-4031-97eb-2790934feb07) [8].
+[2026-06-29 05:13:01] [WARNING] Sync completed: Detected 6 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:13:31] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:13:31] [INFO] === NEW GAME TURN: DAY 1 | TURN 4 ===
+[2026-06-29 05:13:31] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:13:31] [INFO] Health update received: 66.0%
+[2026-06-29 05:13:31] [INFO] Planning move execution to region ID: f23cf0df-cb9d-4f2d-9e6e-3dd245160cf1 [8].
+[2026-06-29 05:13:31] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 05:13:31] [INFO] Health update received: 66.0%
+[2026-06-29 05:13:31] [INFO] Coordinates synchronized: Moved to region Shrine (f23cf0df-cb9d-4f2d-9e6e-3dd245160cf1) [8].
+[2026-06-29 05:13:31] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:14:01] [WARNING] PREDATOR LOCK: Target Neon_King292 is highly vulnerable (HP: 0.0%, Win Rate: 1.0%). Overriding current phase strategy!
+[2026-06-29 05:14:01] [INFO] Target lock active on player: Neon_King292.
+[2026-06-29 05:14:01] [INFO] Planning move execution to region ID: 5a53e0a9-81b9-4fd2-bcb3-2ffc9bdb336a [8].
+[2026-06-29 05:14:01] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 05:14:01] [INFO] Coordinates synchronized: Moved to region S:Relic (5a53e0a9-81b9-4fd2-bcb3-2ffc9bdb336a) [8].
+[2026-06-29 05:14:01] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:14:01] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:14:01] [INFO] === NEW GAME TURN: DAY 1 | TURN 5 ===
+[2026-06-29 05:14:01] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:14:31] [INFO] Target lock active on player: Neon_King292.
+[2026-06-29 05:14:31] [WARNING] Planning attack execution on target ID: 1016bcde-e046-4200-bf6f-77256ab8f548 [11].
+[2026-06-29 05:14:31] [INFO] Dispatched Cooldown Action: ATTACK (30s lock initiated).
+[2026-06-29 05:14:43] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:14:43] [INFO] === NEW GAME TURN: DAY 1 | TURN 6 ===
+[2026-06-29 05:14:43] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:14:43] [INFO] Target lock active on player: Neon_King292.
+[2026-06-29 05:14:43] [WARNING] Planning attack execution on target ID: 1016bcde-e046-4200-bf6f-77256ab8f548 [11].
+[2026-06-29 05:14:43] [INFO] Dispatched Cooldown Action: ATTACK (30s lock initiated).
+[2026-06-29 05:15:13] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:15:13] [INFO] === NEW GAME TURN: DAY 1 | TURN 7 ===
+[2026-06-29 05:15:13] [WARNING] Sync completed: Detected 3 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:15:13] [INFO] Target lock active on player: Neon_King292.
+[2026-06-29 05:15:13] [WARNING] Planning attack execution on target ID: 1016bcde-e046-4200-bf6f-77256ab8f548 [11].
+[2026-06-29 05:15:13] [INFO] Dispatched Cooldown Action: ATTACK (30s lock initiated).
+[2026-06-29 05:15:43] [INFO] Target lock active on player: Neon_King292.
+[2026-06-29 05:15:43] [WARNING] Planning attack execution on target ID: 1016bcde-e046-4200-bf6f-77256ab8f548 [11].
+[2026-06-29 05:15:43] [INFO] Dispatched Cooldown Action: ATTACK (30s lock initiated).
+[2026-06-29 05:15:44] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:15:44] [INFO] === NEW GAME TURN: DAY 1 | TURN 8 ===
+[2026-06-29 05:15:44] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:16:13] [INFO] Target lock active on player: Neon_King292.
+[2026-06-29 05:16:13] [WARNING] Planning attack execution on target ID: 1016bcde-e046-4200-bf6f-77256ab8f548 [11].
+[2026-06-29 05:16:13] [INFO] Dispatched Cooldown Action: ATTACK (30s lock initiated).
+[2026-06-29 05:16:14] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 05:16:14] [INFO] === NEW GAME TURN: DAY 1 | TURN 9 ===
+[2026-06-29 05:16:14] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 05:16:39] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 05:16:39] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 05:16:39] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 05:16:39] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 05:16:39] [INFO] Local GameState session successfully cleared.

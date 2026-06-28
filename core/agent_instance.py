@@ -36,7 +36,7 @@ class AgentInstance:
         self.cooldown_manager = CooldownManager(agent_name)
 
         self.dispatcher = ActionDispatcher(agent_name, self.ws_client, self.cooldown_manager)
-        self.dispatcher.game_state = self.game_state
+        self.dispatcher.cooldown_manager = self.cooldown_manager
         
         self.decision_engine = DecisionEngine(agent_name, self.game_state, self.dispatcher)
 
@@ -52,7 +52,6 @@ class AgentInstance:
 
     async def start(self) -> None:
         self.logger.info(f"Launching Agent Instance for '{self.agent_name}'...")
-        self.game_state.current_action = "MATCHMAKING QUEUE"
         await self.runtime.start()
 
     async def stop(self) -> None:
@@ -63,18 +62,15 @@ class AgentInstance:
 
     async def _on_websocket_message(self, message: Dict[str, Any]) -> None:
         """
-        Processes incoming JSON frames from the WebSocket connection.
-        Routes maps, updates state, and executes decision cycles [5, 8, 12].
+        Processes incoming JSON frames.
+        Only triggers gameplay thoughts if actively inside a gameplay match [5, 12].
         """
-        # Sinyal Pengaman: Jika menerima sinyal match dari lobi, segera putuskan koneksi antrean lokal [5]
-        if message.get("type") in ["match", "match_found", "redirect"]:
-            token = message.get("token") or message.get("data", {}).get("token")
-            if token:
-                self.logger.warning("Match Found frame received! Force-disconnecting queue to trigger gameplay transition.")
-                await self.ws_client.disconnect()
-                return
+        frame_type = message.get("type")
+        
+        # Pengaman Mutlak: Hanya proses frame sinkronisasi permainan asli [12]
+        if frame_type not in ["state", "game_state", "tick", "action_result"]:
+            return
 
-        # Sinkronisasikan state permainan lokal dari server [8, 10]
         self.game_state.update_from_server_frame(message)
 
         if "canAct" in message:

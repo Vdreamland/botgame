@@ -4,6 +4,7 @@ ClawRoyale Autonomous Decision Engine.
 The primary orchestrator that processes scanners, hazards, phases, and dispatches actions [11, 12].
 """
 
+import random
 import asyncio
 from typing import Dict, Any, Optional, Set, Tuple
 from utils.logger import AgentLogger
@@ -14,7 +15,7 @@ from actions.action_dispatcher import ActionDispatcher
 from strategies.combat.battle_analyzer import BattleAnalyzer
 from strategies.combat.engagement_controller import EngagementController
 from strategies.hunter.hunter_mode_controller import HunterModeController
-from strategies.movement.pathfinder import HexPathfinder
+from strategies.movement.pathfinder import HexPathfinder, HEX_NEIGHBORS
 from strategies.movement.chase_tactics import ChaseTactics
 from strategies.exploration.ruin_explorer import RuinExplorer
 from strategies.inventory.equip_selector import EquipSelector
@@ -75,8 +76,6 @@ class DecisionEngine:
                 await self.dispatcher.execute_move(nq, nr)
             return
 
-        # LOGIKA CERDAS: Interaksi Fasilitas Medis Gratis jika HP terluka [11, 12]
-        # (Asumsi game_state mendaftarkan nama fasilitas aktif di tile saat ini)
         current_facility = getattr(self.game_state, "current_facility", "")
         if current_facility == "Medical Facility" and self.game_state.hp < 70.0:
             self.logger.warning("Standing on a Medical Facility. Initiating free healing interaction [11, 12].")
@@ -180,11 +179,33 @@ class DecisionEngine:
             return
 
     async def _navigate_to_nearest_ruins(self, bot_pos: Tuple[int, int]) -> None:
-        if self.game_state.ep < 6.0:
+        """Helper to find and pathfind to closest ruins on current visual map grid [10]."""
+        if self.game_state.ep < 3.0:
             await self.dispatcher.execute_rest()
             return
 
-        target_ruins = (0, 0)
+        # Cek kelayakan: jika berdiri di atas ruins, langsung explore [10]
+        can_explore, _ = self.ruin_explorer.is_safe_to_explore()
+        if can_explore:
+            await self.dispatcher.execute_explore()
+            return
+
+        # Cari koordinat ruins dinamis yang terdeteksi di sekitar
+        target_ruins = None
+        
+        # Pindai item di tanah untuk mencari tile penanda ruins/s-relic [10]
+        for item in self.game_state.items_on_ground:
+            if item.get("type") in ["ruins", "s-relic"]:
+                target_ruins = (int(item.get("q", 0)), int(item.get("r", 0)))
+                break
+
+        if not target_ruins:
+            # PENGAMAN MUTLAK: Jika tidak mendeteksi ruins di sensor sekitar,
+            # lakukan gerakan jelajah acak mencari ruins (Anti-Freezing) [12].
+            dq, dr = random.choice(HEX_NEIGHBORS)
+            await self.dispatcher.execute_move(bot_pos[0] + dq, bot_pos[1] + dr)
+            return
+
         path = self.pathfinder.find_path(
             start=bot_pos,
             target=target_ruins,
@@ -198,15 +219,7 @@ class DecisionEngine:
             await self.dispatcher.execute_rest()
 
     async def _navigate_to_defensive_forest(self, bot_pos: Tuple[int, int]) -> None:
-        target_forest = (1, -1)
-        path = self.pathfinder.find_path(
-            start=bot_pos,
-            target=target_forest,
-            blocked_coords=self.blocked_coordinates,
-            deadzone_coords=self.deadzone_coordinates
-        )
-        if path:
-            nq, nr = path[0]
-            await self.dispatcher.execute_move(nq, nr)
-        else:
-            await self.dispatcher.execute_rest()
+        """Helper to navigate to defense-boosting forest tiles (+3 DEF)."""
+        # Jelajah acak untuk mencari ubin Forest
+        dq, dr = random.choice(HEX_NEIGHBORS)
+        await self.dispatcher.execute_move(bot_pos[0] + dq, bot_pos[1] + dr)

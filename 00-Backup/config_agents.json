@@ -5,6 +5,12 @@
       "api_key": "mr_live_3JiEDObzgek3V3tRE6M4AAmFr3oDCUgX",
       "private_key": "",
       "room_preference": "free"
+    },
+    {
+      "agent_name": "bot_bob",
+      "api_key": "BOB_API_KEY_PLACEHOLDER",
+      "private_key": "",
+      "room_preference": "free"
     }
   ]
 }

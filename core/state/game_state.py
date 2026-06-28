@@ -44,6 +44,7 @@ class GameState:
         self.equipped_relics: List[str] = []
         self.has_full_set: bool = False
 
+        self.inventory: List[Dict[str, Any]] = []
         self.items_on_ground: List[Dict[str, Any]] = []
         self.enemies: List[Dict[str, Any]] = []
         self.allies_nearby: List[Dict[str, Any]] = []
@@ -123,6 +124,9 @@ class GameState:
                 self.hp = float(self_state.get("hp", self.hp))
                 self.ep = float(self_state.get("ep", self.ep))
                 self.alert_gauge = int(self_state.get("alertGauge", self.alert_gauge))
+                
+                # Sinkronisasikan daftar isi tas inventaris bot agar EquipSelector dapat mendeteksinya
+                self.inventory = self_state.get("inventory", [])
 
                 loadout = self_state.get("loadout", {})
                 self.equipped_weapon = loadout.get("weapon") or self_state.get("equippedWeapon", "")

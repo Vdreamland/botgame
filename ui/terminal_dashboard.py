@@ -20,19 +20,27 @@ class TerminalDashboard:
     def __init__(self):
         self.console = Console()
         self.layout = Layout()
+        
+        # AKTIFKAN DUKUNGAN ANSI/VT100 SECARA NATIVE PADA POWERSHELL WINDOWS [8]
+        # Ini menghentikan cetakan '←[H' liar dan menghentikan kedipan layar secara mutlak!
+        if os.name == 'nt':
+            try:
+                import ctypes
+                kernel32 = ctypes.windll.kernel32
+                # -11 = STD_OUTPUT_HANDLE
+                # 7 = ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT
+                kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+            except Exception:
+                pass
 
     def draw_dashboard(self, active_instances: List[AgentInstance]) -> None:
         """
         Renders the elite visual dashboard with hex map.
-        Logs are completely excluded from the console to prevent Windows crash.
+        Uses cursor-home sequence to prevent PowerShell flickering completely.
         """
-        # Deteksi OS untuk menggunakan mekanisme pembersihan layar yang kompatibel
-        if os.name == 'nt':
-            # Menggunakan cls asli Windows untuk membersihkan layar tanpa merusak buffer lobi PowerShell
-            os.system('cls')
-        else:
-            # Menggunakan ANSI Escape Sequence untuk sistem operasi Unix (Linux/macOS)
-            self.console.print("\033[H", end="")
+        # Pindahkan kursor kembali ke pojok kiri atas secara instan (Flicker-Free Overwrite)
+        # Berkat inisialisasi VT100 di __init__, ini tidak akan mencetak '←[H' lagi di Windows!
+        self.console.print("\033[H", end="")
 
         # 1. Tabel Registrasi Status Bot Aktif
         summary_table = Table(expand=True, border_style="cyan")

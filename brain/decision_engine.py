@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Autonomous Decision Engine.
-The primary orchestrator that processes scanners, hazards, phases, and dispatches actions.
+The primary orchestrator that processes scanners, hazards, phases, and dispatches actions [11, 12].
 """
 
+import asyncio
 from typing import Dict, Any, Optional, Set, Tuple
 from utils.logger import AgentLogger
 
-# Import State, Actions, & Helpers
 from core.state.game_state import GameState
 from actions.action_dispatcher import ActionDispatcher
 
-# Import Taktik & Scanners
 from strategies.combat.battle_analyzer import BattleAnalyzer
 from strategies.combat.engagement_controller import EngagementController
 from strategies.hunter.hunter_mode_controller import HunterModeController
@@ -21,7 +20,6 @@ from strategies.exploration.ruin_explorer import RuinExplorer
 from strategies.inventory.equip_selector import EquipSelector
 from strategies.inventory.inventory_manager import InventoryManager
 
-# Import Taktik Fase & Bahaya
 from strategies.phases.early_game_strategy import EarlyGameStrategy
 from strategies.phases.mid_game_strategy import MidGameStrategy
 from strategies.phases.late_game_strategy import LateGameStrategy
@@ -31,16 +29,12 @@ from strategies.hazard.deadzone_active_handler import DeadZoneActiveHandler
 
 class DecisionEngine:
     def __init__(self, agent_name: str, game_state: GameState, dispatcher: ActionDispatcher):
-        """
-        Initializes the central tactical brain.
-        """
         self.agent_name = agent_name
         self.game_state = game_state
         self.dispatcher = dispatcher
         
         self.logger = AgentLogger.get_logger(agent_name)
         
-        # Inisialisasi Taktis & Navigasi
         self.analyzer = BattleAnalyzer(game_state)
         self.engagement = EngagementController(game_state)
         self.hunter = HunterModeController(game_state)
@@ -50,32 +44,23 @@ class DecisionEngine:
         self.equip_selector = EquipSelector(game_state)
         self.inventory_manager = InventoryManager(game_state)
 
-        # Inisialisasi Fase Game & Penanganan Bahaya
         self.early_strategy = EarlyGameStrategy(game_state)
         self.mid_strategy = MidGameStrategy(game_state)
         self.late_strategy = LateGameStrategy(game_state)
         self.deadzone_warning = DeadZoneWarningHandler(game_state)
         self.deadzone_active = DeadZoneActiveHandler(game_state)
 
-        # Cache rintangan (Bisa diisi koordinat tembok heksagonal jika didukung map)
         self.blocked_coordinates: Set[Tuple[int, int]] = set()
         self.deadzone_coordinates: Set[Tuple[int, int]] = set()
 
     async def execute_thought_cycle(self) -> None:
         """
-        Executes one complete hierarchical decision cycle.
-        Invoked periodically by the main agent run loop when can_execute_action is True [12].
+        Executes one complete hierarchical decisionthought cycle [12].
         """
-        # Cek ketersediaan status game vital
         bot_pos = (self.game_state.q, self.game_state.r)
 
-        # ----------------------------------------------------------------------
-        # PROSEDUR 1: DETEKSI BAHAYA AKTIF DEAD ZONE (EMERGENCY OVERRIDE) [14]
-        # ----------------------------------------------------------------------
         if self.deadzone_active.is_in_danger():
             self.logger.critical("EMERGENCY: Agent is inside the active Dead Zone! Overriding strategies [14].")
-            
-            # Asumsikan koordinat pusat aman terdekat adalah (0, 0) jika tidak ada referensi lain
             safe_center = (0, 0) 
             response_type, details = self.deadzone_active.determine_emergency_response(
                 safe_escape_coord=safe_center,
@@ -84,38 +69,33 @@ class DecisionEngine:
             )
 
             if response_type == "EMERGENCY_HEAL" and details:
-                # Obati diri secepatnya (Aksi Bebas) [13]
                 await self.dispatcher.execute_equip(details["item_id"], "use")
             elif response_type == "EMERGENCY_MOVE" and details:
-                # Langkah evakuasi cepat (Aksi Cooldown) [12]
                 nq, nr = details
                 await self.dispatcher.execute_move(nq, nr)
             return
 
-        # ----------------------------------------------------------------------
-        # PROSEDUR 2: OPTIMALISASI PERLENGKAPAN DIRI (FREE ACTIONS BYPASS) [9, 13]
-        # ----------------------------------------------------------------------
+        # LOGIKA CERDAS: Interaksi Fasilitas Medis Gratis jika HP terluka [11, 12]
+        # (Asumsi game_state mendaftarkan nama fasilitas aktif di tile saat ini)
+        current_facility = getattr(self.game_state, "current_facility", "")
+        if current_facility == "Medical Facility" and self.game_state.hp < 70.0:
+            self.logger.warning("Standing on a Medical Facility. Initiating free healing interaction [11, 12].")
+            await self.dispatcher.execute_interact()
+            return
+
         optimal_equip = self.equip_selector.determine_optimal_equips()
         if optimal_equip:
             item_id, slot_name = optimal_equip
             self.logger.warning(f"Optimization trigger: Equipping {item_id} onto slot '{slot_name}' [9].")
             await self.dispatcher.execute_equip(item_id, slot_name)
-            # Karena Equip adalah aksi bebas (Free Action), loop pemikiran tetap berlanjut [13]
 
-        # ----------------------------------------------------------------------
-        # PROSEDUR 3: PENANGANAN MANAJEMEN INVENTARIS (FREE ACTIONS) [13]
-        # ----------------------------------------------------------------------
         inv_action, target_id, details_id = self.inventory_manager.determine_pickup_and_cleanup()
         if inv_action == "PICKUP" and target_id:
             await self.dispatcher.execute_pickup(target_id)
         elif inv_action == "DROP_AND_PICKUP" and target_id and details_id:
-            # Buang barang sampah terlebih dahulu (Asumsi menggunakan use/drop jika didukung)
             await self.dispatcher.execute_equip(details_id, "drop")
             await self.dispatcher.execute_pickup(target_id)
 
-        # ----------------------------------------------------------------------
-        # PROSEDUR 4: ANTISIPASI PERLUASAN DEAD ZONE DINI (WARNING PHASE) [14]
-        # ----------------------------------------------------------------------
         if self.deadzone_warning.is_warning_active():
             self.logger.warning("Dead Zone warning received. Day 2 expansion is imminent [14].")
             safe_center = (0, 0)
@@ -130,28 +110,20 @@ class DecisionEngine:
                 await self.dispatcher.execute_move(nq, nr)
                 return
 
-        # ----------------------------------------------------------------------
-        # PROSEDUR 5: EVALUASI SITUASI PERTEMPURAN & PERBURUAN (COMBAT MODE) [11]
-        # ----------------------------------------------------------------------
         battle_eval = self.analyzer.evaluate_combat_situation()
         enemies_count = len(self.game_state.enemies)
 
-        # A. Cek Jika Sedang Berada Dalam Penguncian Mode Pemburu
         if self.hunter.locked_target_id:
-            # Pastikan target lari masih aman untuk dikejar
             if self.hunter.verify_hunt_safety(battle_eval):
                 self.logger.info(f"Target lock active on player: {self.hunter.locked_target_name}.")
-                
                 target_data = battle_eval["target"]
                 distance = battle_eval["distance"]
 
                 tactic, details = self.engagement.determine_spatial_tactic(target_data, distance)
                 
                 if tactic == "ATTACK":
-                    # Tembak musuh [11, 12]
                     await self.dispatcher.execute_attack(self.hunter.locked_target_id)
                 elif tactic == "APPROACH" and details:
-                    # Cari rute mendekat menggunakan pathfinder heksagonal
                     t_coord = details["target_coords"]
                     path = self.pathfinder.find_path(
                         start=bot_pos,
@@ -163,41 +135,30 @@ class DecisionEngine:
                         nq, nr = path[0]
                         await self.dispatcher.execute_move(nq, nr)
                 elif tactic == "RETREAT_TO_RANGE":
-                    # Mundur 1 langkah menjauh
                     await self.dispatcher.execute_move(bot_pos[0] - 1, bot_pos[1])
                 elif tactic == "REST":
-                    # Pulihkan energi asinkron [12]
                     await self.dispatcher.execute_rest()
                 return
             else:
                 self.logger.warning("Hunter Mode deactivated. Target escaped or HP dropped to critical limit.")
                 self.hunter.release_target()
 
-        # B. Jalankan Strategi Berdasarkan Fase Giliran / Hari Game [10]
         day = self.game_state.day
-        
-        # --- FASE 1: EARLY GAME (Hari ke-1) [10] ---
         if day == 1:
             action_type, details = self.early_strategy.determine_early_action()
-            
             if action_type == "PICKUP" and details:
                 await self.dispatcher.execute_pickup(details["item_id"])
             elif action_type == "EXPLORE":
                 await self.dispatcher.execute_explore()
             else:
-                # Jika tidak berdiri di ruins, cari koordinat heksagonal ruins terdekat di map
                 await self._navigate_to_nearest_ruins(bot_pos)
             return
 
-        # --- FASE 2: MID GAME (Hari ke-2) [10] ---
         elif day == 2:
             action_type, target_data = self.mid_strategy.determine_mid_action(battle_eval)
-            
             if action_type == "HUNT" and target_data:
-                # Aktifkan penguncian mode pemburu
                 self.logger.warning(f"Locking target: {target_data.get('name')} for combat initiation!")
                 self.hunter.lock_target(target_data)
-                # Pemicu thought cycle berikutnya
                 await self.execute_thought_cycle()
             elif action_type == "EXPLORE":
                 await self.dispatcher.execute_explore()
@@ -205,32 +166,24 @@ class DecisionEngine:
                 await self._navigate_to_nearest_ruins(bot_pos)
             return
 
-        # --- FASE 3: LATE GAME (Hari ke-3 atau Lebih) [10] ---
         else:
             action_type, _ = self.late_strategy.determine_late_action(enemies_count)
-            
             if action_type == "MOVE_TO_FOREST":
-                # Cari heksagon Forest di sekitar dan bergerak ke sana (+3 DEF)
                 await self._navigate_to_defensive_forest(bot_pos)
             elif action_type == "CONSERVE_REST":
                 await self.dispatcher.execute_rest()
             else:
-                # Bertahan pasif, serang musuh jika mereka memasuki wilayah tembak kita [11]
                 if battle_eval.get("recommendation") == "FIGHT" and battle_eval.get("target"):
                     await self.dispatcher.execute_attack(battle_eval["target"].get("id"))
                 else:
-                    # Lakukan rest pasif di tempat aman
                     await self.dispatcher.execute_rest()
             return
 
     async def _navigate_to_nearest_ruins(self, bot_pos: Tuple[int, int]) -> None:
-        """Helper to find and pathfind to closest ruins on current visual map grid [10]."""
-        # Sederhanakan: Jika EP bot tipis, lakukan rest terlebih dahulu [12]
         if self.game_state.ep < 6.0:
             await self.dispatcher.execute_rest()
             return
 
-        # Cari ruins (Secara taktis asumsikan ruins berada di (0,0) atau cari dari visual map sekitar)
         target_ruins = (0, 0)
         path = self.pathfinder.find_path(
             start=bot_pos,
@@ -242,12 +195,9 @@ class DecisionEngine:
             nq, nr = path[0]
             await self.dispatcher.execute_move(nq, nr)
         else:
-            # Jika tidak ada jalur, lakukan rest
             await self.dispatcher.execute_rest()
 
     async def _navigate_to_defensive_forest(self, bot_pos: Tuple[int, int]) -> None:
-        """Helper to navigate to defense-boosting forest tiles (+3 DEF)."""
-        # Sederhana: Asumsikan koordinat forest terdekat adalah (1, -1) atau sekitarnya
         target_forest = (1, -1)
         path = self.pathfinder.find_path(
             start=bot_pos,

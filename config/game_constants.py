@@ -35,3 +35,10 @@ WEATHER_EFFECTS = {
     "fog": {"atk_multiplier": 0.90, "move_ep_modifier": 0, "combat_penalty": -0.10},
     "storm": {"atk_multiplier": 0.85, "move_ep_modifier": 1, "combat_penalty": -0.15}
 }
+
+MONSTER_DATABASE = {
+    "Wolf": {"hp": 25.0, "atk": 15.0, "def": 1.0},
+    "Bear": {"hp": 30.0, "atk": 12.0, "def": 3.0},
+    "Bandit": {"hp": 40.0, "atk": 25.0, "def": 5.0},
+    "Guardian": {"hp": 150.0, "atk": 20.0, "def": 34.0}
+}

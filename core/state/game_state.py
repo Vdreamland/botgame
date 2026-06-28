@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Game State Parser and Synchronization Sync.
-Maintains coordinates, health, energy, map context, item positions, and filters allies [8, 10].
+Maintains region context, health, energy, map connections, and filters allies [8, 10].
 """
 
 from typing import Dict, Any, List, Tuple
@@ -19,8 +19,14 @@ class GameState:
         self.hp: float = 100.0
         self.ep: float = 10.0
         
+        # Dipertahankan bernilai 0 hanya untuk kompatibilitas impor modul lain agar tidak memicu AttributeError
         self.q: int = 0
         self.r: int = 0
+
+        self.current_region_id: str = "region_0_0"
+        self.current_region_name: str = "Plains"
+        self.connections: List[str] = []
+        self.visible_ruins: List[Dict[str, Any]] = []
 
         self.alert_gauge: int = 0
         self.current_terrain: str = "plains"
@@ -28,7 +34,6 @@ class GameState:
         self.is_death_zone: bool = False
         self.day: int = 1
         self.turn: int = 1
-        self.connections: List[str] = []
 
         self.equipped_weapon: str = ""
         self.equipped_armor: str = ""
@@ -64,31 +69,18 @@ class GameState:
                 self.day = new_day
                 self.turn = new_turn
 
-            # Dapatkan objek view & self_state yang valid dari WebSocket payload resmi [Gameplay WebSocket]
             view = data.get("view", {}) if isinstance(data, dict) else {}
             self_state = view.get("self") or data.get("self") or data.get("agent") or {}
             
             if self_state:
-                # Daftarkan Player ID yang digunakan untuk pemfilteran aksi
                 resolved_id = self_state.get("id") or frame.get("agentId")
                 if not self.player_id and resolved_id:
                     self.player_id = resolved_id
                     self.team_registry.register_ally(self.player_id, self.agent_name)
                     self.logger.info(f"Registered Player ID: {self.player_id} into the Team Registry.")
 
-                # Ambil koordinat lama untuk deteksi pergerakan
-                old_q, old_r = self.q, self.r
-                
                 self.hp = float(self_state.get("hp", self.hp))
                 self.ep = float(self_state.get("ep", self.ep))
-                self.q = int(self_state.get("q", self.q))
-                self.r = int(self_state.get("r", self.r))
-                
-                # Cetak log sinkronisasi koordinat fisik jika bot terdeteksi sukses berpindah tempat
-                if (old_q != self.q or old_r != self.r) and self.player_id:
-                    self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")
-
-                # alertGauge ada di dalam self_state berdasarkan dokumentasi resmi
                 self.alert_gauge = int(self_state.get("alertGauge", self.alert_gauge))
 
                 loadout = self_state.get("loadout", {})
@@ -100,10 +92,19 @@ class GameState:
             # Ekstrak data wilayah / mapContext
             current_region = view.get("currentRegion", {})
             map_context = data.get("mapContext", {}) or {}
-            self.connections = current_region.get("connections", [])
             
-            # Resolusi terrain dari nama region jika key 'terrain' absen di beberapa tipe koneksi
-            region_name = current_region.get("name", "").lower()
+            old_region_id = self.current_region_id
+            self.current_region_id = current_region.get("id") or data.get("currentRegionId") or self.current_region_id
+            self.current_region_name = current_region.get("name") or data.get("currentRegionName") or self.current_region_name
+            self.connections = current_region.get("connections") or data.get("connections") or []
+            self.visible_ruins = view.get("visibleRuins") or data.get("visibleRuins") or []
+
+            # Cetak log sinkronisasi jika bot sukses berpindah wilayah secara fisik
+            if old_region_id != self.current_region_id and self.player_id:
+                self.logger.info(f"Coordinates synchronized: Moved to region {self.current_region_name} ({self.current_region_id}) [8].")
+
+            # Resolusi terrain dari nama region jika key 'terrain' absen
+            region_name = self.current_region_name.lower()
             resolved_terrain = ""
             if "forest" in region_name or "wood" in region_name:
                 resolved_terrain = "forest"
@@ -116,7 +117,6 @@ class GameState:
             else:
                 resolved_terrain = "plains"
 
-            # Gabungkan parsing data wilayah dari dokumentasi resmi / legacy
             self.current_terrain = (
                 current_region.get("terrain") or 
                 map_context.get("terrain") or 
@@ -196,19 +196,12 @@ class GameState:
             )
 
             if moving_player_id == self.player_id:
-                new_q = int(
-                    data.get("q") or frame.get("q") or
-                    agent_obj.get("q") or frame_agent.get("q") or
-                    self.q
-                )
-                new_r = int(
-                    data.get("r") or frame.get("r") or
-                    agent_obj.get("r") or frame_agent.get("r") or
-                    self.r
-                )
-                self.q = new_q
-                self.r = new_r
-                self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")
+                old_region_id = self.current_region_id
+                self.current_region_id = data.get("regionId") or frame.get("regionId") or self.current_region_id
+                self.current_region_name = data.get("regionName") or frame.get("regionName") or self.current_region_name
+                
+                if old_region_id != self.current_region_id:
+                    self.logger.info(f"Coordinates synchronized: Moved to region {self.current_region_name} ({self.current_region_id}) [8].")
 
     def clean_session_data(self) -> None:
         if self.player_id:
@@ -220,4 +213,6 @@ class GameState:
         self.allies_nearby.clear()
         self.current_action = "Waiting in Queue"
         self.current_target = "None"
+        self.connections.clear()
+        self.visible_ruins.clear()
         self.logger.info("Local GameState session successfully cleared.")

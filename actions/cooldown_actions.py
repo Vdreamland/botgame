@@ -9,21 +9,16 @@ from typing import Dict, Any
 
 class CooldownActionFactory:
     @staticmethod
-    def create_move_payload(q: int, r: int, region_id: str = "") -> Dict[str, Any]:
+    def create_move_payload(region_id: str) -> Dict[str, Any]:
         """
-        Creates payload to move the agent to specific hex coordinates (q, r) [8].
-        Supports dual format with regionId to align with official ws/agent requirements.
+        Creates payload to move the agent to a specific connected region ID [8].
+        Fully matches Gameplay WebSocket schema.
         """
-        # Formulasi fallback aman jika regionId kosong
-        actual_region_id = region_id if region_id else f"region_{q}_{r}"
-        
         return {
             "type": "action",
             "data": {
                 "type": "move",
-                "regionId": str(actual_region_id),
-                "q": int(q),
-                "r": int(r)
+                "regionId": str(region_id)
             }
         }
 

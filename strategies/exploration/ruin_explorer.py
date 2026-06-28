@@ -16,13 +16,20 @@ class RuinExplorer:
 
     def is_safe_to_explore(self) -> Tuple[bool, str]:
         """
-        Checks if the agent can safely execute an explore action on the current tile [10, 12].
+        Checks if the agent can safely execute an explore action on the current region [10, 12].
         :return: Tuple of (is_safe_bool, reason_string)
         """
-        # Kondisi 1: Pastikan bot berdiri tepat di tile ruins atau s-relic [10]
+        # Kondisi 1: Pastikan wilayah saat ini terdaftar di visibleRuins dan tidak kosong
+        is_ruin_here = False
+        for r in self.game_state.visible_ruins:
+            if r.get("ruinId") == self.game_state.current_region_id and not r.get("isEmpty", False):
+                is_ruin_here = True
+                break
+
+        # Fallback terrain checking jika daftar visibleRuins kosong
         current_terrain = self.game_state.current_terrain.lower()
-        if "ruin" not in current_terrain and "relic" not in current_terrain:
-            return False, f"Not standing on an explorable ruins tile. Current: {current_terrain}"
+        if not is_ruin_here and "ruin" not in current_terrain and "relic" not in current_terrain:
+            return False, f"Not standing on an explorable ruins region. Current: {self.game_state.current_region_name}"
 
         # Kondisi 2: Cek ketersediaan energi dasar (Explore memakan 1 EP) [10]
         if self.game_state.ep < 1.0:

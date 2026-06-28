@@ -15,7 +15,7 @@ from actions.action_dispatcher import ActionDispatcher
 from strategies.combat.battle_analyzer import BattleAnalyzer
 from strategies.combat.engagement_controller import EngagementController
 from strategies.hunter.hunter_mode_controller import HunterModeController
-from strategies.movement.pathfinder import HexPathfinder, HEX_NEIGHBORS
+from strategies.movement.pathfinder import HexPathfinder
 from strategies.movement.chase_tactics import ChaseTactics
 from strategies.exploration.ruin_explorer import RuinExplorer
 from strategies.inventory.equip_selector import EquipSelector
@@ -51,29 +51,20 @@ class DecisionEngine:
         self.deadzone_warning = DeadZoneWarningHandler(game_state)
         self.deadzone_active = DeadZoneActiveHandler(game_state)
 
-        self.blocked_coordinates: Set[Tuple[int, int]] = set()
-        self.deadzone_coordinates: Set[Tuple[int, int]] = set()
+        self.blocked_coordinates: Set[str] = set()
+        self.deadzone_coordinates: Set[str] = set()
 
     async def execute_thought_cycle(self) -> None:
         """
-        Executes one complete hierarchical decisionthought cycle [12].
+        Executes one complete hierarchical decision/thought cycle [12].
         """
-        bot_pos = (self.game_state.q, self.game_state.r)
+        bot_pos = self.game_state.current_region_id
 
         if self.deadzone_active.is_in_danger():
             self.logger.critical("EMERGENCY: Agent is inside the active Dead Zone! Overriding strategies [14].")
-            safe_center = (0, 0) 
-            response_type, details = self.deadzone_active.determine_emergency_response(
-                safe_escape_coord=safe_center,
-                blocked_coords=self.blocked_coordinates,
-                active_deadzone_coords=self.deadzone_coordinates
-            )
-
-            if response_type == "EMERGENCY_HEAL" and details:
-                await self.dispatcher.execute_equip(details["item_id"], "use")
-            elif response_type == "EMERGENCY_MOVE" and details:
-                nq, nr = details
-                await self.dispatcher.execute_move(nq, nr)
+            if self.game_state.connections:
+                escape_region = random.choice(self.game_state.connections)
+                await self.dispatcher.execute_move(escape_region)
             return
 
         current_facility = getattr(self.game_state, "current_facility", "")
@@ -97,16 +88,10 @@ class DecisionEngine:
 
         if self.deadzone_warning.is_warning_active():
             self.logger.warning("Dead Zone warning received. Day 2 expansion is imminent [14].")
-            safe_center = (0, 0)
-            escape_path = self.deadzone_warning.calculate_evacuation_path(
-                safe_center_coord=safe_center,
-                blocked_coords=self.blocked_coordinates,
-                active_deadzone_coords=self.deadzone_coordinates
-            )
-            if escape_path:
-                nq, nr = escape_path[0]
-                self.logger.warning(f"Evacuating early towards safe zone coordinates ({nq}, {nr}) [14].")
-                await self.dispatcher.execute_move(nq, nr)
+            if self.game_state.connections:
+                escape_region = random.choice(self.game_state.connections)
+                self.logger.warning(f"Evacuating early towards safe zone region {escape_region} [14].")
+                await self.dispatcher.execute_move(escape_region)
                 return
 
         battle_eval = self.analyzer.evaluate_combat_situation()
@@ -123,18 +108,18 @@ class DecisionEngine:
                 if tactic == "ATTACK":
                     await self.dispatcher.execute_attack(self.hunter.locked_target_id)
                 elif tactic == "APPROACH" and details:
-                    t_coord = details["target_coords"]
+                    t_region = target_data.get("regionId") or self.game_state.current_region_id
                     path = self.pathfinder.find_path(
                         start=bot_pos,
-                        target=t_coord,
+                        target=t_region,
                         blocked_coords=self.blocked_coordinates,
                         deadzone_coords=self.deadzone_coordinates
                     )
                     if path:
-                        nq, nr = path[0]
-                        await self.dispatcher.execute_move(nq, nr)
-                elif tactic == "RETREAT_TO_RANGE":
-                    await self.dispatcher.execute_move(bot_pos[0] - 1, bot_pos[1])
+                        await self.dispatcher.execute_move(path[0])
+                elif tactic == "RETREAT_TO_RANGE" and self.game_state.connections:
+                    retreat_region = random.choice(self.game_state.connections)
+                    await self.dispatcher.execute_move(retreat_region)
                 elif tactic == "REST":
                     await self.dispatcher.execute_rest()
                 return
@@ -178,48 +163,44 @@ class DecisionEngine:
                     await self.dispatcher.execute_rest()
             return
 
-    async def _navigate_to_nearest_ruins(self, bot_pos: Tuple[int, int]) -> None:
+    async def _navigate_to_nearest_ruins(self, bot_pos: str) -> None:
         """Helper to find and pathfind to closest ruins on current visual map grid [10]."""
         if self.game_state.ep < 3.0:
             await self.dispatcher.execute_rest()
             return
 
-        # Cek kelayakan: jika berdiri di atas ruins, langsung explore [10]
         can_explore, _ = self.ruin_explorer.is_safe_to_explore()
         if can_explore:
             await self.dispatcher.execute_explore()
             return
 
-        # Cari koordinat ruins dinamis yang terdeteksi di sekitar
-        target_ruins = None
-        
-        # Pindai item di tanah untuk mencari tile penanda ruins/s-relic [10]
-        for item in self.game_state.items_on_ground:
-            if item.get("type") in ["ruins", "s-relic"]:
-                target_ruins = (int(item.get("q", 0)), int(item.get("r", 0)))
+        target_ruins_id = None
+        for r in self.game_state.visible_ruins:
+            if not r.get("isEmpty", False):
+                target_ruins_id = r.get("ruinId")
                 break
 
-        if not target_ruins:
-            # PENGAMAN MUTLAK: Jika tidak mendeteksi ruins di sensor sekitar,
-            # lakukan gerakan jelajah acak mencari ruins (Anti-Freezing) [12].
-            dq, dr = random.choice(HEX_NEIGHBORS)
-            await self.dispatcher.execute_move(bot_pos[0] + dq, bot_pos[1] + dr)
+        if not target_ruins_id or not self.game_state.connections:
+            # PENGAMAN MUTLAK: Gerakan jelajah acak mencari ruins ke salah satu connections tetangga (Anti-Freezing)
+            if self.game_state.connections:
+                random_region = random.choice(self.game_state.connections)
+                await self.dispatcher.execute_move(random_region)
             return
 
         path = self.pathfinder.find_path(
             start=bot_pos,
-            target=target_ruins,
+            target=target_ruins_id,
             blocked_coords=self.blocked_coordinates,
             deadzone_coords=self.deadzone_coordinates
         )
         if path:
-            nq, nr = path[0]
-            await self.dispatcher.execute_move(nq, nr)
-        else:
-            await self.dispatcher.execute_rest()
+            await self.dispatcher.execute_move(path[0])
+        elif self.game_state.connections:
+            random_region = random.choice(self.game_state.connections)
+            await self.dispatcher.execute_move(random_region)
 
-    async def _navigate_to_defensive_forest(self, bot_pos: Tuple[int, int]) -> None:
+    async def _navigate_to_defensive_forest(self, bot_pos: str) -> None:
         """Helper to navigate to defense-boosting forest tiles (+3 DEF)."""
-        # Jelajah acak untuk mencari ubin Forest
-        dq, dr = random.choice(HEX_NEIGHBORS)
-        await self.dispatcher.execute_move(bot_pos[0] + dq, bot_pos[1] + dr)
+        if self.game_state.connections:
+            random_region = random.choice(self.game_state.connections)
+            await self.dispatcher.execute_move(random_region)

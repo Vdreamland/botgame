@@ -8,7 +8,6 @@ from typing import Dict, Any, Optional
 from core.state.game_state import GameState
 from config.settings import AI_SETTINGS
 from strategies.scanners.enemy_scanner import EnemyScanner
-from strategies.scanners.enemy_stats_scanner import EnemyStatsScanner
 from strategies.scanners.enemy_gear_scanner import EnemyGearScanner
 from strategies.combat.victory_calculator import VictoryCalculator
 
@@ -25,7 +24,6 @@ class BattleAnalyzer:
         """
         closest_enemy = self.scanner.get_closest_enemy()
         if not closest_enemy:
-            # Tidak ada musuh di sekitar radius visual bot
             return {
                 "recommendation": "STANDBY",
                 "target": None,
@@ -33,11 +31,14 @@ class BattleAnalyzer:
                 "distance": 999
             }
 
-        distance = closest_enemy["distance"]
+        # Jarak berbasis wilayah (0 = wilayah yang sama, 1 = bersebelahan)
+        enemy_region = closest_enemy.get("regionId") or self.game_state.current_region_id
+        distance = 0 if enemy_region == self.game_state.current_region_id else 1
+        
         enemy_id = closest_enemy.get("id", "")
+        enemy_hp = float(closest_enemy.get("hp", 100.0))
 
-        # 1. Scan Status Vital & Persenjataan Musuh [11]
-        enemy_vitals = EnemyStatsScanner.extract_vital_stats(closest_enemy)
+        # 1. Hitung statistik bertarung musuh
         enemy_combat_stats = EnemyGearScanner.calculate_effective_combat_stats(closest_enemy)
 
         # 2. Ambil Statistik Efektif Milik Bot Kita Saat Ini [9, 11]
@@ -53,22 +54,15 @@ class BattleAnalyzer:
 
         # 3. Jalankan Kalkulasi Simulasi Turn-Based [11]
         win_rate = VictoryCalculator.simulate_battle_outcome(
-            my_stats=my_combat_stats,
-            enemy_stats=enemy_combat_stats,
-            my_current_hp=self.game_state.hp,
-            enemy_current_hp=enemy_vitals["hp"]
+            my_combat_stats, enemy_combat_stats, self.game_state.hp, enemy_hp
         )
 
-        # 4. Formulasi Keputusan Berdasarkan Threshold Pengaturan setting.py
-        min_fight_rate = AI_SETTINGS["min_win_rate_for_aggression"]
-        flee_rate = AI_SETTINGS["flee_win_rate_threshold"]
-
-        if win_rate >= min_fight_rate:
+        # 4. Formulasi Keputusan Berdasarkan Threshold
+        if win_rate >= 0.60:
             recommendation = "FIGHT"
-        elif win_rate < flee_rate:
+        elif win_rate < 0.40:
             recommendation = "FLEE"
         else:
-            # Berada di zona abu-abu: Bersiap siaga (bertahan atau jaga jarak)
             recommendation = "STANDBY"
 
         return {

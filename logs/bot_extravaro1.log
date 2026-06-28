@@ -1,0 +1,44 @@
+[2026-06-29 04:11:01] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 04:11:01] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 04:11:01] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 04:11:06] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 04:11:06] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 04:11:06] [ERROR] HTTP Error on POST redeem: Status 409
+[2026-06-29 04:11:06] [WARNING] Redeem API reported that this welcome bundle was already claimed. Syncing...
+[2026-06-29 04:11:06] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 04:11:06] [INFO] User preference: Free Room selected.
+[2026-06-29 04:11:06] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 04:11:07] [INFO] Successfully connected to Matchmaking Queue.
+[2026-06-29 04:11:07] [INFO] Received 'welcome' frame. Joining with preference: free
+[2026-06-29 04:11:16] [WARNING] Gameplay mode activated! Brain functions online.
+[2026-06-29 04:11:16] [INFO] Registered Player ID: 3ff808ef-5703-4e01-b315-1b3be2f95f38 into the Team Registry.
+[2026-06-29 04:11:16] [WARNING] Sync completed: Detected 4 actual enemies and 0 ally bots nearby.
+[2026-06-29 04:11:16] [INFO] Planning move execution to hex coordinates (0, 1) [Region ID: region_0_1].
+[2026-06-29 04:11:16] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 04:11:46] [INFO] Planning move execution to hex coordinates (-1, 0) [Region ID: region_-1_0].
+[2026-06-29 04:11:46] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 04:11:48] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 04:11:48] [INFO] === NEW GAME TURN: DAY 1 | TURN 2 ===
+[2026-06-29 04:11:48] [WARNING] Sync completed: Detected 3 actual enemies and 0 ally bots nearby.
+[2026-06-29 04:11:48] [INFO] Dynamic game event received: 'hp_changed'
+[2026-06-29 04:11:48] [INFO] Health update received: 90.0%
+[2026-06-29 04:11:48] [INFO] Dynamic game event received: 'hp_changed'
+[2026-06-29 04:11:48] [INFO] Dynamic game event received: 'hp_changed'
+[2026-06-29 04:11:48] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 04:11:48] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 04:12:17] [INFO] Planning move execution to hex coordinates (-1, 1) [Region ID: region_-1_1].
+[2026-06-29 04:12:17] [INFO] Dispatched Cooldown Action: MOVE (30s lock initiated).
+[2026-06-29 04:12:19] [INFO] Dynamic game event received: 'turn_advanced'
+[2026-06-29 04:12:19] [INFO] === NEW GAME TURN: DAY 1 | TURN 3 ===
+[2026-06-29 04:12:19] [WARNING] Sync completed: Detected 5 actual enemies and 0 ally bots nearby.
+[2026-06-29 04:12:19] [INFO] Dynamic game event received: 'hp_changed'
+[2026-06-29 04:12:19] [INFO] Health update received: 80.0%
+[2026-06-29 04:12:19] [INFO] Dynamic game event received: 'hp_changed'
+[2026-06-29 04:12:19] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 04:12:19] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 04:12:19] [INFO] Dynamic game event received: 'agent_moved'
+[2026-06-29 04:12:41] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 04:12:42] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 04:12:42] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 04:12:42] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 04:12:42] [INFO] Local GameState session successfully cleared.

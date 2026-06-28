@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Multi-Agent Terminal Dashboard (TUI).
-Builds an Elite PowerShell dashboard containing tables, map grids, action logs, and rolling logs.
+Builds an Elite PowerShell dashboard containing tables and map grids.
+Logs are completely excluded from the console to prevent Windows crash.
 """
 
 import os
@@ -20,22 +21,10 @@ class TerminalDashboard:
         self.console = Console()
         self.layout = Layout()
 
-    def _get_last_logs(self, filepath: str = "logs/system.log", count: int = 8) -> str:
-        """
-        Safely reads the last few lines of the system log to display on the terminal.
-        """
-        if not os.path.exists(filepath):
-            return "No logs generated yet."
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            return "".join(lines[-count:]).strip()
-        except Exception:
-            return "Failed to read logs dynamically."
-
     def draw_dashboard(self, active_instances: List[AgentInstance]) -> None:
         """
-        Renders the elite visual dashboard with hex map and active log stream.
+        Renders the elite visual dashboard with hex map.
+        Logs are completely excluded from the console to prevent Windows crash.
         """
         # Deteksi OS untuk menggunakan mekanisme pembersihan layar yang kompatibel
         if os.name == 'nt':
@@ -95,18 +84,8 @@ class TerminalDashboard:
             expand=True
         )
 
-        # 3. Live Log Feed Panel (Membaca logs/system.log sebanyak 8 baris terakhir secara real-time)
-        last_logs_content = self._get_last_logs()
-        log_panel = Panel(
-            last_logs_content,
-            title="Live Activity Log Feed",
-            border_style="green",
-            expand=True
-        )
-
-        # 4. Cetak Seluruh Komponen ke Terminal PowerShell
+        # 3. Cetak Komponen Bersih ke Terminal (LOG FEED DIHAPUS TOTAL)
         self.console.print(Panel("[bold white]CLAWROYALE MULTI-BOT SYSTEM MONITOR v1.11.2[/bold white]", style="blue"), justify="center")
         self.console.print(Panel(summary_table, title="Active Bots Registry", border_style="cyan"))
         self.console.print(map_panel)
-        self.console.print(log_panel)
         self.console.print("[dim white]Press CTRL+C to safely exit and disconnect all bots.[/dim white]", justify="center")

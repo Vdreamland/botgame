@@ -216,6 +216,7 @@ ascii_map_renderer.py https://github.com/Vdreamland/botgame/blob/master/ui/ascii
 
 logs >
 bot_extravaro1.log https://github.com/Vdreamland/botgame/blob/master/logs/bot_extravaro1.log  
+bot_extravaro2.log https://github.com/Vdreamland/botgame/blob/master/logs/bot_extravaro1.log  
 bot_orchestrator.log https://github.com/Vdreamland/botgame/blob/master/logs/bot_orchestrator.log
 system.log https://github.com/Vdreamland/botgame/blob/master/logs/system.log
 

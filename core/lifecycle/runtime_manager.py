@@ -27,7 +27,6 @@ class RuntimeManager:
         
         self.logger = AgentLogger.get_logger(agent_name)
         
-        # Inisialisasi modul pembantu alur hidup
         self.router = StateRouter(agent_name, api_client)
         self.setup = SetupHandler(agent_name, private_key, api_client)
         self.redeemer = OnboardingRedeemer(agent_name, api_client)
@@ -60,16 +59,12 @@ class RuntimeManager:
         
         while self.is_running:
             try:
-                # 1. Pindai Status Akun di Database Server ClawRoyale [1]
                 state, account_data = await self.router.route_current_state()
-                consecutive_errors = 0  # Reset counter error jika route berhasil
+                consecutive_errors = 0
 
-                # --- STATE 1: NO_ACCOUNT (Belum Terdaftar) ---
                 if state == "NO_ACCOUNT":
-                    # Lakukan verifikasi whitelist
                     is_ok = await self.setup.verify_whitelist_status()
                     if is_ok:
-                        # Daftarkan akun baru
                         success, _ = await self.setup.register_new_agent_account()
                         if not success:
                             self.logger.error("Failed to register account. Retrying in 30s...")
@@ -79,32 +74,20 @@ class RuntimeManager:
                         await asyncio.sleep(60)
                     continue
 
-                # --- STATE 2: ERROR JARINGAN ---
                 elif state == "ERROR":
                     raise RuntimeError("REST API returned ERROR state during routing.")
 
-                # --- STATE 3: IN_GAME (Bypass Rekoneksi WebSocket) [1] ---
                 elif state == "IN_GAME":
-                    data = account_data.get("data", {})
-                    current_games = data.get("currentGames", [])
-                    if current_games:
-                        active_game = current_games[0]
-                        token = active_game.get("token")
-                        
-                        # Langsung hubungkan kembali ke socket gameplay [5]
-                        await self.ws_client.connect_to_gameplay(token)
-                        
-                        # Tunggu hingga pertempuran selesai
-                        while self.ws_client.is_connected:
-                            await asyncio.sleep(2.0)
+                    # Masuk langsung ke soket pertempuran gameplay [5]
+                    await self.ws_client.connect_to_gameplay()
+                    
+                    while self.ws_client.is_connected:
+                        await asyncio.sleep(2.0)
                     continue
 
-                # --- STATE 4: READY_FREE / READY_PAID (Siap Memulai Antrean Match) [5] ---
                 elif state in ["READY_FREE", "READY_PAID"]:
-                    # Lakukan klaim welcome bundle otomatis jika memenuhi syarat [3]
                     await self.redeemer.redeem_welcome_bundle_if_needed(account_data)
 
-                    # Tentukan tipe kamar optimal (Free vs Paid) & tanda tangani pesan jika Paid [5, 6]
                     actual_entry, sign_payload = await self.selector.determine_optimal_room(
                         account_data, self.room_preference
                     )
@@ -114,19 +97,15 @@ class RuntimeManager:
                         await asyncio.sleep(60)
                         continue
 
-                    # Bergabung ke antrean websocket ws/join [5]
                     await self.ws_client.connect_to_queue(actual_entry)
                     
-                    # Kirim payload data registrasi tanda tangan jika tipe kamar berbayar (Paid) [6]
                     if actual_entry == "paid" and sign_payload:
-                        # Payload dikirimkan asinkron sebagai pendaftaran pendaftaran kamar berbayar [6]
                         await self.ws_client.send_message({
                             "type": "register_paid",
                             "signature": sign_payload.get("signature"),
                             "message": sign_payload.get("message")
                         })
 
-                    # Biarkan loop antrean WS berjalan hingga dialihkan ke game atau terputus
                     while self.ws_client.is_connected:
                         await asyncio.sleep(2.0)
 

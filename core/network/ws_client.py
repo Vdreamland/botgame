@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale WebSocket Client.
-Manages connections and tracks if the agent is actively inside a gameplay socket [5].
+Manages persistent connections for both the single queue (ws/join) and gameplay socket (ws/agent) [5].
 """
 
 import json
@@ -24,8 +24,6 @@ class WebSocketClient:
         self.logger = AgentLogger.get_logger(agent_name)
         self.connection: Optional[websockets.WebSocketClientProtocol] = None
         self.is_connected = False
-        
-        # Bendera keamanan agar bot tidak mengirim aksi lobi saat bertempur, atau sebaliknya [5]
         self.is_gameplay_active = False
         
         self.on_message_callback: Optional[Callable[[Dict[str, Any]], Awaitable[None]]] = None
@@ -52,7 +50,7 @@ class WebSocketClient:
         try:
             self.connection = await self._connect_with_fallback(url)
             self.is_connected = True
-            self.is_gameplay_active = False # Belum masuk arena pertempuran [5]
+            self.is_gameplay_active = False
             self.logger.info("Successfully connected to Matchmaking Queue.")
             
             self._heartbeat_task = asyncio.create_task(self._send_heartbeats())
@@ -63,16 +61,19 @@ class WebSocketClient:
             self.is_connected = False
             raise e
 
-    async def connect_to_gameplay(self, gameplay_token: str) -> None:
+    async def connect_to_gameplay(self) -> None:
+        """
+        Connects directly to the ws/agent gameplay socket using authorized credentials [5].
+        """
         await self.disconnect()
         
-        url = f"{self.ws_agent_url}?token={gameplay_token}"
+        url = self.ws_agent_url
         self.logger.info(f"Transitioning to Gameplay Socket: {url}")
         
         try:
             self.connection = await self._connect_with_fallback(url)
             self.is_connected = True
-            self.is_gameplay_active = True # Resmi memasuki arena pertempuran [5]
+            self.is_gameplay_active = True
             self.logger.info("Successfully entered Gameplay Socket.")
             
             self._heartbeat_task = asyncio.create_task(self._send_heartbeats())

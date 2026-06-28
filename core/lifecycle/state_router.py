@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale State Router.
-Routes the agent's execution phase based on GET /accounts/me [5].
+Routes the agent's execution phase based on GET /accounts/me [1].
 """
 
 from typing import Dict, Any, Tuple
@@ -17,7 +17,7 @@ class StateRouter:
 
     async def route_current_state(self) -> Tuple[str, Dict[str, Any]]:
         """
-        Queries /accounts/me and maps the response to an authoritative state string [1, 5].
+        Queries /accounts/me and maps the response to an authoritative state string.
         """
         try:
             self.logger.info("Routing current agent state via /accounts/me API...")
@@ -27,17 +27,14 @@ class StateRouter:
             current_games = data.get("currentGames", [])
             readiness = data.get("readiness", {})
 
-            # 1. Cek validitas token sebelum mengaktifkan rekoneksi IN_GAME [5]
+            # Cek keaktifan game di server secara instan [1]
             if current_games:
                 active_game = current_games[0]
-                token = active_game.get("token")
-                
-                if token:
-                    self.logger.warning(
-                        f"Active game session detected (Match ID: {active_game.get('matchId')}). "
-                        f"Routing to IN_GAME state for direct WebSocket connection."
-                    )
-                    return "IN_GAME", account_data
+                self.logger.warning(
+                    f"Active game session detected (Match ID: {active_game.get('matchId')}). "
+                    f"Routing directly to IN_GAME state."
+                )
+                return "IN_GAME", account_data
 
             if readiness.get("paidReady", False):
                 self.logger.info("Paid room checks passed. Agent is routed to READY_PAID.")

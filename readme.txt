@@ -113,115 +113,117 @@ Link url github
 
 botgame/
 
-.env
-config_agents.json
+.env https://github.com/Vdreamland/botgame/blob/master/.env
+config_agents.json https://github.com/Vdreamland/botgame/blob/master/config_agents.json
 
 config >
-settings.py
-game_constants.py
-item_registry.py
+settings.py https://github.com/Vdreamland/botgame/blob/master/config/settings.py
+game_constants.py https://github.com/Vdreamland/botgame/blob/master/config/game_constants.py
+item_registry.py https://github.com/Vdreamland/botgame/blob/master/config/item_registry.py
 
 core >
-agent_instance.py
+agent_instance.py https://github.com/Vdreamland/botgame/blob/master/core/agent_instance.py
 
 core > lifecycle >
-state_router.py
-setup_handler.py
-onboarding_redeemer.py
-wallet_policy.py
-token_registrar.py
-room_selector.py
-runtime_manager.py
+state_router.py https://github.com/Vdreamland/botgame/blob/master/core/lifecycle/state_router.py
+setup_handler.py https://github.com/Vdreamland/botgame/blob/master/core/lifecycle/setup_handler.py
+onboarding_redeemer.py https://github.com/Vdreamland/botgame/blob/master/core/lifecycle/onboarding_redeemer.py
+wallet_policy.py https://github.com/Vdreamland/botgame/blob/master/core/lifecycle/wallet_policy.py
+token_registrar.py https://github.com/Vdreamland/botgame/blob/master/core/lifecycle/token_registrar.py
+room_selector.py https://github.com/Vdreamland/botgame/blob/master/core/lifecycle/room_selector.py
+runtime_manager.py https://github.com/Vdreamland/botgame/blob/master/core/lifecycle/runtime_manager.py
 
 core > network >
-api_client.py
-ws_client.py
-document_cache.py
+api_client.py https://github.com/Vdreamland/botgame/blob/master/core/network/api_client.py
+ws_client.py https://github.com/Vdreamland/botgame/blob/master/core/network/ws_client.py
+document_cache.py https://github.com/Vdreamland/botgame/blob/master/core/network/document_cache.py
 
 core > state >
-game_state.py
-team_registry.py
-cooldown_manager.py
+game_state.py https://github.com/Vdreamland/botgame/blob/master/core/state/game_state.py
+team_registry.py https://github.com/Vdreamland/botgame/blob/master/core/state/team_registry.py
+cooldown_manager.py https://github.com/Vdreamland/botgame/blob/master/core/state/cooldown_manager.py
 
 brain >
-decision_engine.py
+decision_engine.py https://github.com/Vdreamland/botgame/blob/master/brain/decision_engine.py
 
 brain > memory >
-cross_game_memory.py
+cross_game_memory.py https://github.com/Vdreamland/botgame/blob/master/brain/memory/cross_game_memory.py
 
 strategies >
 
 strategies > scanners >
-enemy_scanner.py
-enemy_stats_scanner.py
-enemy_gear_scanner.py
-ground_item_scanner.py
+enemy_scanner.py https://github.com/Vdreamland/botgame/blob/master/strategies/scanners/enemy_scanner.py
+enemy_stats_scanner.py https://github.com/Vdreamland/botgame/blob/master/strategies/scanners/enemy_stats_scanner.py
+enemy_gear_scanner.py https://github.com/Vdreamland/botgame/blob/master/strategies/scanners/enemy_gear_scanner.py
+ground_item_scanner.py https://github.com/Vdreamland/botgame/blob/master/strategies/scanners/ground_item_scanner.py
 
 strategies > team >
-team_coordinator.py
+team_coordinator.py https://github.com/Vdreamland/botgame/blob/master/strategies/team/team_coordinator.py
 
 strategies > combat >
-battle_analyzer.py
-victory_calculator.py
-engagement_controller.py
-cooldown_tracker.py
+battle_analyzer.py https://github.com/Vdreamland/botgame/blob/master/strategies/combat/battle_analyzer.py
+victory_calculator.py https://github.com/Vdreamland/botgame/blob/master/strategies/combat/victory_calculator.py
+engagement_controller.py https://github.com/Vdreamland/botgame/blob/master/strategies/combat/engagement_controller.py
+cooldown_tracker.py https://github.com/Vdreamland/botgame/blob/master/strategies/combat/cooldown_tracker.py
 
 strategies > hunter >
-hunter_mode_controller.py
+hunter_mode_controller.py https://github.com/Vdreamland/botgame/blob/master/strategies/hunter/hunter_mode_controller.py
 
 strategies > movement >
-pathfinder.py
-chase_tactics.py
+pathfinder.py https://github.com/Vdreamland/botgame/blob/master/strategies/movement/pathfinder.py
+chase_tactics.py https://github.com/Vdreamland/botgame/blob/master/strategies/movement/chase_tactics.py
 
 strategies > recovery >
-health_restorer.py
-energy_manager.py
+health_restorer.py https://github.com/Vdreamland/botgame/blob/master/strategies/recovery/health_restorer.py
+energy_manager.py https://github.com/Vdreamland/botgame/blob/master/strategies/recovery/energy_manager.py
 
 strategies > environmental >
-weather_terrain_handler.py
+weather_terrain_handler.py https://github.com/Vdreamland/botgame/blob/master/strategies/environmental/weather_terrain_handler.py
 
 strategies > inventory >
-equip_selector.py
-inventory_manager.py
+equip_selector.py https://github.com/Vdreamland/botgame/blob/master/strategies/inventory/equip_selector.py
+inventory_manager.py https://github.com/Vdreamland/botgame/blob/master/strategies/inventory/inventory_manager.py
 
 strategies > exploration >
-ruin_explorer.py
+ruin_explorer.py https://github.com/Vdreamland/botgame/blob/master/strategies/exploration/ruin_explorer.py
 
 strategies > lobby >
-reforge_optimizer.py
-shop_manager.py
+reforge_optimizer.py https://github.com/Vdreamland/botgame/blob/master/strategies/lobby/reforge_optimizer.py
+shop_manager.py https://github.com/Vdreamland/botgame/blob/master/strategies/lobby/shop_manager.py
 
 strategies > phases >
-early_game_strategy.py
-mid_game_strategy.py
-late_game_strategy.py
+early_game_strategy.py https://github.com/Vdreamland/botgame/blob/master/strategies/phases/early_game_strategy.py
+mid_game_strategy.py  https://github.com/Vdreamland/botgame/blob/master/strategies/phases/mid_game_strategy.py
+late_game_strategy.py https://github.com/Vdreamland/botgame/blob/master/strategies/phases/late_game_strategy.py
 
 strategies > hazard >
-deadzone_warning_handler.py
-deadzone_active_handler.py
+deadzone_warning_handler.py  https://github.com/Vdreamland/botgame/blob/master/strategies/hazard/deadzone_warning_handler.py
+deadzone_active_handler.py https://github.com/Vdreamland/botgame/blob/master/strategies/hazard/deadzone_active_handler.py
 
 actions >
-action_dispatcher.py
-cooldown_actions.py
-free_actions.py
+action_dispatcher.py https://github.com/Vdreamland/botgame/blob/master/actions/action_dispatcher.py
+cooldown_actions.py https://github.com/Vdreamland/botgame/blob/master/actions/cooldown_actions.py
+free_actions.py https://github.com/Vdreamland/botgame/blob/master/actions/free_actions.py
 
 ui >
-terminal_dashboard.py
-ascii_map_renderer.py
+terminal_dashboard.py https://github.com/Vdreamland/botgame/blob/master/ui/terminal_dashboard.py
+ascii_map_renderer.py https://github.com/Vdreamland/botgame/blob/master/ui/ascii_map_renderer.py
 
 logs >
-bot_alice.log
-bot_bob.log
-system.log
+bot_alice.log https://github.com/Vdreamland/botgame/blob/master/logs/bot_alice.log
+bot_bob.log https://github.com/Vdreamland/botgame/blob/master/logs/bot_bob.log
+system.log https://github.com/Vdreamland/botgame/blob/master/logs/system.log
 
 utils >
-crypto_helper.py
-math_helper.py
-rate_limiter.py
-logger.py
+crypto_helper.py https://github.com/Vdreamland/botgame/blob/master/utils/crypto_helper.py
+math_helper.py https://github.com/Vdreamland/botgame/blob/master/utils/math_helper.py 
+rate_limiter.py https://github.com/Vdreamland/botgame/blob/master/utils/rate_limiter.py
+logger.py https://github.com/Vdreamland/botgame/blob/master/utils/logger.py
 
-orchestrator.py
+orchestrator.py https://github.com/Vdreamland/botgame/blob/master/orchestrator.py
 skill.md
-index.py
-
+index.py https://github.com/Vdreamland/botgame/blob/master/index.py
+readme.txt https://github.com/Vdreamland/botgame/blob/master/readme.txt
+requirments.txt https://github.com/Vdreamland/botgame/blob/master/requirements.txt
+skill.md https://github.com/Vdreamland/botgame/blob/master/skill.md
 

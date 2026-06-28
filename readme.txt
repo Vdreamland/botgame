@@ -215,8 +215,8 @@ terminal_dashboard.py https://github.com/Vdreamland/botgame/blob/master/ui/termi
 ascii_map_renderer.py https://github.com/Vdreamland/botgame/blob/master/ui/ascii_map_renderer.py
 
 logs >
-bot_alice.log https://github.com/Vdreamland/botgame/blob/master/logs/bot_alice.log
-bot_bob.log https://github.com/Vdreamland/botgame/blob/master/logs/bot_bob.log
+bot_extravaro1.log 
+bot_orchestrator.log 
 system.log https://github.com/Vdreamland/botgame/blob/master/logs/system.log
 
 utils >

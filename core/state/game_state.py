@@ -54,7 +54,15 @@ class GameState:
             self.logger.error(f"SERVER REJECTION: {err_msg}")
             return
 
-        if frame_type == "agent_view":
+        # Parsing penuh dilakukan untuk 'agent_view' (awal game) dan 'turn_advanced' (setiap ganti turn)
+        if frame_type in ["agent_view", "turn_advanced"]:
+            if frame_type == "turn_advanced":
+                new_day = int(data.get("day") or data.get("view", {}).get("currentRegion", {}).get("day") or self.day)
+                new_turn = int(data.get("turn") or data.get("view", {}).get("currentRegion", {}).get("turn") or self.turn)
+                self.logger.info(f"=== NEW GAME TURN: DAY {new_day} | TURN {new_turn} ===")
+                self.day = new_day
+                self.turn = new_turn
+
             # Dapatkan objek view & self_state yang valid dari WebSocket payload resmi [Gameplay WebSocket]
             view = data.get("view", {}) if isinstance(data, dict) else {}
             self_state = view.get("self") or data.get("self") or data.get("agent") or {}
@@ -67,11 +75,18 @@ class GameState:
                     self.team_registry.register_ally(self.player_id, self.agent_name)
                     self.logger.info(f"Registered Player ID: {self.player_id} into the Team Registry.")
 
+                # Ambil koordinat lama untuk deteksi pergerakan
+                old_q, old_r = self.q, self.r
+                
                 self.hp = float(self_state.get("hp", self.hp))
                 self.ep = float(self_state.get("ep", self.ep))
                 self.q = int(self_state.get("q", self.q))
                 self.r = int(self_state.get("r", self.r))
                 
+                # Cetak log sinkronisasi koordinat fisik jika bot terdeteksi sukses berpindah tempat
+                if (old_q != self.q or old_r != self.r) and self.player_id:
+                    self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")
+
                 # alertGauge ada di dalam self_state berdasarkan dokumentasi resmi
                 self.alert_gauge = int(self_state.get("alertGauge", self.alert_gauge))
 
@@ -85,12 +100,30 @@ class GameState:
             current_region = view.get("currentRegion", {})
             map_context = data.get("mapContext", {}) or {}
             
+            # Resolusi terrain dari nama region jika key 'terrain' absen di beberapa tipe koneksi
+            region_name = current_region.get("name", "").lower()
+            resolved_terrain = ""
+            if "forest" in region_name or "wood" in region_name:
+                resolved_terrain = "forest"
+            elif "ruin" in region_name or "temple" in region_name or "relic" in region_name:
+                resolved_terrain = "ruins"
+            elif "hill" in region_name or "mountain" in region_name or "ridge" in region_name:
+                resolved_terrain = "hills"
+            elif "water" in region_name or "lake" in region_name or "river" in region_name or "sea" in region_name or "swamp" in region_name:
+                resolved_terrain = "water"
+            else:
+                resolved_terrain = "plains"
+
             # Gabungkan parsing data wilayah dari dokumentasi resmi / legacy
-            self.current_terrain = current_region.get("terrain") or map_context.get("terrain") or self.current_terrain
+            self.current_terrain = (
+                current_region.get("terrain") or 
+                map_context.get("terrain") or 
+                resolved_terrain
+            ).lower()
+            
             self.current_weather = current_region.get("weather") or map_context.get("weather") or self.current_weather
             self.is_death_zone = bool(current_region.get("isDeathZone", map_context.get("isDeathZone", self.is_death_zone)))
             
-            # Turn bisa berada di tingkat atas frame atau di mapContext
             self.turn = int(frame.get("turn") or data.get("turn") or map_context.get("turn") or self.turn)
             self.day = int(map_context.get("day") or self.day)
 
@@ -122,16 +155,6 @@ class GameState:
                     f"Sync completed: Detected {len(self.enemies)} actual enemies "
                     f"and {len(self.allies_nearby)} ally bots nearby."
                 )
-
-        elif frame_type == "turn_advanced":
-            new_day = int(data.get("day", self.day))
-            new_turn = int(data.get("turn", self.turn))
-            
-            self.logger.info(f"=== NEW GAME TURN: DAY {new_day} | TURN {new_turn} ===")
-            
-            self.day = new_day
-            self.turn = new_turn
-            self.current_weather = data.get("weather", self.current_weather)
 
         elif frame_type == "hp_changed":
             # Ekstrak ID target secara berlapis (termasuk objek bersarang)

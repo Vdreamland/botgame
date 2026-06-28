@@ -28,7 +28,7 @@ class GroundItemScanner:
         for item in items:
             # Pengaman berlapis mencari ID item asli dari server
             item_id = item.get("id") or item.get("itemId") or ""
-            item_type = item.get("type", "")  # ID Referensi Kamus
+            item_type = item.get("type") or item.get("item_type") or ""
             
             # Semua item di lantai wilayah yang sama berjarak 0
             distance = 0
@@ -53,29 +53,41 @@ class GroundItemScanner:
         """
         Internal utility scorer.
         Evaluates dynamic needs (e.g., low HP needs healing items, incomplete sets need relics) [9].
+        Safe against any server case-sensitivity or underscores.
         """
-        if item_type not in ITEM_DATABASE:
+        if not item_type:
             return 0.0
 
-        info = ITEM_DATABASE[item_type]
-        category = info.get("category", "")
+        # Normalisasi pencarian tipe item agar aman terhadap case-sensitivity dan format snake_case
+        normalized_search = item_type.lower().replace("_", " ").strip()
+        matched_info = None
+        
+        for db_key, db_info in ITEM_DATABASE.items():
+            if db_key.lower().replace("_", " ").strip() == normalized_search:
+                matched_info = db_info
+                break
+
+        if not matched_info:
+            return 0.0
+
+        category = matched_info.get("category", "")
         
         # Penalti jarak (Item yang jauh dinilai kurang bernilai karena memakan EP gerakan)
         distance_penalty = distance * 0.15
         base_utility = 1.0
 
         # Kasus 1: Bot sekarat (HP < 40%) -> Utilitas obat sangat tinggi
-        if category == "consumable" and info.get("heal_value", 0) > 0:
+        if category == "consumable" and matched_info.get("heal_value", 0) > 0:
             hp_percentage = self.game_state.hp / 100.0
             if hp_percentage < 0.40:
                 base_utility = 2.5
             elif hp_percentage >= 0.85:
-                # Sedikit berguna jika darah penuh
+                # Sedikit berguna jika darah penuh, namun tetap diprioritaskan jika tas muat
                 base_utility = 0.2
 
         # Kasus 2: Relic pengisi fullSet (Bot butuh melengkapi RGB Relic) [9]
         elif category == "relic":
-            slot_color = info.get("slot_color", "")
+            slot_color = matched_info.get("slot_color", "")
             # Jika bot belum punya relic di warna ini, jadikan prioritas tinggi untuk fullSet [9]
             if slot_color not in self.game_state.equipped_relics:
                 base_utility = 2.0

@@ -27,19 +27,34 @@ class EquipSelector:
         best_weapon_id: Optional[str] = None
         highest_weapon_atk = 0.0
 
-        # Ambil status serangan senjata terpasang saat ini [11]
+        # Ambil status serangan senjata terpasang saat ini secara case-insensitive [11]
         current_weapon_type = self.game_state.equipped_weapon
-        if current_weapon_type in ITEM_DATABASE:
-            highest_weapon_atk = float(ITEM_DATABASE[current_weapon_type].get("atk_bonus", 0.0))
+        normalized_current_weapon = current_weapon_type.lower().replace("_", " ").strip()
+        matched_current_weapon = None
+        
+        for db_key, db_info in ITEM_DATABASE.items():
+            if db_key.lower().replace("_", " ").strip() == normalized_current_weapon:
+                matched_current_weapon = db_info
+                break
+
+        if matched_current_weapon:
+            highest_weapon_atk = float(matched_current_weapon.get("atk_bonus", 0.0))
 
         for item in inventory_items:
-            item_id = item.get("id", "")
+            item_id = item.get("id") or item.get("itemId") or ""
             item_type = item.get("type", "")
 
-            if item_type in ITEM_DATABASE:
-                info = ITEM_DATABASE[item_type]
-                if info.get("category") == "weapon":
-                    atk_bonus = float(info.get("atk_bonus", 0.0))
+            # Cari info di database secara case-insensitive
+            normalized_search = item_type.lower().replace("_", " ").strip()
+            matched_info = None
+            for db_key, db_info in ITEM_DATABASE.items():
+                if db_key.lower().replace("_", " ").strip() == normalized_search:
+                    matched_info = db_info
+                    break
+
+            if matched_info:
+                if matched_info.get("category") == "weapon":
+                    atk_bonus = float(matched_info.get("atk_bonus", 0.0))
                     # Jika menemukan senjata dengan serangan lebih tinggi, jadikan target pasang [11]
                     if atk_bonus > highest_weapon_atk:
                         highest_weapon_atk = atk_bonus
@@ -51,26 +66,39 @@ class EquipSelector:
         # 2. OPTIMALISASI RELIC (MENGEJAR BONUS fullSet RGB) [9]
         equipped_relic_types = self.game_state.equipped_relics  # List tipe relic yang terpasang
         
-        # Petakan warna relic yang sudah kita pasang saat ini
+        # Petakan warna relic yang sudah kita pasang saat ini secara case-insensitive
         equipped_colors: Set[str] = set()
         for r_type in equipped_relic_types:
-            if r_type in ITEM_DATABASE:
-                equipped_colors.add(ITEM_DATABASE[r_type].get("slot_color", ""))
+            normalized_r = r_type.lower().replace("_", " ").strip()
+            for db_key, db_info in ITEM_DATABASE.items():
+                if db_key.lower().replace("_", " ").strip() == normalized_r:
+                    color = db_info.get("slot_color", "")
+                    if color:
+                        equipped_colors.add(color.lower())
+                    break
 
-        # Jika kita belum memiliki 3 relic terpasang, coba cari relic di tas dengan warna yang belum kita miliki [9]
+        # Coba pasang relic di tas dengan warna yang belum kita miliki [9]
         if len(equipped_colors) < 3:
             for item in inventory_items:
-                item_id = item.get("id", "")
+                item_id = item.get("id") or item.get("itemId") or ""
                 item_type = item.get("type", "")
 
-                if item_type in ITEM_DATABASE:
-                    info = ITEM_DATABASE[item_type]
-                    if info.get("category") == "relic":
-                        color = info.get("slot_color", "")
-                        # Pasang relic jika warnanya belum ada di slot aktif saat ini untuk mengejar fullSet [9]
-                        if color not in equipped_colors:
-                            # Cari indeks slot kosong (1, 2, atau 3) yang bisa kita gunakan
-                            slot_name = f"relic_{len(equipped_colors) + 1}"
-                            return item_id, slot_name
+                normalized_search = item_type.lower().replace("_", " ").strip()
+                matched_info = None
+                for db_key, db_info in ITEM_DATABASE.items():
+                    if db_key.lower().replace("_", " ").strip() == normalized_search:
+                        matched_info = db_info
+                        break
+
+                if matched_info:
+                    if matched_info.get("category") == "relic":
+                        color = matched_info.get("slot_color", "")
+                        if color:
+                            normalized_color = color.lower()
+                            # Pasang relic jika warnanya belum ada di slot aktif saat ini untuk mengejar fullSet [9]
+                            if normalized_color not in equipped_colors:
+                                # Cari indeks slot kosong (1, 2, atau 3) yang bisa kita gunakan
+                                slot_name = f"relic_{len(equipped_colors) + 1}"
+                                return item_id, slot_name
 
         return None

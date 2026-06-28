@@ -37,17 +37,26 @@ class InventoryManager:
         lowest_value = 999.0
 
         for item in inventory_items:
-            i_id = item.get("id", "")
+            i_id = item.get("id") or item.get("itemId") or ""
             i_type = item.get("type", "")
 
-            if i_type in ITEM_DATABASE:
-                info = ITEM_DATABASE[i_type]
-                category = info.get("category", "")
+            # Normalisasi pencarian tipe item lobi terhadap ITEM_DATABASE
+            normalized_search = i_type.lower().replace("_", " ").strip()
+            matched_info = None
+            for db_key, db_info in ITEM_DATABASE.items():
+                if db_key.lower().replace("_", " ").strip() == normalized_search:
+                    matched_info = db_info
+                    break
+
+            if matched_info:
+                category = matched_info.get("category", "")
                 
                 val = 100.0
-                if i_type == "Dagger" and self.game_state.equipped_weapon in ["Sword", "Katana"]:
+                # Cek tipe senjata terpasang secara case-insensitive
+                equipped_normalized = self.game_state.equipped_weapon.lower().replace("_", " ").strip()
+                if normalized_search == "dagger" and equipped_normalized in ["sword", "katana"]:
                     val = 1.0
-                elif i_type == "Bow" and self.game_state.equipped_weapon in ["Pistol", "Sniper rifle"]:
+                elif normalized_search == "bow" and equipped_normalized in ["pistol", "sniper rifle"]:
                     val = 1.0
                 elif category == "consumable":
                     val = 20.0

@@ -117,3 +117,27 @@
 [2026-06-29 01:51:21] [extravaro2] [WARNING] Autonomous Agent Runtime shut down gracefully.
 [2026-06-29 01:51:21] [extravaro2] [INFO] Local GameState session successfully cleared.
 [2026-06-29 01:51:21] [orchestrator] [INFO] All bot sessions successfully disconnected. Goodbye!
+[2026-06-29 01:53:06] [orchestrator] [INFO] Loaded 2 agent configurations. Spawning instances...
+[2026-06-29 01:53:06] [extravaro1] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 01:53:06] [extravaro1] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 01:53:06] [extravaro2] [INFO] Launching Agent Instance for 'Extravaro2'...
+[2026-06-29 01:53:06] [extravaro2] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 01:53:06] [orchestrator] [INFO] All bot instances successfully initialized. Streaming logs...
+[2026-06-29 01:53:06] [extravaro1] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 01:53:06] [extravaro2] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 01:53:12] [extravaro2] [WARNING] Active game session detected (Match ID: None). Routing directly to IN_GAME state.
+[2026-06-29 01:53:12] [extravaro2] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 01:53:12] [extravaro2] [INFO] Transitioning to Gameplay Socket: wss://cdn.clawroyale.ai/ws/agent
+[2026-06-29 01:53:12] [extravaro1] [WARNING] Active game session detected (Match ID: None). Routing directly to IN_GAME state.
+[2026-06-29 01:53:12] [extravaro1] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 01:53:12] [extravaro1] [INFO] Transitioning to Gameplay Socket: wss://cdn.clawroyale.ai/ws/agent
+[2026-06-29 01:53:12] [extravaro2] [INFO] Successfully entered Gameplay Socket.
+[2026-06-29 01:53:12] [extravaro1] [INFO] Successfully entered Gameplay Socket.
+[2026-06-29 01:53:12] [extravaro2] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 01:53:12] [extravaro2] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 01:53:12] [extravaro1] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 01:53:12] [extravaro1] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 01:53:42] [extravaro1] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 01:53:42] [extravaro1] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 01:53:42] [extravaro2] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 01:53:42] [extravaro2] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).

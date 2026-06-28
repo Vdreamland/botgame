@@ -5,6 +5,7 @@ Binds API Clients, WebSockets, State trackers, and Decision Engine into an activ
 """
 
 import asyncio
+import traceback
 from typing import Dict, Any
 
 from utils.logger import AgentLogger
@@ -49,8 +50,6 @@ class AgentInstance:
         )
 
         self.ws_client.on_message_callback = self._on_websocket_message
-        
-        # PENGAMAN MUTLAK: Kunci asinkron untuk mencegah Race Condition & Spam Request [12]
         self._is_thinking = False
 
     async def start(self) -> None:
@@ -66,12 +65,15 @@ class AgentInstance:
 
     async def _safe_thought_cycle(self) -> None:
         """
-        Wrapper to ensure thought cycle executes safely without parallel race conditions.
+        Wrapper to ensure thought cycle executes safely.
+        Catches any logical crash inside the DecisionEngine so the bot doesn't freeze silently.
         """
         try:
             await self.decision_engine.execute_thought_cycle()
+        except Exception as e:
+            self.logger.error(f"CRITICAL BRAIN CRASH: {str(e)}")
+            self.logger.error(traceback.format_exc())
         finally:
-            # Lepaskan kunci setelah proses berpikir dan transmisi aksi selesai
             self._is_thinking = False
 
     async def _on_websocket_message(self, message: Dict[str, Any]) -> None:
@@ -89,6 +91,12 @@ class AgentInstance:
 
         if frame_type in ["turn_advanced", "hp_changed", "agent_moved", "error"]:
             self.logger.info(f"Dynamic game event received: '{frame_type}'")
+
+        # AKTIVASI DINAMIS YANG HILANG: Sadarkan bot bahwa ia sudah masuk ke dalam arena pertempuran! [5]
+        if frame_type in ["agent_view", "turn_advanced", "can_act_changed"]:
+            if not self.ws_client.is_gameplay_active:
+                self.logger.warning("Gameplay mode activated! Brain functions online.")
+            self.ws_client.is_gameplay_active = True
 
         # Sinkronisasikan state permainan lokal dari server
         self.game_state.update_from_server_frame(message)

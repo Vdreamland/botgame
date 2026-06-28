@@ -52,7 +52,6 @@ class AgentInstance:
 
     async def start(self) -> None:
         self.logger.info(f"Launching Agent Instance for '{self.agent_name}'...")
-        self.game_state.current_action = "MATCHMAKING QUEUE"
         await self.runtime.start()
 
     async def stop(self) -> None:
@@ -67,18 +66,22 @@ class AgentInstance:
         """
         frame_type = message.get("type")
         
-        self.logger.info(f"Raw WebSocket frame received: '{frame_type}'")
+        # Buka saringan untuk memproses 'hp_changed' dan 'agent_moved' [8, 12]
+        allowed_frames = ["agent_view", "turn_advanced", "can_act_changed", 
+                          "deathzone_warning", "deathzone_expanded", "hp_changed", "agent_moved"]
         
-        # Validasi pembukaan tipe bingkai resmi pertempuran [8, 11, 12, 14]
-        if frame_type not in ["agent_view", "turn_advanced", "can_act_changed", "deathzone_warning", "deathzone_expanded"]:
+        if frame_type not in allowed_frames:
             return
 
-        # Sinkronisasikan peta, HP, EP, dan musuh dari 'agent_view' atau 'turn_advanced' [8, 10, 11]
+        # Saring log sampah: Hanya tayangkan log jika bertipe turn_advanced, hp_changed, atau agent_moved
+        if frame_type in ["turn_advanced", "hp_changed", "agent_moved"]:
+            self.logger.info(f"Dynamic game event received: '{frame_type}'")
+
+        # Sinkronisasikan state permainan lokal dari server [8, 10]
         self.game_state.update_from_server_frame(message)
 
         # Urai ketersediaan aksi dari tipe bingkai 'can_act_changed' [12]
         if frame_type == "can_act_changed":
-            # Ekstrak bool canAct dari data payload [12]
             can_act_val = message.get("canAct", message.get("data", {}).get("canAct", True))
             self.cooldown_manager.update_server_can_act(bool(can_act_val))
 

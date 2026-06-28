@@ -47,16 +47,8 @@ class GameState:
         Synchronizes HP, EP, coordinates, ground items, weather, and filters teammates [8, 10, 11].
         """
         frame_type = frame.get("type")
-        
-        # Validasi tipe bingkai resmi [8, 11, 12]
-        if frame_type not in ["agent_view", "turn_advanced", "can_act_changed", "deathzone_warning", "deathzone_expanded"]:
-            return
+        data = frame.get("data", {}) if frame.get("data") else frame
 
-        data = frame.get("data", {})
-        if not data:
-            return
-
-        # 1. Urai Bingkai Pandangan Agen ('agent_view') [8, 10]
         if frame_type == "agent_view":
             self_state = data.get("self", data.get("agent", {}))
             if self_state:
@@ -113,17 +105,29 @@ class GameState:
                     f"and {len(self.allies_nearby)} ally bots nearby."
                 )
 
-        # 2. Urai Bingkai Waktu / Turn ('turn_advanced') [11]
         elif frame_type == "turn_advanced":
             new_day = int(data.get("day", self.day))
             new_turn = int(data.get("turn", self.turn))
             
-            # Cetak log pembatas turn asinkron di terminal [11]
             self.logger.info(f"=== NEW GAME TURN: DAY {new_day} | TURN {new_turn} ===")
             
             self.day = new_day
             self.turn = new_turn
             self.current_weather = data.get("weather", self.current_weather)
+
+        # Sinkronisasi Darah (HP) secara instan
+        elif frame_type == "hp_changed":
+            new_hp = float(data.get("hp", frame.get("hp", self.hp)))
+            self.hp = new_hp
+            self.logger.info(f"Health update received: {self.hp:.1f}%")
+
+        # Sinkronisasi Posisi Koordinat (q, r) setelah sukses melangkah [8]
+        elif frame_type == "agent_moved":
+            new_q = int(data.get("q", frame.get("q", self.q)))
+            new_r = int(data.get("r", frame.get("r", self.r)))
+            self.q = new_q
+            self.r = new_r
+            self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")
 
     def clean_session_data(self) -> None:
         """

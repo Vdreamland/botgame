@@ -1,0 +1,16 @@
+{
+  "agents": [
+    {
+      "agent_name": "bot_alice",
+      "api_key": "ALICE_API_KEY_PLACEHOLDER",
+      "private_key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "room_preference": "free"
+    },
+    {
+      "agent_name": "bot_bob",
+      "api_key": "BOB_API_KEY_PLACEHOLDER",
+      "private_key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "room_preference": "free"
+    }
+  ]
+}

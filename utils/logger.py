@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+"""
+ClawRoyale thread-safe and async-safe logging utility.
+Creates isolated log files for each bot instance to prevent output collision.
+"""
+
+import os
+import logging
+from typing import Dict
+
+# Pastikan folder logs tersedia
+os.makedirs("logs", exist_ok=True)
+
+class AgentLogger:
+    _loggers: Dict[str, logging.Logger] = {}
+
+    @classmethod
+    def get_logger(cls, agent_name: str) -> logging.Logger:
+        """
+        Returns or creates a separate Logger instance for the specified agent.
+        Logs are securely saved to /logs/bot_<name>.log without leaking private credentials.
+        """
+        # Standarisasi nama agar aman untuk format file
+        safe_name = agent_name.lower().replace(" ", "_")
+        
+        if safe_name in cls._loggers:
+            return cls._loggers[safe_name]
+
+        logger = logging.getLogger(safe_name)
+        logger.setLevel(logging.INFO)
+        logger.propagate = False  # Cegah log ganda terlempar ke root logger console
+
+        # Handler untuk menulis ke Berkas Log
+        log_file_path = os.path.join("logs", f"bot_{safe_name}.log")
+        file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+        file_formatter = logging.Formatter(
+            fmt="[%(asctime)s] [%(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
+
+        # Handler khusus untuk System Log global
+        system_log_path = os.path.join("logs", "system.log")
+        sys_handler = logging.FileHandler(system_log_path, encoding="utf-8")
+        sys_formatter = logging.Formatter(
+            fmt="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        sys_handler.setFormatter(sys_formatter)
+        logger.addHandler(sys_handler)
+
+        cls._loggers[safe_name] = logger
+        return logger

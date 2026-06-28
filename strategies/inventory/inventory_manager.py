@@ -15,15 +15,16 @@ class InventoryManager:
         self.game_state = game_state
         self.scanner = GroundItemScanner(game_state)
 
-    def determine_pickup_and_cleanup(self, max_slots: int = 15) -> Tuple[str, Optional[str], Optional[str]]:
+    def determine_pickup_and_cleanup(self, max_slots: int = 10) -> Tuple[str, Optional[str], Optional[str]]:
         """
         Determines the next inventory optimization step.
+        ClawRoyale in-game inventory is strictly limited to 10 slots [skill.md].
         """
         best_ground_item = self.scanner.find_highest_utility_item()
         if not best_ground_item:
             return "NONE", None, None
 
-        ground_item_id = best_ground_item.get("itemId", "")
+        ground_item_id = best_ground_item.get("id") or best_ground_item.get("itemId") or ""
         ground_item_type = best_ground_item.get("type", "")
 
         inventory_items = getattr(self.game_state, "inventory", [])

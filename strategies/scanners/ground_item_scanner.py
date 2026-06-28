@@ -26,7 +26,8 @@ class GroundItemScanner:
         highest_score = -1.0
 
         for item in items:
-            item_id = item.get("itemId", "")
+            # Pengaman berlapis mencari ID item asli dari server
+            item_id = item.get("id") or item.get("itemId") or ""
             item_type = item.get("type", "")  # ID Referensi Kamus
             
             # Semua item di lantai wilayah yang sama berjarak 0
@@ -38,6 +39,8 @@ class GroundItemScanner:
             if score > highest_score:
                 highest_score = score
                 best_item = item.copy()
+                best_item["id"] = item_id
+                best_item["itemId"] = item_id
                 best_item["distance"] = distance
                 best_item["utility_score"] = score
 

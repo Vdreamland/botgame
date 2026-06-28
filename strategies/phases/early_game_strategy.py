@@ -24,7 +24,8 @@ class EarlyGameStrategy:
         # 1. Prioritas Utama: Cari & Ambil Item Relic/Weapons berharga di tanah sekitar [9]
         best_item = self.item_scanner.find_highest_utility_item()
         if best_item and best_item.get("utility_score", 0.0) >= 1.0:
-            return "PICKUP", {"item_id": best_item.get("itemId")}
+            item_id = best_item.get("id") or best_item.get("itemId")
+            return "PICKUP", {"item_id": item_id}
 
         # 2. Prioritas Kedua: Lakukan eksplorasi ruin jika berada di tile Ruins [10]
         can_explore, reason = self.ruin_explorer.is_safe_to_explore()
@@ -32,5 +33,4 @@ class EarlyGameStrategy:
             return "EXPLORE", None
 
         # 3. Prioritas Ketiga: Cari ruins terdekat jika tidak berdiri di tile Ruins
-        # (Logika navigasi akan diserahkan ke decision_engine untuk memanggil pathfinder)
         return "LOOT_OR_EXPLORE_PASSIVE", None

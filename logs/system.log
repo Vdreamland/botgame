@@ -35,3 +35,29 @@
 [2026-06-29 00:41:00] [extravaro1] [WARNING] Autonomous Agent Runtime shut down gracefully.
 [2026-06-29 00:41:00] [extravaro1] [INFO] Local GameState session successfully cleared.
 [2026-06-29 00:41:00] [orchestrator] [INFO] All bot sessions successfully disconnected. Goodbye!
+[2026-06-29 00:45:20] [orchestrator] [INFO] Loaded 1 agent configurations. Spawning instances...
+[2026-06-29 00:45:20] [extravaro1] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 00:45:20] [extravaro1] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 00:45:20] [orchestrator] [INFO] All bot instances successfully initialized. Streaming logs...
+[2026-06-29 00:45:20] [extravaro1] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:45:25] [extravaro1] [WARNING] Active game session detected (Match ID: None). Routing to IN_GAME state for direct WebSocket connection.
+[2026-06-29 00:45:25] [extravaro1] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:45:25] [extravaro1] [INFO] Transitioning to Gameplay Socket: wss://cdn.clawroyale.ai/ws/agent?token=None
+[2026-06-29 00:45:26] [extravaro1] [INFO] Successfully entered Gameplay Socket.
+[2026-06-29 00:45:26] [extravaro1] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:45:26] [extravaro1] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:45:56] [extravaro1] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:46:15] [extravaro1] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:46:16] [orchestrator] [WARNING] Shutting down Orchestrator System...
+[2026-06-29 00:46:16] [extravaro1] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:46:16] [extravaro1] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:46:16] [extravaro1] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:46:16] [extravaro1] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:46:16] [extravaro1] [INFO] Local GameState session successfully cleared.
+[2026-06-29 00:46:16] [orchestrator] [INFO] All bot sessions successfully disconnected. Goodbye!
+[2026-06-29 00:46:16] [orchestrator] [WARNING] Shutting down Orchestrator System...
+[2026-06-29 00:46:16] [extravaro1] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:46:16] [extravaro1] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:46:16] [extravaro1] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:46:16] [extravaro1] [INFO] Local GameState session successfully cleared.
+[2026-06-29 00:46:16] [orchestrator] [INFO] All bot sessions successfully disconnected. Goodbye!

@@ -38,7 +38,6 @@ class GameState:
         self.enemies: List[Dict[str, Any]] = []
         self.allies_nearby: List[Dict[str, Any]] = []
 
-        # Parameter pelacak aksi aktif khusus untuk dasbor visual PowerShell [11, 12]
         self.current_action: str = "Waiting in Queue"
         self.current_target: str = "None"
 
@@ -77,12 +76,19 @@ class GameState:
 
         map_context = data.get("mapContext", {})
         if map_context:
+            new_day = int(map_context.get("day", self.day))
+            new_turn = int(map_context.get("turn", self.turn))
+            
+            # LOGIKA UTAMA: Cetak garis indikator turn baru secara instan di terminal PowerShell Anda [11]
+            if new_turn != self.turn or new_day != self.day:
+                self.logger.info(f"=== NEW GAME TURN: DAY {new_day} | TURN {new_turn} ===")
+            
             self.alert_gauge = int(map_context.get("alertGauge", self.alert_gauge))
             self.current_terrain = map_context.get("terrain", self.current_terrain)
             self.current_weather = map_context.get("weather", self.current_weather)
             self.is_death_zone = bool(map_context.get("isDeathZone", self.is_death_zone))
-            self.day = int(map_context.get("day", self.day))
-            self.turn = int(map_context.get("turn", self.turn))
+            self.day = new_day
+            self.turn = new_turn
 
         self.items_on_ground = data.get("items", [])
 

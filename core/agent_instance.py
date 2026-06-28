@@ -89,9 +89,11 @@ class AgentInstance:
         while True:
             try:
                 await asyncio.sleep(0.5)
+                # PROTEKSI MUTLAK: Bot hanya boleh mulai berpikir jika ID sudah terdaftar dari server (self.game_state.player_id != "")
                 if (self.cooldown_manager.can_execute_action() and 
                     self.ws_client.is_connected and 
                     self.ws_client.is_gameplay_active and 
+                    self.game_state.player_id != "" and
                     not self._is_thinking):
                     
                     self._is_thinking = True
@@ -133,9 +135,11 @@ class AgentInstance:
         if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
             self.game_state.current_action = "ENTERING GAMEPLAY"
 
+        # PROTEKSI MUTLAK: Bot hanya boleh mulai berpikir jika ID sudah terdaftar dari server (self.game_state.player_id != "")
         if (self.cooldown_manager.can_execute_action() and 
             self.ws_client.is_connected and 
             self.ws_client.is_gameplay_active and 
+            self.game_state.player_id != "" and
             not self._is_thinking):
             
             self._is_thinking = True

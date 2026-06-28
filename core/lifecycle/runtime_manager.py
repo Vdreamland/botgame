@@ -5,14 +5,13 @@ Coordinates setup, welcome claims, room selector signing, queue entry, and game 
 """
 
 import asyncio
+from typing import Optional, Dict, Any
+
 from utils.logger import AgentLogger
 from core.network.api_client import APIClient
 from core.network.ws_client import WebSocketClient
 from core.lifecycle.state_router import StateRouter
 from core.lifecycle.setup_handler import SetupHandler
-from core.lifecycle.onboarding_redeemer.py import OnboardingRedeemer if False else None # Import safety
-
-# Pastikan import aman dari kegagalan path
 from core.lifecycle.onboarding_redeemer import OnboardingRedeemer
 from core.lifecycle.room_selector import RoomSelector
 
@@ -120,7 +119,7 @@ class RuntimeManager:
                     
                     # Kirim payload data registrasi tanda tangan jika tipe kamar berbayar (Paid) [6]
                     if actual_entry == "paid" and sign_payload:
-                        # Payload dikirimkan asinkron sebagai pendaftaran validasi kamar berbayar [6]
+                        # Payload dikirimkan asinkron sebagai pendaftaran pendaftaran kamar berbayar [6]
                         await self.ws_client.send_message({
                             "type": "register_paid",
                             "signature": sign_payload.get("signature"),

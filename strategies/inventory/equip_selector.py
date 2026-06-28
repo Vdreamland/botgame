@@ -4,7 +4,7 @@ ClawRoyale Auto Equipment Selector.
 Optimizes weapon choices and completes Red/Green/Blue relic sets to trigger 'fullSet' [9].
 """
 
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Set
 from config.item_registry import ITEM_DATABASE
 from core.state.game_state import GameState
 

@@ -7,7 +7,7 @@ Parses agent lists, spawns concurrent task loops, and renders UI monitors.
 import os
 import json
 import asyncio
-from typing import List
+from typing import List, Optional
 
 from utils.logger import AgentLogger
 from utils.rate_limiter import GlobalRateLimiter

@@ -4,7 +4,7 @@ ClawRoyale Autonomous Decision Engine.
 The primary orchestrator that processes scanners, hazards, phases, and dispatches actions.
 """
 
-from typing import Dict, Any, Optional, Set
+from typing import Dict, Any, Optional, Set, Tuple
 from utils.logger import AgentLogger
 
 # Import State, Actions, & Helpers
@@ -31,6 +31,9 @@ from strategies.hazard.deadzone_active_handler import DeadZoneActiveHandler
 
 class DecisionEngine:
     def __init__(self, agent_name: str, game_state: GameState, dispatcher: ActionDispatcher):
+        """
+        Initializes the central tactical brain.
+        """
         self.agent_name = agent_name
         self.game_state = game_state
         self.dispatcher = dispatcher
@@ -60,7 +63,7 @@ class DecisionEngine:
 
     async def execute_thought_cycle(self) -> None:
         """
-        Executes one complete hierarchical decisionthought cycle.
+        Executes one complete hierarchical decision cycle.
         Invoked periodically by the main agent run loop when can_execute_action is True [12].
         """
         # Cek ketersediaan status game vital
@@ -194,7 +197,7 @@ class DecisionEngine:
                 # Aktifkan penguncian mode pemburu
                 self.logger.warning(f"Locking target: {target_data.get('name')} for combat initiation!")
                 self.hunter.lock_target(target_data)
-                # Pemicu iterasi thought berikutnya untuk memicu taktik spatial
+                # Pemicu thought cycle berikutnya
                 await self.execute_thought_cycle()
             elif action_type == "EXPLORE":
                 await self.dispatcher.execute_explore()

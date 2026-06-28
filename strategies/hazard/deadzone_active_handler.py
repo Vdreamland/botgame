@@ -4,7 +4,7 @@ ClawRoyale Dead Zone Emergency Active Handler.
 Overrides all decisions to force immediate escape from active Death Zones (1.34 HP/s) [14].
 """
 
-from typing import Tuple, List, Set, Optional
+from typing import Tuple, List, Set, Optional, Any
 from core.state.game_state import GameState
 from strategies.movement.pathfinder import HexPathfinder
 from strategies.recovery.health_restorer import HealthRestorer

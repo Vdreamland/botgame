@@ -17,7 +17,7 @@ class LobbyShopManager:
 
     def log_safety_status(self) -> None:
         """
-        Logs the safety configuration of the lobby shop manager.
+        Logs the safety status of the lobby shop manager.
         Ensures the operator knows that spending is physically blocked.
         """
         self.logger.info("Lobby Shop Security Check: Automated Moltz spending functions are completely removed.")

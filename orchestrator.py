@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Central Orchestrator.
-Parses agent lists, spawns concurrent task loops, and renders UI monitors.
+Parses agent lists, spawns concurrent task loops, and coordinates execution.
 """
 
 import os
@@ -12,7 +12,6 @@ from typing import List, Optional
 from utils.logger import AgentLogger
 from utils.rate_limiter import GlobalRateLimiter
 from core.agent_instance import AgentInstance
-from ui.terminal_dashboard import TerminalDashboard
 
 
 class CentralOrchestrator:
@@ -20,10 +19,7 @@ class CentralOrchestrator:
         self.config_file = config_file
         self.logger = AgentLogger.get_logger("orchestrator")
         self.limiter = GlobalRateLimiter()
-        self.dashboard = TerminalDashboard()
-        
         self.instances: List[AgentInstance] = []
-        self._ui_task: Optional[asyncio.Task] = None
 
     def _load_agents_config(self) -> List[dict]:
         """Reads list of active accounts from config_agents.json."""
@@ -41,7 +37,8 @@ class CentralOrchestrator:
 
     async def run_system(self) -> None:
         """
-        Bootstraps all agent instances in parallel task loops and spawns TUI monitor.
+        Bootstraps all agent instances in parallel task loops.
+        Outputs real-time activity stream to the console.
         """
         agents_data = self._load_agents_config()
         if not agents_data:
@@ -74,8 +71,7 @@ class CentralOrchestrator:
         for inst in self.instances:
             await inst.start()
 
-        # 3. Jalankan asinkron task untuk memperbarui Terminal Dashboard setiap 1 detik
-        self._ui_task = asyncio.create_task(self._update_dashboard_loop())
+        self.logger.info("All bot instances successfully initialized. Streaming logs...")
 
         # Jaga proses utama tetap hidup selama agen aktif
         try:
@@ -86,25 +82,10 @@ class CentralOrchestrator:
         finally:
             await self.shutdown_system()
 
-    async def _update_dashboard_loop(self) -> None:
-        """Runs infinite loop rendering the terminal dashboard periodically."""
-        try:
-            while True:
-                await asyncio.sleep(1.0)
-                self.dashboard.draw_dashboard(self.instances)
-        except asyncio.CancelledError:
-            pass
-        except Exception as e:
-            self.logger.error(f"Dashboard UI Loop crashed: {str(e)}")
-
     async def shutdown_system(self) -> None:
-        """Safely shuts down all bots and tears down GUI tasks."""
+        """Safely shuts down all bots and cleans sessions."""
         self.logger.warning("Shutting down Orchestrator System...")
         
-        if self._ui_task:
-            self._ui_task.cancel()
-            self._ui_task = None
-            
         for inst in self.instances:
             await inst.stop()
             

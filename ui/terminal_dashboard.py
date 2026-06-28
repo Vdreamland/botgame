@@ -20,16 +20,16 @@ class TerminalDashboard:
         self.console = Console()
         self.layout = Layout()
 
-    def _get_last_logs(self, filepath: str = "logs/system.log", count: int = 6) -> str:
+    def _get_last_logs(self, filepath: str = "logs/system.log", count: int = 12) -> str:
         """
         Safely reads the last few lines of the system log to display on the terminal.
+        Increased count to 12 lines for broader history coverage.
         """
         if not os.path.exists(filepath):
             return "No logs generated yet."
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                # Ambil baris terakhir sesuai jumlah count dan gabungkan kembali
                 return "".join(lines[-count:]).strip()
         except Exception:
             return "Failed to read logs dynamically."
@@ -40,7 +40,6 @@ class TerminalDashboard:
         """
         self.console.clear()
 
-        # 1. Tabel Registry Aktif
         summary_table = Table(expand=True, border_style="cyan")
         summary_table.add_column("Agent Name", style="bold green")
         summary_table.add_column("Room Pref", justify="center")
@@ -75,7 +74,6 @@ class TerminalDashboard:
                 synergy_str
             )
 
-        # 2. Mini Map Visual Heksagonal
         map_string = ""
         if active_instances:
             map_string = ASCIIMapRenderer.render_local_map(active_instances[0].game_state)
@@ -87,16 +85,15 @@ class TerminalDashboard:
             expand=True
         )
 
-        # 3. Live Log Feed Panel (Membaca logs/system.log secara dinamis)
+        # Membaca logs/system.log sebanyak 12 baris terakhir secara real-time
         last_logs_content = self._get_last_logs()
         log_panel = Panel(
             last_logs_content,
-            title="Live Activity Log Feed",
+            title="Live Activity Log Feed (Last 12 Lines)",
             border_style="green",
             expand=True
         )
 
-        # 4. Cetak Seluruh Komponen ke Terminal PowerShell
         self.console.print(Panel("[bold white]CLAWROYALE MULTI-BOT SYSTEM MONITOR v1.11.2[/bold white]", style="blue"), justify="center")
         self.console.print(Panel(summary_table, title="Active Bots Registry", border_style="cyan"))
         self.console.print(map_panel)

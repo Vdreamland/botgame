@@ -19,7 +19,6 @@ class ActionDispatcher:
         self.cooldown_manager = cooldown_manager
         self.logger = AgentLogger.get_logger(agent_name)
         
-        # Ikat reference GameState secara asinkron dari kelas utama
         self.game_state = None
 
     async def _send_safe_cooldown_action(self, action_name: str, payload: Dict[str, Any]) -> bool:
@@ -37,6 +36,11 @@ class ActionDispatcher:
         return True
 
     async def execute_move(self, q: int, r: int) -> bool:
+        # PENGAMAN GERAK CERDAS: Jangan kirim perintah jalan jika tujuan = tempat berdiri saat ini
+        if self.game_state and self.game_state.q == q and self.game_state.r == r:
+            self.logger.warning(f"Movement canceled: Bot is already standing on target hex ({q}, {r}). Saving EP.")
+            return False
+
         payload = CooldownActionFactory.create_move_payload(q, r)
         self.logger.info(f"Planning move execution to hex coordinates ({q}, {r}) [8].")
         

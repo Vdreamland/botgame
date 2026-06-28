@@ -16,8 +16,8 @@ class CooldownActionFactory:
         return {
             "type": "action",
             "action": "move",
-            "q": q,
-            "r": r
+            "q": int(q),
+            "r": int(r)
         }
 
     @staticmethod
@@ -38,7 +38,7 @@ class CooldownActionFactory:
         return {
             "type": "action",
             "action": "attack",
-            "targetId": target_id
+            "targetId": str(target_id)
         }
 
     @staticmethod

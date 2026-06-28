@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Multi-Agent Terminal Dashboard (TUI).
-Builds a beautiful CMD/PowerShell dashboard utilizing 'rich' with real-time log monitoring.
+Builds an Elite PowerShell dashboard containing tables, map grids, action logs, and rolling logs.
 """
 
 import os
@@ -20,10 +20,9 @@ class TerminalDashboard:
         self.console = Console()
         self.layout = Layout()
 
-    def _get_last_logs(self, filepath: str = "logs/system.log", count: int = 12) -> str:
+    def _get_last_logs(self, filepath: str = "logs/system.log", count: int = 8) -> str:
         """
         Safely reads the last few lines of the system log to display on the terminal.
-        Increased count to 12 lines for broader history coverage.
         """
         if not os.path.exists(filepath):
             return "No logs generated yet."
@@ -36,10 +35,11 @@ class TerminalDashboard:
 
     def draw_dashboard(self, active_instances: List[AgentInstance]) -> None:
         """
-        Renders the multi-bot monitor dashboard with live log feed inside PowerShell/CMD.
+        Renders the elite visual dashboard with hex map and active log stream.
         """
         self.console.clear()
 
+        # 1. Tabel Registrasi Status Bot Aktif
         summary_table = Table(expand=True, border_style="cyan")
         summary_table.add_column("Agent Name", style="bold green")
         summary_table.add_column("Room Pref", justify="center")
@@ -47,20 +47,22 @@ class TerminalDashboard:
         summary_table.add_column("EP State", justify="center")
         summary_table.add_column("Coords (q, r)", justify="center")
         summary_table.add_column("Alert", justify="center")
-        summary_table.add_column("Weather/Terrain", justify="center")
+        summary_table.add_column("Active Action Status", style="bold yellow", justify="left")
         summary_table.add_column("Synergy", justify="center")
 
         for inst in active_instances:
             gs = inst.game_state
             
             hp_color = "green" if gs.hp > 60 else "yellow" if gs.hp > 35 else "red"
-            ep_color = "green" if gs.ep > 15 else "yellow" if gs.ep > 5 else "red"
+            ep_color = "green" if gs.ep > 7 else "yellow" if gs.ep > 3 else "red"
             
             hp_str = f"[{hp_color}]{gs.hp:.1f}%[/{hp_color}]"
             ep_str = f"[{ep_color}]{gs.ep:.1f} EP[/{ep_color}]"
             coord_str = f"({gs.q}, {gs.r})"
             alert_str = f"{gs.alert_gauge}/10"
-            env_str = f"{gs.current_weather.upper()} / {gs.current_terrain.upper()}"
+            
+            # Ambil status aksi dinamis untuk ditayangkan di dasbor [11, 12]
+            action_status_str = gs.current_action.upper()
             synergy_str = "RGB fullSet" if gs.has_full_set else "None"
 
             summary_table.add_row(
@@ -70,10 +72,11 @@ class TerminalDashboard:
                 ep_str,
                 coord_str,
                 alert_str,
-                env_str,
+                action_status_str,
                 synergy_str
             )
 
+        # 2. Mini Map Visual Heksagonal
         map_string = ""
         if active_instances:
             map_string = ASCIIMapRenderer.render_local_map(active_instances[0].game_state)
@@ -85,15 +88,16 @@ class TerminalDashboard:
             expand=True
         )
 
-        # Membaca logs/system.log sebanyak 12 baris terakhir secara real-time
+        # 3. Live Log Feed Panel (Membaca logs/system.log sebanyak 8 baris terakhir secara real-time)
         last_logs_content = self._get_last_logs()
         log_panel = Panel(
             last_logs_content,
-            title="Live Activity Log Feed (Last 12 Lines)",
+            title="Live Activity Log Feed",
             border_style="green",
             expand=True
         )
 
+        # 4. Cetak Seluruh Komponen ke Terminal PowerShell
         self.console.print(Panel("[bold white]CLAWROYALE MULTI-BOT SYSTEM MONITOR v1.11.2[/bold white]", style="blue"), justify="center")
         self.console.print(Panel(summary_table, title="Active Bots Registry", border_style="cyan"))
         self.console.print(map_panel)

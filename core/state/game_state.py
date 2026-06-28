@@ -17,7 +17,7 @@ class GameState:
 
         self.player_id: str = ""
         self.hp: float = 100.0
-        self.ep: float = 10.0  # Penyesuaian inisiasi awal agar sinkron dengan max 10.0 EP [11]
+        self.ep: float = 10.0
         
         self.q: int = 0
         self.r: int = 0
@@ -37,6 +37,10 @@ class GameState:
         self.items_on_ground: List[Dict[str, Any]] = []
         self.enemies: List[Dict[str, Any]] = []
         self.allies_nearby: List[Dict[str, Any]] = []
+
+        # Parameter pelacak aksi aktif khusus untuk dasbor visual PowerShell [11, 12]
+        self.current_action: str = "Waiting in Queue"
+        self.current_target: str = "None"
 
     def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
         """
@@ -118,4 +122,6 @@ class GameState:
         self.items_on_ground.clear()
         self.enemies.clear()
         self.allies_nearby.clear()
+        self.current_action = "Waiting in Queue"
+        self.current_target = "None"
         self.logger.info("Local GameState session successfully cleared.")

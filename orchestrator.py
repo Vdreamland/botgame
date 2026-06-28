@@ -12,6 +12,7 @@ from typing import List, Optional
 from utils.logger import AgentLogger
 from utils.rate_limiter import GlobalRateLimiter
 from core.agent_instance import AgentInstance
+from ui.terminal_dashboard import TerminalDashboard
 
 
 class CentralOrchestrator:
@@ -19,7 +20,9 @@ class CentralOrchestrator:
         self.config_file = config_file
         self.logger = AgentLogger.get_logger("orchestrator")
         self.limiter = GlobalRateLimiter()
+        self.dashboard = TerminalDashboard()
         self.instances: List[AgentInstance] = []
+        self._ui_task: Optional[asyncio.Task] = None
 
     def _load_agents_config(self) -> List[dict]:
         """Reads list of active accounts from config_agents.json."""
@@ -73,6 +76,9 @@ class CentralOrchestrator:
 
         self.logger.info("All bot instances successfully initialized. Streaming logs...")
 
+        # 3. Jalankan asinkron task untuk memperbarui Terminal Dashboard v2.0 setiap 1 detik
+        self._ui_task = asyncio.create_task(self._update_dashboard_loop())
+
         # Jaga proses utama tetap hidup selama agen aktif
         try:
             while True:
@@ -82,10 +88,25 @@ class CentralOrchestrator:
         finally:
             await self.shutdown_system()
 
+    async def _update_dashboard_loop(self) -> None:
+        """Runs infinite loop rendering the terminal dashboard periodically."""
+        try:
+            while True:
+                await asyncio.sleep(1.0)
+                self.dashboard.draw_dashboard(self.instances)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            self.logger.error(f"Dashboard UI Loop crashed: {str(e)}")
+
     async def shutdown_system(self) -> None:
         """Safely shuts down all bots and cleans sessions."""
         self.logger.warning("Shutting down Orchestrator System...")
         
+        if self._ui_task:
+            self._ui_task.cancel()
+            self._ui_task = None
+            
         for inst in self.instances:
             await inst.stop()
             

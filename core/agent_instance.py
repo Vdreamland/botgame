@@ -36,6 +36,9 @@ class AgentInstance:
         self.cooldown_manager = CooldownManager(agent_name)
 
         self.dispatcher = ActionDispatcher(agent_name, self.ws_client, self.cooldown_manager)
+        # Saling ikat referensi GameState agar status aksi bisa di-update
+        self.dispatcher.game_state = self.game_state
+        
         self.decision_engine = DecisionEngine(agent_name, self.game_state, self.dispatcher)
 
         self.runtime = RuntimeManager(
@@ -50,6 +53,8 @@ class AgentInstance:
 
     async def start(self) -> None:
         self.logger.info(f"Launching Agent Instance for '{self.agent_name}'...")
+        # Update status visual saat mulai mencari antrean [5]
+        self.game_state.current_action = "MATCHMAKING QUEUE"
         await self.runtime.start()
 
     async def stop(self) -> None:
@@ -68,7 +73,10 @@ class AgentInstance:
         if "canAct" in message:
             self.cooldown_manager.update_server_can_act(bool(message["canAct"]))
 
-        # Skenario: Hanya jalankan thought cycle jika local cooldown siap DAN bot berada di dalam arena pertempuran [5, 12]
+        # Skenario: Update status visual saat berhasil tersambung ke soket gameplay [5]
+        if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
+            self.game_state.current_action = "ENTERING GAMEPLAY"
+
         if (self.cooldown_manager.can_execute_action() and 
                 self.ws_client.is_connected and 
                 self.ws_client.is_gameplay_active):

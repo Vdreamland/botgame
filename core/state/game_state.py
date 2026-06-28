@@ -160,11 +160,17 @@ class GameState:
             self.enemies = clean_enemies
             self.allies_nearby = clean_allies
             
+            # PENINGKATAN LOG: Cetak daftar musuh beserta wilayah penemuannya agar terlihat jelas di lobi
             if len(self.enemies) > 0:
+                enemy_details = [f"{e.get('name', 'Unknown')} (Region: {e.get('regionId', 'Unknown')})" for e in self.enemies]
                 self.logger.warning(
-                    f"Sync completed: Detected {len(self.enemies)} actual enemies "
-                    f"and {len(self.allies_nearby)} ally bots nearby."
+                    f"Sync completed: Detected {len(self.enemies)} active enemies: {', '.join(enemy_details)}."
                 )
+
+            # PENINGKATAN LOG: Cetak daftar barang jatuh di tanah sekitar ubin bot berdiri
+            if self.items_on_ground:
+                item_details = [f"{i.get('type', 'Unknown')} (ID: {i.get('id') or i.get('itemId', 'Unknown')})" for i in self.items_on_ground]
+                self.logger.info(f"Loot radar: Detected {len(self.items_on_ground)} items on ground: {', '.join(item_details)}.")
 
         elif frame_type == "hp_changed":
             # Ekstrak ID target secara berlapis (termasuk objek bersarang)

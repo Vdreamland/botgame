@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Free Action Payloads.
-Generates payloads for instant actions that consume 0 EP and bypass cooldown locks [13].
+Generates nested payloads for instant actions that consume 0 EP and bypass cooldown locks [13].
 """
 
 from typing import Dict, Any
@@ -9,17 +9,16 @@ from typing import Dict, Any
 
 class FreeActionFactory:
     @staticmethod
-    def create_equip_payload(item_id: str, slot: str) -> Dict[str, Any]:
+    def create_equip_payload(item_id: str) -> Dict[str, Any]:
         """
         Creates payload to equip a weapon or armor from the inventory [9].
-        :param item_id: Unique database ID of the item in inventory.
-        :param slot: Target slot ('weapon' or 'armor').
         """
         return {
             "type": "action",
-            "action": "equip",
-            "itemId": item_id,
-            "slot": slot
+            "data": {
+                "type": "equip",
+                "itemId": str(item_id)
+            }
         }
 
     @staticmethod
@@ -29,20 +28,24 @@ class FreeActionFactory:
         """
         return {
             "type": "action",
-            "action": "pickup",
-            "itemId": item_id
+            "data": {
+                "type": "pickup",
+                "itemId": str(item_id)
+            }
         }
 
     @staticmethod
     def create_whisper_payload(target_id: str, message: str) -> Dict[str, Any]:
         """
-        Sends a private text message to another player (ideal for teammate bot synchronization) [13].
+        Sends a private text message to another player [13].
         """
         return {
             "type": "action",
-            "action": "whisper",
-            "targetId": target_id,
-            "message": message
+            "data": {
+                "type": "whisper",
+                "targetId": str(target_id),
+                "message": message[:200]
+            }
         }
 
     @staticmethod
@@ -52,6 +55,8 @@ class FreeActionFactory:
         """
         return {
             "type": "action",
-            "action": "broadcast",
-            "message": message
+            "data": {
+                "type": "broadcast",
+                "message": message[:200]
+            }
         }

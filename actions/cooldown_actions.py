@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale Cooldown Action Payloads.
-Generates compliant payloads for actions that consume EP and trigger 30s cooldowns [12].
+Generates compliant nested payloads for actions that consume EP and trigger 30s cooldowns [12].
 """
 
 from typing import Dict, Any
@@ -15,9 +15,11 @@ class CooldownActionFactory:
         """
         return {
             "type": "action",
-            "action": "move",
-            "q": int(q),
-            "r": int(r)
+            "data": {
+                "type": "move",
+                "q": int(q),
+                "r": int(r)
+            }
         }
 
     @staticmethod
@@ -27,7 +29,9 @@ class CooldownActionFactory:
         """
         return {
             "type": "action",
-            "action": "explore"
+            "data": {
+                "type": "explore"
+            }
         }
 
     @staticmethod
@@ -37,8 +41,10 @@ class CooldownActionFactory:
         """
         return {
             "type": "action",
-            "action": "attack",
-            "targetId": str(target_id)
+            "data": {
+                "type": "attack",
+                "targetId": str(target_id)
+            }
         }
 
     @staticmethod
@@ -48,7 +54,9 @@ class CooldownActionFactory:
         """
         return {
             "type": "action",
-            "action": "rest"
+            "data": {
+                "type": "rest"
+            }
         }
 
     @staticmethod
@@ -58,5 +66,7 @@ class CooldownActionFactory:
         """
         return {
             "type": "action",
-            "action": "interact"
+            "data": {
+                "type": "interact"
+            }
         }

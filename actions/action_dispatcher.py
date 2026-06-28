@@ -30,10 +30,14 @@ class ActionDispatcher:
             )
             return False
 
-        await self.ws_client.send_message(payload)
-        self.cooldown_manager.set_action_cooldown(30.0)
-        self.logger.info(f"Dispatched Cooldown Action: {action_name.upper()} (30s lock initiated).")
-        return True
+        try:
+            await self.ws_client.send_message(payload)
+            self.cooldown_manager.set_action_cooldown(30.0)
+            self.logger.info(f"Dispatched Cooldown Action: {action_name.upper()} (30s lock initiated).")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to transmit cooldown action '{action_name}': {str(e)}")
+            return False
 
     async def execute_move(self, q: int, r: int) -> bool:
         # PENGAMAN GERAK CERDAS: Jangan kirim perintah jalan jika tujuan = tempat berdiri saat ini
@@ -92,8 +96,12 @@ class ActionDispatcher:
         if self.game_state:
             self.game_state.current_action = f"EQUIPPING {slot.upper()}"
             
-        await self.ws_client.send_message(payload)
-        return True
+        try:
+            await self.ws_client.send_message(payload)
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to transmit free action EQUIP: {str(e)}")
+            return False
 
     async def execute_pickup(self, item_id: str) -> bool:
         payload = FreeActionFactory.create_pickup_payload(item_id)
@@ -102,17 +110,29 @@ class ActionDispatcher:
         if self.game_state:
             self.game_state.current_action = f"PICKING UP {item_id}"
             
-        await self.ws_client.send_message(payload)
-        return True
+        try:
+            await self.ws_client.send_message(payload)
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to transmit free action PICKUP: {str(e)}")
+            return False
 
     async def execute_whisper(self, target_id: str, message: str) -> bool:
         payload = FreeActionFactory.create_whisper_payload(target_id, message)
         self.logger.info(f"Dispatched Free Action: WHISPER to ID {target_id}.")
-        await self.ws_client.send_message(payload)
-        return True
+        try:
+            await self.ws_client.send_message(payload)
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to transmit free action WHISPER: {str(e)}")
+            return False
 
     async def execute_broadcast(self, message: str) -> bool:
         payload = FreeActionFactory.create_broadcast_payload(message)
         self.logger.info(f"Dispatched Free Action: BROADCAST: '{message}'.")
-        await self.ws_client.send_message(payload)
-        return True
+        try:
+            await self.ws_client.send_message(payload)
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to transmit free action BROADCAST: {str(e)}")
+            return False

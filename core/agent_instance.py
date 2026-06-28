@@ -127,6 +127,8 @@ class AgentInstance:
         if frame_type == "can_act_changed":
             can_act_val = message.get("canAct", message.get("data", {}).get("canAct", True))
             self.cooldown_manager.update_server_can_act(bool(can_act_val))
+        elif frame_type == "turn_advanced":
+            self.cooldown_manager.update_server_can_act(True)
 
         if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
             self.game_state.current_action = "ENTERING GAMEPLAY"

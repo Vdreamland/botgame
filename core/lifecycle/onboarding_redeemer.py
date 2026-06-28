@@ -40,13 +40,17 @@ class OnboardingRedeemer:
             if status == "success" or response.get("code") == "SUCCESS":
                 self.logger.info("Onboarding welcome bundle claimed successfully! (2 packs, 3 relics, 13 stones received).")
                 return True
-                
+            
             self.logger.error(f"Redeem API responded with an unexpected status: {response}")
             return False
 
         except APIClientError as ace:
-            # Cegah bot terhenti jika error adalah kode ganda atau klaim paralel
-            if "ALREADY_CLAIMED" in str(ace) or "already claimed" in str(ace).lower():
+            err_str = str(ace).lower()
+            # Cegah log error merah jika welcome bundle terdeteksi sudah pernah diklaim sebelumnya
+            if ("already_claimed" in err_str or 
+                "already claimed" in err_str or 
+                "already redeemed" in err_str or 
+                "conflict" in err_str):
                 self.logger.warning("Redeem API reported that this welcome bundle was already claimed. Syncing...")
                 return True
             self.logger.error(f"Failed to execute onboarding Welcome redeem: {str(ace)}")

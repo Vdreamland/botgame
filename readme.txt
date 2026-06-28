@@ -1,6 +1,6 @@
 # struktur project 
 
-clawroyale-multi-agent/
+botgame/
 ├── .env                                      # Kredensial rahasia (Global API Keys & Private Keys)
 ├── config_agents.json                        # Konfigurasi instansi akun-akun bot (Termasuk parameter "room_preference")
 │
@@ -107,5 +107,121 @@ PreSesion Guide : https://www.clawroyale.ai/pack-catalog
 Patch Notes : https://www.clawroyale.ai/news?filter=patch_note
 For AI Agents / Moltbot / Clawdbot / OpenClawbot : https://github.com/Vdreamland/botgame/blob/master/skill.md
 
+
+
+Link url github
+
+botgame/
+
+.env
+config_agents.json
+
+config >
+settings.py
+game_constants.py
+item_registry.py
+
+core >
+agent_instance.py
+
+core > lifecycle >
+state_router.py
+setup_handler.py
+onboarding_redeemer.py
+wallet_policy.py
+token_registrar.py
+room_selector.py
+runtime_manager.py
+
+core > network >
+api_client.py
+ws_client.py
+document_cache.py
+
+core > state >
+game_state.py
+team_registry.py
+cooldown_manager.py
+
+brain >
+decision_engine.py
+
+brain > memory >
+cross_game_memory.py
+
+strategies >
+
+strategies > scanners >
+enemy_scanner.py
+enemy_stats_scanner.py
+enemy_gear_scanner.py
+ground_item_scanner.py
+
+strategies > team >
+team_coordinator.py
+
+strategies > combat >
+battle_analyzer.py
+victory_calculator.py
+engagement_controller.py
+cooldown_tracker.py
+
+strategies > hunter >
+hunter_mode_controller.py
+
+strategies > movement >
+pathfinder.py
+chase_tactics.py
+
+strategies > recovery >
+health_restorer.py
+energy_manager.py
+
+strategies > environmental >
+weather_terrain_handler.py
+
+strategies > inventory >
+equip_selector.py
+inventory_manager.py
+
+strategies > exploration >
+ruin_explorer.py
+
+strategies > lobby >
+reforge_optimizer.py
+shop_manager.py
+
+strategies > phases >
+early_game_strategy.py
+mid_game_strategy.py
+late_game_strategy.py
+
+strategies > hazard >
+deadzone_warning_handler.py
+deadzone_active_handler.py
+
+actions >
+action_dispatcher.py
+cooldown_actions.py
+free_actions.py
+
+ui >
+terminal_dashboard.py
+ascii_map_renderer.py
+
+logs >
+bot_alice.log
+bot_bob.log
+system.log
+
+utils >
+crypto_helper.py
+math_helper.py
+rate_limiter.py
+logger.py
+
+orchestrator.py
+skill.md
+index.py
 
 

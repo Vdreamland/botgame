@@ -1,0 +1,32 @@
+[2026-06-29 00:38:12] [INFO] Launching Agent Instance for 'Extravaro1'...
+[2026-06-29 00:38:12] [INFO] Autonomous Agent Runtime initialized successfully.
+[2026-06-29 00:38:12] [INFO] Routing current agent state via /accounts/me API...
+[2026-06-29 00:38:17] [INFO] Agent is configured and routed to READY_FREE state.
+[2026-06-29 00:38:17] [WARNING] Account is eligible for the welcome starter bundle. Initiating POST claim...
+[2026-06-29 00:38:17] [ERROR] Redeem API responded with an unexpected status: {'data': {'items': [{'acquiredItemKey': '9:T3', 'acquiredItemName': 'Bomber T3', 'quantity': 1, 'kind': 'pack'}, {'acquiredItemKey': '0:T3', 'acquiredItemName': 'Moltz Expert T3', 'quantity': 1, 'kind': 'pack'}, {'acquiredItemKey': '0', 'acquiredItemName': 'Ruby', 'quantity': 1, 'kind': 'relic'}, {'acquiredItemKey': '1', 'acquiredItemName': 'Emerald', 'quantity': 1, 'kind': 'relic'}, {'acquiredItemKey': '2', 'acquiredItemName': 'Sapphire', 'quantity': 1, 'kind': 'relic'}, {'acquiredItemKey': 'reforge_effect_reroll', 'acquiredItemName': 'Effect Reroll Stone', 'quantity': 10, 'kind': 'item'}, {'acquiredItemKey': 'reforge_effect_add', 'acquiredItemName': 'Effect Add Stone', 'quantity': 1, 'kind': 'item'}, {'acquiredItemKey': 'reforge_effect_remove', 'acquiredItemName': 'Effect Remove Stone', 'quantity': 1, 'kind': 'item'}, {'acquiredItemKey': 'reforge_stat_reroll', 'acquiredItemName': 'Stat Reroll Stone', 'quantity': 1, 'kind': 'item'}], 'replayed': False}, 'success': True}
+[2026-06-29 00:38:17] [INFO] Wallet policy check passed. Agent is recognized as the primary agent.
+[2026-06-29 00:38:17] [INFO] User preference: Free Room selected.
+[2026-06-29 00:38:17] [INFO] Connecting to Matchmaking Queue: wss://cdn.clawroyale.ai/ws/join?version=1.11.2
+[2026-06-29 00:38:17] [INFO] Successfully connected to Matchmaking Queue.
+[2026-06-29 00:38:17] [INFO] Received 'welcome' frame. Joining with preference: free
+[2026-06-29 00:38:18] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:38:18] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:38:48] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:38:48] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:39:23] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:39:23] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:39:53] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:39:53] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:40:23] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:40:23] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:40:53] [INFO] Planning rest execution to replenish EP.
+[2026-06-29 00:40:53] [INFO] Dispatched Cooldown Action: REST (30s lock initiated).
+[2026-06-29 00:41:00] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:41:00] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:41:00] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:41:00] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:41:00] [INFO] Local GameState session successfully cleared.
+[2026-06-29 00:41:00] [WARNING] Stopping Agent Instance for 'Extravaro1'...
+[2026-06-29 00:41:00] [INFO] WebSocket Client safely disconnected.
+[2026-06-29 00:41:00] [WARNING] Autonomous Agent Runtime shut down gracefully.
+[2026-06-29 00:41:00] [INFO] Local GameState session successfully cleared.

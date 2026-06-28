@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ClawRoyale thread-safe and async-safe logging utility.
-Creates isolated log files for each bot instance and streams live output to the console.
+Creates isolated log files for each bot instance to prevent output collision.
 """
 
 import os
-import sys
 import logging
 from typing import Dict
 
@@ -19,7 +18,7 @@ class AgentLogger:
     def get_logger(cls, agent_name: str) -> logging.Logger:
         """
         Returns or creates a separate Logger instance for the specified agent.
-        Streams logs directly to stdout for infinite terminal scrolling.
+        Logs are securely saved to /logs/bot_<name>.log without leaking private credentials.
         """
         safe_name = agent_name.lower().replace(" ", "_")
         
@@ -30,16 +29,7 @@ class AgentLogger:
         logger.setLevel(logging.INFO)
         logger.propagate = False
 
-        # 1. Handler untuk menulis ke layar Terminal PowerShell (Stdout Stream)
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_formatter = logging.Formatter(
-            fmt="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        console_handler.setFormatter(console_formatter)
-        logger.addHandler(console_handler)
-
-        # 2. Handler untuk menulis ke Berkas Log Akun
+        # 1. Handler untuk menulis ke Berkas Log Akun masing-masing bot
         log_file_path = os.path.join("logs", f"bot_{safe_name}.log")
         file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
         file_formatter = logging.Formatter(
@@ -49,7 +39,7 @@ class AgentLogger:
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
-        # 3. Handler untuk menulis ke Berkas Log Sistem Global
+        # 2. Handler untuk menulis ke Berkas Log Sistem Global (Dibaca oleh Dashboard TUI)
         system_log_path = os.path.join("logs", "system.log")
         sys_handler = logging.FileHandler(system_log_path, encoding="utf-8")
         sys_formatter = logging.Formatter(

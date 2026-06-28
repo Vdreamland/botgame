@@ -54,7 +54,7 @@ class DecisionEngine:
         self.blocked_coordinates: Set[str] = set()
         self.deadzone_coordinates: Set[str] = set()
 
-    async def execute_thought_cycle(self) -> None:
+    async def [execute_thought_cycle](file:///brain/decision_engine.py#L52)(self) -> None:
         """
         Executes one complete hierarchical decision/thought cycle [12].
         """
@@ -80,16 +80,23 @@ class DecisionEngine:
         optimal_equip = self.equip_selector.determine_optimal_equips()
         if optimal_equip:
             item_id, slot_name = optimal_equip
-            self.logger.warning(f"TACTICAL DECISION (Free Action): Equipping {item_id} onto slot '{slot_name}' [9].")
+            self.logger.warning(f"TACTICAL DECISION (Free Action): Equipping onto slot '{slot_name}' [9].")
             await self.dispatcher.execute_equip(item_id, slot_name)
 
         # 4. KONTROL LOOTING & PEMBERSIHAN TAS (FREE ACTION)
         inv_action, target_id, details_id = self.inventory_manager.determine_pickup_and_cleanup()
         if inv_action == "PICKUP" and target_id:
-            self.logger.info(f"TACTICAL DECISION (Free Action): Found valuable item. Initiating PICKUP of item ID: {target_id}.")
+            # Tulis log pemungutan bersih hanya menggunakan tipe barang, menyembunyikan ID bising
+            self.logger.info(f"TACTICAL DECISION (Free Action): Found valuable item. Initiating PICKUP of '{details_id}'.")
             await self.dispatcher.execute_pickup(target_id)
         elif inv_action == "DROP_AND_PICKUP" and target_id and details_id:
-            self.logger.info(f"TACTICAL DECISION (Free Action): Inventory full. Dropping obsolete item {details_id} to PICKUP {target_id} [11].")
+            # Cari nama barang lobi yang akan dibuang dari tas secara dinamis
+            dropped_name = "Obsolete Item"
+            for item in self.game_state.inventory:
+                if item.get("id") == details_id:
+                    dropped_name = item.get("type", "Obsolete Item")
+                    break
+            self.logger.info(f"TACTICAL DECISION (Free Action): Inventory full. Dropping '{dropped_name}' to PICKUP '{details_id}' [11].")
             await self.dispatcher.execute_equip(details_id, "drop")
             await self.dispatcher.execute_pickup(target_id)
 
@@ -105,7 +112,7 @@ class DecisionEngine:
             if 0.0 < enemy_hp < 50.0 or win_rate >= 0.70:
                 if not self.hunter.locked_target_id:
                     self.logger.warning(
-                        f"PREDATOR LOCK INITIALIZED: Target {enemy.get('name')} in region {enemy.get('regionId')} "
+                        f"PREDATOR LOCK INITIALIZED: Target {enemy.get('name')} in region {self.game_state.get_region_name(enemy.get('regionId'))} "
                         f"is highly vulnerable (HP: {enemy_hp}%, Win Rate: {win_rate:.1f}%). Overriding current phase strategy!"
                     )
                     self.hunter.lock_target(enemy)
@@ -140,7 +147,8 @@ class DecisionEngine:
         if self.deadzone_warning.is_warning_active():
             if self.game_state.connections:
                 escape_region = random.choice(self.game_state.connections)
-                self.logger.warning(f"TACTICAL DECISION: Dead Zone warning received. Evacuating early to safe region {escape_region} [14].")
+                resolved_escape_name = self.game_state.get_region_name(escape_region)
+                self.logger.warning(f"TACTICAL DECISION: Dead Zone warning received. Evacuating early to safe region {resolved_escape_name} [14].")
                 await self.dispatcher.execute_move(escape_region)
                 return
 
@@ -165,11 +173,14 @@ class DecisionEngine:
                         deadzone_coords=self.deadzone_coordinates
                     )
                     if path:
-                        self.logger.warning(f"COMBAT APPROACH: Moving to connected region {path[0]} to approach target '{self.hunter.locked_target_name}' in {t_region} [11].")
+                        resolved_next_name = self.game_state.get_region_name(path[0])
+                        resolved_target_name = self.game_state.get_region_name(t_region)
+                        self.logger.warning(f"COMBAT APPROACH: Moving to connected region {resolved_next_name} to approach target '{self.hunter.locked_target_name}' in {resolved_target_name} [11].")
                         await self.dispatcher.execute_move(path[0])
                 elif tactic == "RETREAT_TO_RANGE" and self.game_state.connections:
                     retreat_region = random.choice(self.game_state.connections)
-                    self.logger.warning(f"COMBAT RETREAT: Target entered melee range. Retreating to adjacent region {retreat_region} to recover weapon range [11].")
+                    resolved_retreat_name = self.game_state.get_region_name(retreat_region)
+                    self.logger.warning(f"COMBAT RETREAT: Target entered melee range. Retreating to adjacent region {resolved_retreat_name} to recover weapon range [11].")
                     await self.dispatcher.execute_move(retreat_region)
                 elif tactic == "REST":
                     self.logger.info("COMBAT REST: Insufficient EP to attack/move during chase. Rest initiated to restore EP.")
@@ -243,7 +254,8 @@ class DecisionEngine:
             # PENGAMAN MUTLAK: Gerakan jelajah acak mencari ruins ke salah satu connections tetangga (Anti-Freezing)
             if self.game_state.connections:
                 random_region = random.choice(self.game_state.connections)
-                self.logger.info(f"TACTICAL DECISION: No ruins in immediate vision. Moving randomly to adjacent region {random_region} to search.")
+                resolved_random_name = self.game_state.get_region_name(random_region)
+                self.logger.info(f"TACTICAL DECISION: No ruins in immediate vision. Moving randomly to adjacent region {resolved_random_name} to search.")
                 await self.dispatcher.execute_move(random_region)
             return
 
@@ -254,16 +266,20 @@ class DecisionEngine:
             deadzone_coords=self.deadzone_coordinates
         )
         if path:
-            self.logger.info(f"TACTICAL DECISION: Ruins detected. Pathfinder computed optimal path. Moving to next region {path[0]} [10].")
+            resolved_next_name = self.game_state.get_region_name(path[0])
+            resolved_ruins_name = self.game_state.get_region_name(target_ruins_id)
+            self.logger.info(f"TACTICAL DECISION: Ruins detected in {resolved_ruins_name}. Pathfinder computed optimal path. Moving to next region {resolved_next_name} [10].")
             await self.dispatcher.execute_move(path[0])
         elif self.game_state.connections:
             random_region = random.choice(self.game_state.connections)
-            self.logger.info(f"TACTICAL DECISION: Ruins blocked or unpathable. Moving randomly to adjacent region {random_region}.")
+            resolved_random_name = self.game_state.get_region_name(random_region)
+            self.logger.info(f"TACTICAL DECISION: Ruins blocked or unpathable. Moving randomly to adjacent region {resolved_random_name}.")
             await self.dispatcher.execute_move(random_region)
 
     async def _navigate_to_defensive_forest(self, bot_pos: str) -> None:
         """Helper to navigate to defense-boosting forest tiles (+3 DEF)."""
         if self.game_state.connections:
             random_region = random.choice(self.game_state.connections)
-            self.logger.info(f"TACTICAL DECISION: Moving to adjacent defensive forest region {random_region} (+3 DEF).")
+            resolved_random_name = self.game_state.get_region_name(random_region)
+            self.logger.info(f"TACTICAL DECISION: Moving to adjacent defensive forest region {resolved_random_name} (+3 DEF).")
             await self.dispatcher.execute_move(random_region)

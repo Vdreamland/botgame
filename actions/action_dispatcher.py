@@ -46,10 +46,14 @@ class ActionDispatcher:
             return False
 
         payload = CooldownActionFactory.create_move_payload(region_id)
-        self.logger.info(f"Planning move execution to region ID: {region_id} [8].")
         
+        # Sembunyikan cetakan UUID di dalam log aksi final agar lobi bersih
         if self.game_state:
-            self.game_state.current_action = f"MOVING TO [{region_id}]"
+            resolved_name = self.game_state.get_region_name(region_id)
+            self.logger.info(f"Planning move execution to region: {resolved_name} [8].")
+            self.game_state.current_action = f"MOVING TO [{resolved_name}]"
+        else:
+            self.logger.info("Planning move execution [8].")
             
         return await self._send_safe_cooldown_action("move", payload)
 
@@ -64,10 +68,10 @@ class ActionDispatcher:
 
     async def execute_attack(self, target_id: str) -> bool:
         payload = CooldownActionFactory.create_attack_payload(target_id)
-        self.logger.warning(f"Planning attack execution on target ID: {target_id} [11].")
+        self.logger.warning("Planning combat attack execution [11].")
         
         if self.game_state:
-            self.game_state.current_action = f"ATTACKING {target_id}"
+            self.game_state.current_action = "ATTACKING HOSTILE TARGET"
             
         return await self._send_safe_cooldown_action("attack", payload)
 
@@ -91,7 +95,7 @@ class ActionDispatcher:
 
     async def execute_equip(self, item_id: str, slot: str) -> bool:
         payload = FreeActionFactory.create_equip_payload(item_id, slot)
-        self.logger.info(f"Dispatched Free Action: EQUIP {slot.upper()} (Item ID: {item_id}).")
+        self.logger.info(f"Dispatched Free Action: EQUIP {slot.upper()}.")
         
         if self.game_state:
             self.game_state.current_action = f"EQUIPPING {slot.upper()}"
@@ -105,10 +109,10 @@ class ActionDispatcher:
 
     async def execute_pickup(self, item_id: str) -> bool:
         payload = FreeActionFactory.create_pickup_payload(item_id)
-        self.logger.info(f"Dispatched Free Action: PICKUP (Item ID: {item_id}).")
+        self.logger.info("Dispatched Free Action: PICKUP.")
         
         if self.game_state:
-            self.game_state.current_action = f"PICKING UP {item_id}"
+            self.game_state.current_action = "PICKING UP ITEM"
             
         try:
             await self.ws_client.send_message(payload)
@@ -119,7 +123,7 @@ class ActionDispatcher:
 
     async def execute_whisper(self, target_id: str, message: str) -> bool:
         payload = FreeActionFactory.create_whisper_payload(target_id, message)
-        self.logger.info(f"Dispatched Free Action: WHISPER to ID {target_id}.")
+        self.logger.info("Dispatched Free Action: WHISPER.")
         try:
             await self.ws_client.send_message(payload)
             return True
@@ -129,7 +133,7 @@ class ActionDispatcher:
 
     async def execute_broadcast(self, message: str) -> bool:
         payload = FreeActionFactory.create_broadcast_payload(message)
-        self.logger.info(f"Dispatched Free Action: BROADCAST: '{message}'.")
+        self.logger.info("Dispatched Free Action: BROADCAST.")
         try:
             await self.ws_client.send_message(payload)
             return True

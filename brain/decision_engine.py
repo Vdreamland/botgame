@@ -54,7 +54,7 @@ class DecisionEngine:
         self.blocked_coordinates: Set[str] = set()
         self.deadzone_coordinates: Set[str] = set()
 
-    async def [execute_thought_cycle](file:///brain/decision_engine.py#L52)(self) -> None:
+    async def execute_thought_cycle(self) -> None:
         """
         Executes one complete hierarchical decision/thought cycle [12].
         """

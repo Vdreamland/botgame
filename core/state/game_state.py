@@ -34,7 +34,7 @@ class GameState:
 
         self.alert_gauge: int = 0
         self.current_terrain: str = "plains"
-        self.current_weather: str = "clear"
+        self.current_weather = "clear"
         self.is_death_zone: bool = False
         self.day: int = 1
         self.turn: int = 1
@@ -89,7 +89,7 @@ class GameState:
             
         return f"Region {region_id[:8]}"
 
-    def [update_from_server_frame](file:///core/state/game_state.py#L40)(self, frame: Dict[str, Any]) -> None:
+    def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
         """
         Parses incoming game state updates from the WebSocket server [8, 10, 11].
         Supports both REST payload shapes and official /ws/agent WebSocket view structures.
@@ -144,6 +144,18 @@ class GameState:
             self.connections = current_region.get("connections") or data.get("connections") or []
             self.visible_ruins = view.get("visibleRuins") or data.get("visibleRuins") or []
             self.visible_monsters = view.get("visibleMonsters") or data.get("visibleMonsters") or []
+
+            # Daftarkan secara dinamis ubin yang sedang kita injak saat ini ke memori
+            if self.current_region_id and self.current_region_name:
+                self.dynamic_region_names[self.current_region_id] = self.current_region_name
+
+            # Daftarkan wilayah Dead Zone yang akan meluas secara dinamis dari server
+            pending_zones = view.get("pendingDeathzones") or data.get("pendingDeathzones") or []
+            for zone in pending_zones:
+                z_id = zone.get("id")
+                z_name = zone.get("name")
+                if z_id and z_name:
+                    self.dynamic_region_names[z_id] = z_name
 
             # Cetak log sinkronisasi jika bot sukses berpindah wilayah
             if old_region_id != self.current_region_id and self.player_id:
@@ -234,11 +246,15 @@ class GameState:
                 item_details = []
                 for i in self.items_on_ground:
                     i_type = i.get("type") or i.get("name") or i.get("itemType") or "Unknown"
-                    item_details.append(f"'{i_type}'")
+                    i_id = i.get("id") or i.get("itemId") or "Unknown"
+                    if i_type == "Unknown":
+                        item_details.append(f"Unknown (Raw Data: {i})")
+                    else:
+                        item_details.append(f"{i_type} (ID: {i_id})")
                 self.logger.info(f"Loot radar: Detected {len(self.items_on_ground)} items on ground: {', '.join(item_details)}.")
 
         elif frame_type == "hp_changed":
-            # Ekstrak ID target secara berlapis (termasuk objek bersarang)
+            # Ekstrak ID pelaku gerak secara berlapis (termasuk objek bersarang)
             agent_obj = data.get("agent", {}) if isinstance(data, dict) else {}
             player_obj = data.get("player", {}) if isinstance(data, dict) else {}
             frame_agent = frame.get("agent", {}) if isinstance(frame, dict) else {}

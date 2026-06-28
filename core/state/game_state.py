@@ -38,12 +38,13 @@ class GameState:
         self.enemies: List[Dict[str, Any]] = []
         self.allies_nearby: List[Dict[str, Any]] = []
 
-        self.current_action: str = "Waiting in Queue"
-        self.current_target: str = "None"
+        self.current_action = "Waiting in Queue"
+        self.current_target = "None"
 
     def update_from_server_frame(self, frame: Dict[str, Any]) -> None:
         """
         Parses incoming game state updates from the WebSocket server [8, 10, 11].
+        Supports both REST payload shapes and official /ws/agent WebSocket view structures.
         """
         frame_type = frame.get("type")
         data = frame.get("data", {}) if frame.get("data") else frame
@@ -54,43 +55,56 @@ class GameState:
             return
 
         if frame_type == "agent_view":
-            self_state = data.get("self", data.get("agent", {}))
+            # Dapatkan objek view & self_state yang valid dari WebSocket payload resmi [Gameplay WebSocket]
+            view = data.get("view", {}) if isinstance(data, dict) else {}
+            self_state = view.get("self") or data.get("self") or data.get("agent") or {}
+            
             if self_state:
-                if not self.player_id and self_state.get("id"):
-                    self.player_id = self_state.get("id")
+                # Daftarkan Player ID yang digunakan untuk pemfilteran aksi
+                resolved_id = self_state.get("id") or frame.get("agentId")
+                if not self.player_id and resolved_id:
+                    self.player_id = resolved_id
                     self.team_registry.register_ally(self.player_id, self.agent_name)
                     self.logger.info(f"Registered Player ID: {self.player_id} into the Team Registry.")
 
                 self.hp = float(self_state.get("hp", self.hp))
                 self.ep = float(self_state.get("ep", self.ep))
-                
                 self.q = int(self_state.get("q", self.q))
                 self.r = int(self_state.get("r", self.r))
+                
+                # alertGauge ada di dalam self_state berdasarkan dokumentasi resmi
+                self.alert_gauge = int(self_state.get("alertGauge", self.alert_gauge))
 
                 loadout = self_state.get("loadout", {})
-                self.equipped_weapon = loadout.get("weapon", "")
+                self.equipped_weapon = loadout.get("weapon") or self_state.get("equippedWeapon", "")
                 self.equipped_armor = loadout.get("armor", "")
                 self.equipped_relics = loadout.get("relics", [])
                 self.has_full_set = loadout.get("fullSet", False)
 
-            map_context = data.get("mapContext", {})
-            if map_context:
-                self.alert_gauge = int(map_context.get("alertGauge", self.alert_gauge))
-                self.current_terrain = map_context.get("terrain", self.current_terrain)
-                self.current_weather = map_context.get("weather", self.current_weather)
-                self.is_death_zone = bool(map_context.get("isDeathZone", self.is_death_zone))
-                self.day = int(map_context.get("day", self.day))
-                self.turn = int(map_context.get("turn", self.turn))
+            # Ekstrak data wilayah / mapContext
+            current_region = view.get("currentRegion", {})
+            map_context = data.get("mapContext", {}) or {}
+            
+            # Gabungkan parsing data wilayah dari dokumentasi resmi / legacy
+            self.current_terrain = current_region.get("terrain") or map_context.get("terrain") or self.current_terrain
+            self.current_weather = current_region.get("weather") or map_context.get("weather") or self.current_weather
+            self.is_death_zone = bool(current_region.get("isDeathZone", map_context.get("isDeathZone", self.is_death_zone)))
+            
+            # Turn bisa berada di tingkat atas frame atau di mapContext
+            self.turn = int(frame.get("turn") or data.get("turn") or map_context.get("turn") or self.turn)
+            self.day = int(map_context.get("day") or self.day)
 
-            self.items_on_ground = data.get("items", [])
+            # Ground items berada di view.currentRegion.items atau data.items
+            self.items_on_ground = current_region.get("items") or data.get("items") or []
 
-            other_players = data.get("players", [])
+            # Musuh & Aliansi berada di view.visibleAgents atau data.players
+            other_players = view.get("visibleAgents") or data.get("players") or []
             clean_enemies = []
             clean_allies = []
 
             for p in other_players:
-                p_id = p.get("id", "")
-                p_name = p.get("name", "")
+                p_id = p.get("id") or p.get("agentId") or ""
+                p_name = p.get("name") or p.get("agentName") or ""
 
                 if p_id == self.player_id:
                     continue
@@ -120,23 +134,53 @@ class GameState:
             self.current_weather = data.get("weather", self.current_weather)
 
         elif frame_type == "hp_changed":
+            # Ekstrak ID target secara berlapis (termasuk objek bersarang)
+            agent_obj = data.get("agent", {}) if isinstance(data, dict) else {}
+            player_obj = data.get("player", {}) if isinstance(data, dict) else {}
+            frame_agent = frame.get("agent", {}) if isinstance(frame, dict) else {}
+            frame_player = frame.get("player", {}) if isinstance(frame, dict) else {}
+
             target_player_id = (
+                agent_obj.get("id") or player_obj.get("id") or
+                frame_agent.get("id") or frame_player.get("id") or
                 data.get("agentId") or data.get("playerId") or data.get("id") or
                 frame.get("agentId") or frame.get("playerId") or frame.get("id") or ""
             )
+
             if target_player_id == self.player_id:
-                new_hp = float(data.get("hp", frame.get("hp", self.hp)))
+                new_hp = float(
+                    data.get("hp") or frame.get("hp") or
+                    agent_obj.get("hp") or frame_agent.get("hp") or
+                    self.hp
+                )
                 self.hp = new_hp
                 self.logger.info(f"Health update received: {self.hp:.1f}%")
 
         elif frame_type == "agent_moved":
+            # Ekstrak ID pelaku gerak secara berlapis (termasuk objek bersarang)
+            agent_obj = data.get("agent", {}) if isinstance(data, dict) else {}
+            player_obj = data.get("player", {}) if isinstance(data, dict) else {}
+            frame_agent = frame.get("agent", {}) if isinstance(frame, dict) else {}
+            frame_player = frame.get("player", {}) if isinstance(frame, dict) else {}
+
             moving_player_id = (
+                agent_obj.get("id") or player_obj.get("id") or
+                frame_agent.get("id") or frame_player.get("id") or
                 data.get("agentId") or data.get("playerId") or data.get("id") or
                 frame.get("agentId") or frame.get("playerId") or frame.get("id") or ""
             )
+
             if moving_player_id == self.player_id:
-                new_q = int(data.get("q", frame.get("q", self.q)))
-                new_r = int(data.get("r", frame.get("r", self.r)))
+                new_q = int(
+                    data.get("q") or frame.get("q") or
+                    agent_obj.get("q") or frame_agent.get("q") or
+                    self.q
+                )
+                new_r = int(
+                    data.get("r") or frame.get("r") or
+                    agent_obj.get("r") or frame_agent.get("r") or
+                    self.r
+                )
                 self.q = new_q
                 self.r = new_r
                 self.logger.info(f"Coordinates synchronized: Moved to hex ({self.q}, {self.r}) [8].")

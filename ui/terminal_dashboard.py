@@ -37,9 +37,13 @@ class TerminalDashboard:
         """
         Renders the elite visual dashboard with hex map and active log stream.
         """
-        # Gunakan Escape Sequence ANSI untuk memindahkan kursor kembali ke pojok kiri atas
-        # Ini mencegah layar PowerShell berkedip, bergetar, atau menumpuk teks ke bawah
-        self.console.print("\033[H", end="")
+        # Deteksi OS untuk menggunakan mekanisme pembersihan layar yang kompatibel
+        if os.name == 'nt':
+            # Menggunakan cls asli Windows untuk membersihkan layar tanpa merusak buffer lobi PowerShell
+            os.system('cls')
+        else:
+            # Menggunakan ANSI Escape Sequence untuk sistem operasi Unix (Linux/macOS)
+            self.console.print("\033[H", end="")
 
         # 1. Tabel Registrasi Status Bot Aktif
         summary_table = Table(expand=True, border_style="cyan")

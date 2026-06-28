@@ -51,14 +51,19 @@ class AgentInstance:
 
         self.ws_client.on_message_callback = self._on_websocket_message
         self._is_thinking = False
+        self._ticker_task = None
 
     async def start(self) -> None:
         self.logger.info(f"Launching Agent Instance for '{self.agent_name}'...")
         self.game_state.current_action = "MATCHMAKING QUEUE"
         await self.runtime.start()
+        self._ticker_task = asyncio.create_task(self._cooldown_ticker_loop())
 
     async def stop(self) -> None:
         self.logger.warning(f"Stopping Agent Instance for '{self.agent_name}'...")
+        if self._ticker_task:
+            self._ticker_task.cancel()
+            self._ticker_task = None
         await self.runtime.stop()
         await self.api_client.close()
         self.game_state.clean_session_data()
@@ -76,6 +81,26 @@ class AgentInstance:
         finally:
             self._is_thinking = False
 
+    async def _cooldown_ticker_loop(self) -> None:
+        """
+        Background ticker to periodically wake up the brain if a cooldown expires
+        and the bot is idle, ensuring it never stalls even if the WebSocket is silent [12].
+        """
+        while True:
+            try:
+                await asyncio.sleep(0.5)
+                if (self.cooldown_manager.can_execute_action() and 
+                    self.ws_client.is_connected and 
+                    self.ws_client.is_gameplay_active and 
+                    not self._is_thinking):
+                    
+                    self._is_thinking = True
+                    asyncio.create_task(self._safe_thought_cycle())
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self.logger.error(f"Error in cooldown ticker loop: {str(e)}")
+
     async def _on_websocket_message(self, message: Dict[str, Any]) -> None:
         """
         Processes incoming JSON frames from the WebSocket connection [5, 8, 12].
@@ -92,13 +117,11 @@ class AgentInstance:
         if frame_type in ["turn_advanced", "hp_changed", "agent_moved", "error"]:
             self.logger.info(f"Dynamic game event received: '{frame_type}'")
 
-        # AKTIVASI DINAMIS YANG HILANG: Sadarkan bot bahwa ia sudah masuk ke dalam arena pertempuran! [5]
         if frame_type in ["agent_view", "turn_advanced", "can_act_changed"]:
             if not self.ws_client.is_gameplay_active:
                 self.logger.warning("Gameplay mode activated! Brain functions online.")
-            self.ws_client.is_gameplay_active = True
+                self.ws_client.is_gameplay_active = True
 
-        # Sinkronisasikan state permainan lokal dari server
         self.game_state.update_from_server_frame(message)
 
         if frame_type == "can_act_changed":
@@ -108,11 +131,10 @@ class AgentInstance:
         if self.ws_client.is_gameplay_active and self.game_state.current_action == "MATCHMAKING QUEUE":
             self.game_state.current_action = "ENTERING GAMEPLAY"
 
-        # Picu pemikiran otonom hanya jika: Cooldown siap, Terkoneksi, di Arena, dan TIDAK SEDANG BERPIKIR [12]
         if (self.cooldown_manager.can_execute_action() and 
-                self.ws_client.is_connected and 
-                self.ws_client.is_gameplay_active and 
-                not self._is_thinking):
+            self.ws_client.is_connected and 
+            self.ws_client.is_gameplay_active and 
+            not self._is_thinking):
             
             self._is_thinking = True
             asyncio.create_task(self._safe_thought_cycle())

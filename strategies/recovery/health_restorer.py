@@ -35,16 +35,23 @@ class HealthRestorer:
         closest_fit_diff = 999.0
 
         for item in inventory_items:
-            item_id = item.get("id", "")
+            item_id = item.get("id") or item.get("itemId") or ""
             item_type = item.get("type", "")  # Kode tipe item dari item_registry
 
-            if item_type in ITEM_DATABASE:
-                info = ITEM_DATABASE[item_type]
-                category = info.get("category", "")
+            # Normalisasi pencarian tipe obat terhadap ITEM_DATABASE secara case-insensitive
+            normalized_search = item_type.lower().replace("_", " ").strip()
+            matched_info = None
+            for db_key, db_info in ITEM_DATABASE.items():
+                if db_key.lower().replace("_", " ").strip() == normalized_search:
+                    matched_info = db_info
+                    break
+
+            if matched_info:
+                category = matched_info.get("category", "")
                 
                 # Hanya evaluasi item dengan kategori consumable penyembuh
-                if category == "consumable" and info.get("heal_value", 0) > 0:
-                    heal_val = float(info.get("heal_value", 0))
+                if category == "consumable" and matched_info.get("heal_value", 0) > 0:
+                    heal_val = float(matched_info.get("heal_value", 0))
                     
                     # Hitung perbedaan efisiensi penyembuhan
                     diff = abs(missing_hp - heal_val)
@@ -63,13 +70,19 @@ class HealthRestorer:
             # Cari obat darurat apa pun
             for item in inventory_items:
                 item_type = item.get("type", "")
-                if item_type in ITEM_DATABASE:
-                    info = ITEM_DATABASE[item_type]
-                    if info.get("category") == "consumable" and info.get("heal_value", 0) > 0:
+                normalized_search = item_type.lower().replace("_", " ").strip()
+                matched_info = None
+                for db_key, db_info in ITEM_DATABASE.items():
+                    if db_key.lower().replace("_", " ").strip() == normalized_search:
+                        matched_info = db_info
+                        break
+
+                if matched_info:
+                    if matched_info.get("category") == "consumable" and matched_info.get("heal_value", 0) > 0:
                         return {
-                            "item_id": item.get("id"),
+                            "item_id": item.get("id") or item.get("itemId"),
                             "item_type": item_type,
-                            "heal_value": float(info.get("heal_value"))
+                            "heal_value": float(matched_info.get("heal_value"))
                         }
 
         return best_item

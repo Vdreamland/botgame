@@ -23,6 +23,13 @@ LOOT_PRIORITY = {
     "Dagger": 1
 }
 
+# Tabel kekuatan pelindung badan (Armor)
+ARMORS = {
+    "Plate Armor": 3,
+    "Chainmail": 2,
+    "Leather Armor": 1
+}
+
 class UtilityDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
@@ -63,8 +70,40 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better weapon: {best_weapon_name} (+{best_weapon_bonus} ATK)."
             )
 
-        # 2. FITUR PEMBONGKARAN PETI PERSEDIAAN OTOMATIS (Supply Cache Interact)
-        # Menyeleksi jika ada Supply Cache aktif yang belum digunakan dan belum pernah kita buka sebelumnya
+        # 1.1 LOGIKA PEMAKAIAN ARMOR TERBAIK OTOMATIS (0 EP, Free Action)
+        equipped_armor = view_self.get("equippedArmor")
+        current_armor_score = 0
+        if equipped_armor:
+            ar_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
+            current_armor_score = ARMORS.get(ar_name, 0)
+
+        best_armor_id = None
+        best_armor_name = ""
+        best_armor_score = current_armor_score
+
+        for item in inventory:
+            if isinstance(item, dict):
+                item_name = item.get("name") or item.get("displayName") or ""
+                item_id = item.get("id") or item_name
+            else:
+                item_name = str(item)
+                item_id = item_name
+
+            if item_name in ARMORS:
+                score = ARMORS.get(item_name, 0)
+                if score > best_armor_score:
+                    best_armor_score = score
+                    best_armor_id = item_id
+                    best_armor_name = item_name
+
+        if best_armor_id:
+            context.last_action_type = "equip"
+            return UtilityBehavior.build_equip_action(
+                item_id=best_armor_id,
+                thought=f"Equipping better armor: {best_armor_name}."
+            )
+
+        # 2. FITUR PEMBONGKARAN PETI PERSEDIAAN OTOMATIS
         interactables = current_region.get("interactables", [])
         for fac in interactables:
             if isinstance(fac, dict):
@@ -102,7 +141,7 @@ class UtilityDecider(BaseDecider):
                     priority = 10
                 elif g_name in ["Katana", "Sniper rifle"]:
                     priority = 9
-                elif "Armor" in g_name or g_name == "Chainmail":
+                elif "Armor" in g_name or g_name == "Chainmail" or g_name in ARMORS:
                     priority = 8
                 elif g_name == "Sword":
                     priority = 7
@@ -126,7 +165,6 @@ class UtilityDecider(BaseDecider):
                 w_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
                 carried_weapons.append({"name": w_name, "atk_bonus": current_atk_bonus})
                 
-            equipped_armor = view_self.get("equippedArmor")
             if equipped_armor:
                 ar_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
                 carried_armors.append({"name": ar_name})
@@ -140,7 +178,7 @@ class UtilityDecider(BaseDecider):
                 if item_name in WEAPONS:
                     bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
                     carried_weapons.append({"name": item_name, "atk_bonus": bonus})
-                elif "Armor" in item_name or item_name == "Chainmail":
+                elif "Armor" in item_name or item_name == "Chainmail" or item_name in ARMORS:
                     carried_armors.append({"name": item_name})
 
             for priority, g_name, g_id in prioritized_items:
@@ -175,7 +213,7 @@ class UtilityDecider(BaseDecider):
                                 thought=f"Looting stronger weapon: {g_name} to replace {weakest_carried_weapon['name']}."
                             )
 
-                elif "Armor" in g_name or g_name == "Chainmail":
+                elif "Armor" in g_name or g_name == "Chainmail" or g_name in ARMORS:
                     if len(carried_armors) < 2:
                         context.last_action_type = "pickup"
                         return UtilityBehavior.build_pickup_action(

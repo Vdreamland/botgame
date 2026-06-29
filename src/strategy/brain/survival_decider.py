@@ -8,7 +8,7 @@ class SurvivalDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
-        self_id = view_self.get("id", "")  # Diinisiasi secara aman guna mencegah error 'self_id is not defined'
+        self_id = view_self.get("id", "")
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
@@ -17,7 +17,6 @@ class SurvivalDecider(BaseDecider):
         is_active_deathzone = current_region.get("isDeathZone", False)
         current_turn = view.get("turn", 0)
 
-        # PRIORITAS 1: LARI MUTLAK JIKA BERADA DI DEATH ZONE AKTIF
         if is_active_deathzone:
             connections = current_region.get("connections", [])
             safe_options = [
@@ -54,7 +53,6 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Standing in ACTIVE deathzone. Fleeing immediately to: {target_name}"
                 )
 
-        # PRIORITAS 2: LARI DARI ANCAMAN TEMPUR AKTIF (HP < 60 & Ada Pemain atau Monster berdiri di ubin kita!)
         visible_agents = view.get("visibleAgents", [])
         enemies_here = [a for a in visible_agents if a.get("id") != self_id and a.get("regionId") == region_id and a.get("isAlive", True)]
         
@@ -99,7 +97,6 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Under threat ({hp}/100) from close-range hostiles. Fleeing to safe region: {target_name}"
                 )
 
-        # PRIORITAS 3: PEMULIHAN HP DARURAT (Hanya dievaluasi jika berada di koordinat aman dari musuh langsung)
         if hp < 50:
             for item in inventory:
                 if isinstance(item, dict):
@@ -112,7 +109,6 @@ class SurvivalDecider(BaseDecider):
                             thought=f"HP critical ({hp}/100) in safe zone. Consuming {item_name} to heal."
                         )
 
-        # PRIORITAS 4: PEMULIHAN EP DARURAT (Hanya dievaluasi jika berada di koordinat aman dari musuh langsung)
         if ep < 2:
             for item in inventory:
                 if isinstance(item, dict):
@@ -125,7 +121,6 @@ class SurvivalDecider(BaseDecider):
                             thought=f"Energy critical ({ep}/10) in safe zone. Consuming {item_name} to recover EP."
                         )
 
-        # PRIORITAS 5: FASILITAS MEDIS (Maksimal hanya boleh berinteraksi tepat 1 kali saja per wilayah)
         if hp < 70:
             already_interacted = any(
                 act.get("type") == "interact" and act.get("regionId") == region_id 
@@ -144,7 +139,6 @@ class SurvivalDecider(BaseDecider):
                                 thought="HP is low. Interacting with Medical Facility to heal."
                             )
 
-        # PRIORITAS 6: MENGHINDARI PENDING DEATH ZONE
         in_danger_zone = (region_id in context.pending_deathzones)
         if in_danger_zone or (hp < 40 and threats_here):
             connections = current_region.get("connections", [])

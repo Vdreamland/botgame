@@ -8,6 +8,7 @@ class SurvivalDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
+        self_id = view_self.get("id", "")
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
@@ -15,20 +16,17 @@ class SurvivalDecider(BaseDecider):
         region_id = current_region.get("id")
         is_active_deathzone = current_region.get("isDeathZone", False)
 
-        # PRIORITAS 1: SELALU LARI TERLEBIH DAHULU JIKA BERADA DI DEATH ZONE AKTIF (Jangan isi HP di dalam zona maut!)
+        # PRIORITAS 1: LARI MUTLAK JIKA BERADA DI DEATH ZONE AKTIF
         if is_active_deathzone:
             connections = current_region.get("connections", [])
-            
             safe_options = [
                 r_id for r_id in connections 
                 if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
             ]
-            
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
             ]
-            
             chosen_target = None
             if safe_options:
                 chosen_target = random.choice(safe_options)
@@ -45,7 +43,38 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Standing in ACTIVE deathzone. Fleeing immediately to: {target_name}"
                 )
 
-        # PRIORITAS 2: HP RECOVERY (Hanya dievaluasi jika berada di wilayah aman)
+        # PRIORITAS 2: LARI DARI ANCAMAN TEMPUR AKTIF (HP < 60 & Ada musuh berdiri di wilayah yang sama!)
+        # Jangan gunakan obat atau diam di tempat jika sedang digebuki musuh. Kabur dahulu, sembuhkan kemudian!
+        visible_agents = view.get("visibleAgents", [])
+        enemies_here = [a for a in visible_agents if a.get("id") != self_id and a.get("regionId") == region_id and a.get("isAlive", True)]
+        
+        if hp < 60 and enemies_here:
+            connections = current_region.get("connections", [])
+            safe_options = [
+                r_id for r_id in connections 
+                if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
+            ]
+            pending_options = [
+                r_id for r_id in connections 
+                if r_id not in context.active_deathzones
+            ]
+            chosen_target = None
+            if safe_options:
+                chosen_target = random.choice(safe_options)
+            elif pending_options:
+                chosen_target = random.choice(pending_options)
+            elif connections:
+                chosen_target = random.choice(connections)
+
+            if chosen_target:
+                context.last_action_type = "move"
+                target_name = context.region_names.get(chosen_target, f"Hex-{chosen_target[:8]}")
+                return UtilityBehavior.build_move_action(
+                    region_id=chosen_target,
+                    thought=f"Under threat ({hp}/100) with {len(enemies_here)} enemies. Fleeing to safe region: {target_name}"
+                )
+
+        # PRIORITAS 3: PEMULIHAN HP DARURAT (Hanya dievaluasi jika berada di koordinat aman dari musuh langsung)
         if hp < 50:
             for item in inventory:
                 if isinstance(item, dict):
@@ -58,7 +87,7 @@ class SurvivalDecider(BaseDecider):
                             thought=f"HP critical ({hp}/100) in safe zone. Consuming {item_name} to heal."
                         )
 
-        # PRIORITAS 3: EP RECOVERY (Hanya dievaluasi jika berada di wilayah aman)
+        # PRIORITAS 4: PEMULIHAN EP DARURAT (Hanya dievaluasi jika berada di koordinat aman dari musuh langsung)
         if ep < 2:
             for item in inventory:
                 if isinstance(item, dict):
@@ -71,14 +100,12 @@ class SurvivalDecider(BaseDecider):
                             thought=f"Energy critical ({ep}/10) in safe zone. Consuming {item_name} to recover EP."
                         )
 
-        # PRIORITAS 4: FASILITAS MEDIS (Maksimal hanya boleh berinteraksi tepat 1 kali saja per wilayah)
+        # PRIORITAS 5: FASILITAS MEDIS (Hanya dievaluasi jika berada di koordinat aman dari musuh langsung)
         if hp < 70:
-            # Memastikan bot belum pernah mengirim aksi "interact" di wilayah aktif saat ini
             already_interacted = any(
                 act.get("type") == "interact" and act.get("regionId") == region_id 
                 for act in context.history_actions
             )
-            
             if not already_interacted:
                 interactables = current_region.get("interactables", [])
                 for fac in interactables:
@@ -92,24 +119,18 @@ class SurvivalDecider(BaseDecider):
                                 thought="HP is low. Interacting with Medical Facility to heal."
                             )
 
-        # PRIORITAS 5: PENDING DEATH ZONE / ANCAMAN SEKITAR
+        # PRIORITAS 6: MENGHINDARI PENDING DEATH ZONE
         in_danger_zone = (region_id in context.pending_deathzones)
-        visible_agents = view.get("visibleAgents", [])
-        enemies_here = [a for a in visible_agents if a.get("id") != view_self.get("id") and a.get("regionId") == region_id]
-        
         if in_danger_zone or (hp < 40 and enemies_here):
             connections = current_region.get("connections", [])
-            
             safe_options = [
                 r_id for r_id in connections 
                 if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
             ]
-            
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
             ]
-            
             chosen_target = None
             if safe_options:
                 chosen_target = random.choice(safe_options)

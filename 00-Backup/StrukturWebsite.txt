@@ -38,6 +38,7 @@ botgame/
 │   │   │
 │   │   └── battle/          # --- MODUL KONEKSI DALAM GAME (PERTARUNGAN) ---
 │   │       ├── __init__.py
+│   │       ├── state_parser.py
 │   │       └── agent_handler.py # Handler '/ws/agent' (Menghubungkan agent_view ke otak bot)
 │   │
 │   ├── models/              # TYPE SAFETY & VALIDASI DATA (Skema Pydantic)

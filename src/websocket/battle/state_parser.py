@@ -1,0 +1,91 @@
+from typing import Dict, Any, Optional
+from config.game_data import WEAPONS
+from src.strategy.evaluators.threat_evaluator import ThreatEvaluator
+
+class StateParser:
+    
+    @staticmethod
+    def parse(view: Dict[str, Any], context: Any, computed_action: Optional[Dict[str, Any]], is_new_turn: bool) -> Dict[str, Any]:
+        view_self = view.get("self", {})
+        
+        hp = view_self.get("hp", 100)
+        max_hp = view_self.get("maxHp", 100)
+        ep = view_self.get("ep", 10)
+        max_ep = view_self.get("maxEp", 10)
+        atk = view_self.get("atk", 25)
+        def_val = view_self.get("def", 5)
+        kills = view_self.get("kills", 0)
+        server_is_alive = view_self.get("isAlive", True)
+
+        equipped_weapon = view_self.get("equippedWeapon")
+        weapon_name = "None"
+        if equipped_weapon:
+            weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
+
+        equipped_armor = view_self.get("equippedArmor")
+        armor_name = "None"
+        if equipped_armor:
+            armor_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
+
+        inventory_raw = view_self.get("inventory", [])
+        inventory_counts = {}
+        for item in inventory_raw:
+            name = item.get("name") or item.get("displayName") or "Unknown Item" if isinstance(item, dict) else str(item)
+            inventory_counts[name] = inventory_counts.get(name, 0) + 1
+
+        if not inventory_counts:
+            inventory_str = "None"
+        else:
+            inventory_str = " / ".join(f"{name} x{qty}" for name, qty in inventory_counts.items())
+
+        current_region = view.get("currentRegion", {})
+        location_now = current_region.get("name", "Unknown Location")
+
+        ground_raw = current_region.get("items", [])
+        ground_counts = {}
+        for g_item in ground_raw:
+            g_name = g_item.get("name") or g_item.get("displayName") or "Unknown Item" if isinstance(g_item, dict) else str(g_item)
+            ground_counts[g_name] = ground_counts.get(g_name, 0) + 1
+
+        if not ground_counts:
+            ground_str = "None"
+        else:
+            ground_str = " / ".join(f"{g_name} x{qty}" for g_name, qty in ground_counts.items())
+
+        location_planning = "None"
+        if computed_action:
+            action_data = computed_action.get("data", {})
+            action_type = action_data.get("type")
+            if action_type == "move":
+                target_id = action_data.get("regionId", "")
+                location_planning = context.region_names.get(target_id, f"Hex-{target_id[:8]}")
+            elif action_type == "rest":
+                location_planning = "RESTING"
+            elif action_type == "use_item":
+                location_planning = "HEALING"
+            elif action_type == "pickup":
+                location_planning = "PICKING UP ITEM"
+            elif action_type == "equip":
+                location_planning = "EQUIPPING WEAPON"
+
+        layer0, layer1, layer2 = ThreatEvaluator.scan_enemies(view, view_self.get("id", ""))
+
+        return {
+            "server_is_alive": server_is_alive,
+            "hp": hp,
+            "max_hp": max_hp,
+            "ep": ep,
+            "max_ep": max_ep,
+            "atk": atk,
+            "def_val": def_val,
+            "kills": kills,
+            "weapon_name": weapon_name,
+            "armor_name": armor_name,
+            "inventory_str": inventory_str,
+            "ground_str": ground_str,
+            "location_now": location_now,
+            "location_planning": location_planning,
+            "layer0": layer0,
+            "layer1": layer1,
+            "layer2": layer2
+        }

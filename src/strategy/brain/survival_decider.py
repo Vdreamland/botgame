@@ -8,24 +8,36 @@ class SurvivalDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
-        self_id = view_self.get("id", "")
+        self_id = view_self.get("id", "")  # Diinisiasi secara aman guna mencegah error 'self_id is not defined'
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
         current_region = view.get("currentRegion", {})
         region_id = current_region.get("id")
         is_active_deathzone = current_region.get("isDeathZone", False)
+        current_turn = view.get("turn", 0)
 
+        # PRIORITAS 1: LARI MUTLAK JIKA BERADA DI DEATH ZONE AKTIF
         if is_active_deathzone:
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 
                 if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
             ]
+            
+            if current_turn > 15 and safe_options:
+                safe_non_corners = [
+                    r_id for r_id in safe_options
+                    if len(context.map_graph.get(r_id, [1, 2, 3, 4])) > 3
+                ]
+                if safe_non_corners:
+                    safe_options = safe_non_corners
+
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
             ]
+            
             chosen_target = None
             if safe_options:
                 chosen_target = random.choice(safe_options)
@@ -42,27 +54,35 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Standing in ACTIVE deathzone. Fleeing immediately to: {target_name}"
                 )
 
-        # MENDETEKSI SELURUH ANCAMAN SE-TILE AKTIF (Gabungan Pemain Lawan & Monster/Bandit)
+        # PRIORITAS 2: LARI DARI ANCAMAN TEMPUR AKTIF (HP < 60 & Ada Pemain atau Monster berdiri di ubin kita!)
         visible_agents = view.get("visibleAgents", [])
         enemies_here = [a for a in visible_agents if a.get("id") != self_id and a.get("regionId") == region_id and a.get("isAlive", True)]
         
         visible_monsters = view.get("visibleMonsters", [])
         monsters_here = [m for m in visible_monsters if m.get("regionId") == region_id]
         
-        # Perekaman seluruh ancaman fisik di ubin yang sama (Players + Monsters)
         threats_here = enemies_here + monsters_here
         
-        # PRIORITAS 2: Lari mutlak jika HP tipis dan ada Pemain atau Monster berdiri di ubin kita!
         if hp < 60 and threats_here:
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 
                 if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
             ]
+            
+            if current_turn > 15 and safe_options:
+                safe_non_corners = [
+                    r_id for r_id in safe_options
+                    if len(context.map_graph.get(r_id, [1, 2, 3, 4])) > 3
+                ]
+                if safe_non_corners:
+                    safe_options = safe_non_corners
+
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
             ]
+            
             chosen_target = None
             if safe_options:
                 chosen_target = random.choice(safe_options)
@@ -79,6 +99,7 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Under threat ({hp}/100) from close-range hostiles. Fleeing to safe region: {target_name}"
                 )
 
+        # PRIORITAS 3: PEMULIHAN HP DARURAT (Hanya dievaluasi jika berada di koordinat aman dari musuh langsung)
         if hp < 50:
             for item in inventory:
                 if isinstance(item, dict):
@@ -91,6 +112,7 @@ class SurvivalDecider(BaseDecider):
                             thought=f"HP critical ({hp}/100) in safe zone. Consuming {item_name} to heal."
                         )
 
+        # PRIORITAS 4: PEMULIHAN EP DARURAT (Hanya dievaluasi jika berada di koordinat aman dari musuh langsung)
         if ep < 2:
             for item in inventory:
                 if isinstance(item, dict):
@@ -103,6 +125,7 @@ class SurvivalDecider(BaseDecider):
                             thought=f"Energy critical ({ep}/10) in safe zone. Consuming {item_name} to recover EP."
                         )
 
+        # PRIORITAS 5: FASILITAS MEDIS (Maksimal hanya boleh berinteraksi tepat 1 kali saja per wilayah)
         if hp < 70:
             already_interacted = any(
                 act.get("type") == "interact" and act.get("regionId") == region_id 
@@ -121,6 +144,7 @@ class SurvivalDecider(BaseDecider):
                                 thought="HP is low. Interacting with Medical Facility to heal."
                             )
 
+        # PRIORITAS 6: MENGHINDARI PENDING DEATH ZONE
         in_danger_zone = (region_id in context.pending_deathzones)
         if in_danger_zone or (hp < 40 and threats_here):
             connections = current_region.get("connections", [])
@@ -128,10 +152,20 @@ class SurvivalDecider(BaseDecider):
                 r_id for r_id in connections 
                 if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
             ]
+            
+            if current_turn > 15 and safe_options:
+                safe_non_corners = [
+                    r_id for r_id in safe_options
+                    if len(context.map_graph.get(r_id, [1, 2, 3, 4])) > 3
+                ]
+                if safe_non_corners:
+                    safe_options = safe_non_corners
+
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
             ]
+            
             chosen_target = None
             if safe_options:
                 chosen_target = random.choice(safe_options)

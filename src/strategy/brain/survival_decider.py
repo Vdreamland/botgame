@@ -8,7 +8,7 @@ class SurvivalDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
-        self_id = view_self.get("id", "")  # Menyisipkan kembali inisialisasi self_id secara aman
+        self_id = view_self.get("id", "")
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
@@ -42,10 +42,18 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Standing in ACTIVE deathzone. Fleeing immediately to: {target_name}"
                 )
 
+        # MENDETEKSI SELURUH ANCAMAN SE-TILE AKTIF (Gabungan Pemain Lawan & Monster/Bandit)
         visible_agents = view.get("visibleAgents", [])
         enemies_here = [a for a in visible_agents if a.get("id") != self_id and a.get("regionId") == region_id and a.get("isAlive", True)]
         
-        if hp < 60 and enemies_here:
+        visible_monsters = view.get("visibleMonsters", [])
+        monsters_here = [m for m in visible_monsters if m.get("regionId") == region_id]
+        
+        # Perekaman seluruh ancaman fisik di ubin yang sama (Players + Monsters)
+        threats_here = enemies_here + monsters_here
+        
+        # PRIORITAS 2: Lari mutlak jika HP tipis dan ada Pemain atau Monster berdiri di ubin kita!
+        if hp < 60 and threats_here:
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 
@@ -68,7 +76,7 @@ class SurvivalDecider(BaseDecider):
                 target_name = context.region_names.get(chosen_target, f"Hex-{chosen_target[:8]}")
                 return UtilityBehavior.build_move_action(
                     region_id=chosen_target,
-                    thought=f"Under threat ({hp}/100) with {len(enemies_here)} enemies. Fleeing to safe region: {target_name}"
+                    thought=f"Under threat ({hp}/100) from close-range hostiles. Fleeing to safe region: {target_name}"
                 )
 
         if hp < 50:
@@ -114,7 +122,7 @@ class SurvivalDecider(BaseDecider):
                             )
 
         in_danger_zone = (region_id in context.pending_deathzones)
-        if in_danger_zone or (hp < 40 and enemies_here):
+        if in_danger_zone or (hp < 40 and threats_here):
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 

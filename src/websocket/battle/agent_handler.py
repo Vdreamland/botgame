@@ -60,6 +60,13 @@ class AgentHandler:
                     pending_zones = self.last_view.get("pendingDeathzones") or self.last_view.get("pendingDeathZones") or []
                     self.context.update_map(current_region, pending_zones)
 
+                    # PERBAIKAN UTAMA: Memasukkan data musuh hasil scan langsung ke dalam context sebelum keputusan dihitung
+                    self.context.opponents_data = ThreatEvaluator.scan_detailed_opponents(
+                        view=self.last_view,
+                        self_id=view_self.get("id", "")
+                    )
+                    self.opponents_data = self.context.opponents_data
+
                     computed_action = None
                     location_planning = "None"
                     action_thought = "None"
@@ -93,11 +100,6 @@ class AgentHandler:
                                 location_planning = "INTERACTING"
                             elif action_type == "explore":
                                 location_planning = "EXPLORING RUIN"
-
-                    self.opponents_data = ThreatEvaluator.scan_detailed_opponents(
-                        view=self.last_view,
-                        self_id=view_self.get("id", "")
-                    )
 
                     if computed_action:
                         await self.send_json(computed_action)

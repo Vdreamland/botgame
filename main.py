@@ -15,15 +15,16 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
     # 1. OPTIMIZE ACTIVE PACK (T1 > T2 > T3)
     packs = await manager.get_packs_inventory()
     if isinstance(packs, list) and len(packs) > 0:
-        tier_weights = {"T1": 3, "T2": 2, "T3": 1}
+        # Maps integer and string tiers to dynamic weights (1 or T1 is highest weight)
+        tier_weights = {1: 3, 2: 2, 3: 1, "T1": 3, "T2": 2, "T3": 1}
         # Sort descending by tier weight safely
-        packs.sort(key=lambda p: tier_weights.get(p.get("tier", "T3"), 0) if isinstance(p, dict) else 0, reverse=True)
+        packs.sort(key=lambda p: tier_weights.get(p.get("tier", 3), 0) if isinstance(p, dict) else 0, reverse=True)
         best_pack = packs[0]
-        best_pack_id = best_pack.get("instanceId") if isinstance(best_pack, dict) else None
+        best_pack_id = best_pack.get("id") if isinstance(best_pack, dict) else None
         
         loadout = await manager.get_loadout()
         current_pack = loadout.get("activePack", {})
-        current_pack_id = current_pack.get("instanceId") if isinstance(current_pack, dict) else None
+        current_pack_id = current_pack.get("id") if isinstance(current_pack, dict) else None
         
         if best_pack_id and best_pack_id != current_pack_id:
             logger.info(f"[{bot_name}] Equipping stronger active pack...")
@@ -62,7 +63,7 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
             
             if len(scored_relics) > 0:
                 best_relic = scored_relics[0][1]
-                best_relic_id = best_relic.get("instanceId") if isinstance(best_relic, dict) else None
+                best_relic_id = best_relic.get("id") if isinstance(best_relic, dict) else None
                 
                 loadout = await manager.get_loadout()
                 slots_equipped = loadout.get("slots", [])
@@ -72,7 +73,7 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
                 current_relic_id = None
                 if len(slots_equipped) > slot_index:
                     curr_relic = slots_equipped[slot_index]
-                    current_relic_id = curr_relic.get("instanceId") if isinstance(curr_relic, dict) else None
+                    current_relic_id = curr_relic.get("id") if isinstance(curr_relic, dict) else None
                     
                 if best_relic_id and best_relic_id != current_relic_id:
                     slot_names = ["Red", "Green", "Blue"]

@@ -4,7 +4,7 @@ from src.api.client import BaseHttpClient
 from src.utils.logger import logger
 
 class LobbyLoadoutManager(BaseHttpClient):
-    """Manages out-of-game lobby inventory and loadout configurations with robust type checks."""
+    """Manages out-of-game lobby inventory and loadout configurations with verified key mapping."""
     
     def __init__(self, api_key: str):
         super().__init__(api_key)
@@ -22,13 +22,14 @@ class LobbyLoadoutManager(BaseHttpClient):
             return {}
 
     async def get_relics_inventory(self) -> List[Dict[str, Any]]:
-        """Fetch owned relics from inventory with robust dictionary/list checks."""
+        """Fetch owned relics from inventory scanning all potential fallback pagination keys."""
         try:
             res = await self.get("/api/inventory/relics")
             if res.get("success"):
                 data = res.get("data", {})
                 if isinstance(data, dict):
-                    return data.get("relics", [])
+                    items_list = data.get("relics") or data.get("entries") or data.get("items") or data.get("data")
+                    return items_list if isinstance(items_list, list) else []
                 elif isinstance(data, list):
                     return data
             return []
@@ -37,13 +38,14 @@ class LobbyLoadoutManager(BaseHttpClient):
             return []
 
     async def get_packs_inventory(self) -> List[Dict[str, Any]]:
-        """Fetch owned packs from inventory with robust dictionary/list checks."""
+        """Fetch owned packs from inventory scanning all potential fallback pagination keys."""
         try:
             res = await self.get("/api/inventory/packs")
             if res.get("success"):
                 data = res.get("data", {})
                 if isinstance(data, dict):
-                    return data.get("packs", [])
+                    items_list = data.get("packs") or data.get("entries") or data.get("items") or data.get("data")
+                    return items_list if isinstance(items_list, list) else []
                 elif isinstance(data, list):
                     return data
             return []

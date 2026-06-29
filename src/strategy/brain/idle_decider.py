@@ -13,11 +13,26 @@ class IdleDecider(BaseDecider):
         kills = view_self.get("kills", 0)
         current_turn = view.get("turn", 0)
         
+        # 1. PENANGANAN PEMBUNUHAN AGEN PLAYER
         if kills > context.last_kills_count:
             context.last_kills_count = kills
             if context.last_attack_region and context.last_attack_region not in context.loot_targets:
                 context.loot_targets.append(context.last_attack_region)
             
+        # 2. PENANGANAN PENYELAMAT KOIN MONSTER (Monster/Guardian Slay Looting)
+        # Jika aksi terakhir bot adalah menyerang di wilayah musuh, dan pada giliran ini musuh
+        # tersebut sudah hilang (tewas), daftarkan wilayah tersebut sebagai target penjarahan.
+        if context.last_action_type == "attack" and context.last_attack_region:
+            opponents_now = context.opponents_data.get("players", []) + context.opponents_data.get("monsters", [])
+            opponents_still_in_target_region = any(
+                opp.get("region_id") == context.last_attack_region for opp in opponents_now
+            )
+            if not opponents_still_in_target_region:
+                if context.last_attack_region not in context.loot_targets:
+                    context.loot_targets.append(context.last_attack_region)
+                # Kosongkan penanda agar tidak terdaftar berulang kali
+                context.last_attack_region = ""
+
         current_region = view.get("currentRegion", {})
         current_region_id = current_region.get("id")
         connections = current_region.get("connections", [])

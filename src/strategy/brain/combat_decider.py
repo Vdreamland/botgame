@@ -1,3 +1,4 @@
+import random
 from typing import Dict, Any, Optional
 from src.strategy.brain.game_context import GameContext
 from src.strategy.brain.base_decider import BaseDecider
@@ -76,11 +77,26 @@ class CombatDecider(BaseDecider):
 
         valid_targets.sort(key=lambda x: (x["is_monster"], x["hp"]))
         best_target = valid_targets[0]
+        
+        # ALGORITMA PENYARINGAN CERDAS GUARDIAN (Smart Guardian Finisher)
+        # Jika target terlemah adalah Guardian yang masih sehat (HP > 15), bot akan mencari target alternatif lain
+        if "Guardian" in best_target["name"] and best_target["hp"] > 15:
+            alternative_target = None
+            for t in valid_targets:
+                if "Guardian" not in t["name"] or t["hp"] <= 15:
+                    alternative_target = t
+                    break
+            
+            if alternative_target:
+                best_target = alternative_target
+            else:
+                # Jika tidak ada target alternatif, bot kembali patroli/menjarah kuil daripada stuck membuang turn
+                return None
+
         target_id = best_target["id"]
         target_name = best_target["name"]
         target_distance = best_target["distance"]
 
-        # Mencatat wilayah target serangan sebelum menembak
         context.last_attack_region = best_target["region_id"]
 
         if target_distance == 0:

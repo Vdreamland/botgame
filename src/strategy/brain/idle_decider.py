@@ -25,12 +25,21 @@ class IdleDecider(BaseDecider):
             if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
         ]
         
+        # Menyaring dan menjauh dari area pojokan map (koneksi <= 3) secara proaktif saat kondisi aman
+        safe_non_corners = [
+            r_id for r_id in safe_connections
+            if len(context.map_graph.get(r_id, [1, 2, 3, 4])) > 3
+        ]
+        
         pending_connections = [
             r_id for r_id in connections 
             if r_id not in context.active_deathzones
         ]
         
-        chosen_connections = safe_connections if safe_connections else (pending_connections if pending_connections else connections)
+        if safe_non_corners:
+            chosen_connections = safe_non_corners
+        else:
+            chosen_connections = safe_connections if safe_connections else (pending_connections if pending_connections else connections)
         
         if chosen_connections:
             unvisited = [r_id for r_id in chosen_connections if r_id not in context.visited_history]

@@ -15,7 +15,7 @@ class SurvivalDecider(BaseDecider):
         region_id = current_region.get("id")
         is_active_deathzone = current_region.get("isDeathZone", False)
 
-        # PRIORITAS 1: LARI MUTLAK DARI ACTIVE DEATH ZONE (Sangat Vital)
+        # PRIORITAS 1: SELALU LARI TERLEBIH DAHULU JIKA BERADA DI DEATH ZONE AKTIF (Jangan isi HP di dalam zona maut!)
         if is_active_deathzone:
             connections = current_region.get("connections", [])
             
@@ -71,18 +71,26 @@ class SurvivalDecider(BaseDecider):
                             thought=f"Energy critical ({ep}/10) in safe zone. Consuming {item_name} to recover EP."
                         )
 
-        # PRIORITAS 4: FASILITAS MEDIS (Hanya dievaluasi jika berada di wilayah aman)
+        # PRIORITAS 4: FASILITAS MEDIS (Maksimal hanya boleh berinteraksi tepat 1 kali saja per wilayah)
         if hp < 70:
-            interactables = current_region.get("interactables", [])
-            for fac in interactables:
-                if isinstance(fac, dict):
-                    fac_name = fac.get("name", "")
-                    is_used = fac.get("isUsed", True)
-                    if fac_name == "Medical Facility" and not is_used:
-                        context.last_action_type = "interact"
-                        return UtilityBehavior.build_interact_action(
-                            thought="HP is low. Interacting with Medical Facility to heal."
-                        )
+            # Memastikan bot belum pernah mengirim aksi "interact" di wilayah aktif saat ini
+            already_interacted = any(
+                act.get("type") == "interact" and act.get("regionId") == region_id 
+                for act in context.history_actions
+            )
+            
+            if not already_interacted:
+                interactables = current_region.get("interactables", [])
+                for fac in interactables:
+                    if isinstance(fac, dict):
+                        fac_name = fac.get("name", "")
+                        is_used = fac.get("isUsed", True)
+                        if fac_name == "Medical Facility" and not is_used:
+                            context.last_action_type = "interact"
+                            context.history_actions.append({"type": "interact", "regionId": region_id})
+                            return UtilityBehavior.build_interact_action(
+                                thought="HP is low. Interacting with Medical Facility to heal."
+                            )
 
         # PRIORITAS 5: PENDING DEATH ZONE / ANCAMAN SEKITAR
         in_danger_zone = (region_id in context.pending_deathzones)
@@ -91,6 +99,7 @@ class SurvivalDecider(BaseDecider):
         
         if in_danger_zone or (hp < 40 and enemies_here):
             connections = current_region.get("connections", [])
+            
             safe_options = [
                 r_id for r_id in connections 
                 if r_id not in context.pending_deathzones and r_id not in context.active_deathzones

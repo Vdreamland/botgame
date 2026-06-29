@@ -70,9 +70,13 @@ class StateParser:
                 location_planning = "PICKING UP ITEM"
             elif action_type == "equip":
                 location_planning = "EQUIPPING WEAPON"
+            elif action_type == "interact":
+                location_planning = "INTERACTING"
 
         is_deathzone = current_region.get("isDeathZone", False)
-        pending_zones = view.get("pendingDeathzones", [])
+        
+        # Pengaman Casing: Mendukung pembacaan pendingDeathzones (kecil) maupun pendingDeathZones (besar) secara kokoh
+        pending_zones = view.get("pendingDeathzones") or view.get("pendingDeathZones") or []
         
         if is_deathzone:
             deadzone_status = "ACTIVE"

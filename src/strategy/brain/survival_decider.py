@@ -70,6 +70,10 @@ class SurvivalDecider(BaseDecider):
         threats_here = enemies_here + monsters_here
         
         if hp < 60 and threats_here:
+            # Broadcast SOS signal for ally backup before escaping
+            if region_id and region_id not in settings.SOS_TARGETS:
+                settings.SOS_TARGETS.append(region_id)
+
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 
@@ -149,6 +153,10 @@ class SurvivalDecider(BaseDecider):
 
         in_danger_zone = (region_id in context.pending_deathzones)
         if in_danger_zone or (hp < 40 and threats_here):
+            # Broadcast SOS signal on extreme panic threat
+            if threats_here and region_id and region_id not in settings.SOS_TARGETS:
+                settings.SOS_TARGETS.append(region_id)
+
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 

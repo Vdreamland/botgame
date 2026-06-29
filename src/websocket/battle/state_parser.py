@@ -30,11 +30,17 @@ class StateParser:
         if equipped_armor:
             armor_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
 
+        # Parse inventory and stack quantities correctly
         inventory_raw = view_self.get("inventory", [])
         inventory_counts = {}
         for item in inventory_raw:
-            name = item.get("name") or item.get("displayName") or "Unknown Item" if isinstance(item, dict) else str(item)
-            inventory_counts[name] = inventory_counts.get(name, 0) + 1
+            if isinstance(item, dict):
+                name = item.get("name") or item.get("displayName") or "Unknown Item"
+                qty = item.get("quantity") or item.get("count") or item.get("amount") or 1
+            else:
+                name = str(item)
+                qty = 1
+            inventory_counts[name] = inventory_counts.get(name, 0) + qty
 
         if not inventory_counts:
             inventory_str = "None"
@@ -44,11 +50,17 @@ class StateParser:
         current_region = view.get("currentRegion", {})
         location_now = current_region.get("name", "Unknown Location")
 
+        # Parse ground items and stack quantities correctly
         ground_raw = current_region.get("items", [])
         ground_counts = {}
         for g_item in ground_raw:
-            g_name = g_item.get("name") or g_item.get("displayName") or "Unknown Item" if isinstance(g_item, dict) else str(g_item)
-            ground_counts[g_name] = ground_counts.get(g_name, 0) + 1
+            if isinstance(g_item, dict):
+                g_name = g_item.get("name") or g_item.get("displayName") or "Unknown Item"
+                g_qty = g_item.get("quantity") or g_item.get("count") or g_item.get("amount") or 1
+            else:
+                g_name = str(g_item)
+                g_qty = 1
+            ground_counts[g_name] = ground_counts.get(g_name, 0) + g_qty
 
         if not ground_counts:
             ground_str = "None"
@@ -75,7 +87,7 @@ class StateParser:
 
         is_deathzone = current_region.get("isDeathZone", False)
         
-        # Pengaman Casing: Mendukung pembacaan pendingDeathzones (kecil) maupun pendingDeathZones (besar) secara kokoh
+        # Robust case-insensitive check for pending death zones
         pending_zones = view.get("pendingDeathzones") or view.get("pendingDeathZones") or []
         
         if is_deathzone:

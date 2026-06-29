@@ -1,4 +1,5 @@
 from typing import Dict, Any, List
+from config import settings
 
 class GameContext:
     
@@ -32,6 +33,12 @@ class GameContext:
                 self.visited_history.append(region_id)
                 if len(self.visited_history) > 4:
                     self.visited_history.pop(0)
+
+            # Record visited history globally for co-op routing
+            if not settings.SHARED_VISITED_HISTORY or settings.SHARED_VISITED_HISTORY[-1] != region_id:
+                settings.SHARED_VISITED_HISTORY.append(region_id)
+                if len(settings.SHARED_VISITED_HISTORY) > 8:
+                    settings.SHARED_VISITED_HISTORY.pop(0)
         
         self.pending_deathzones = []
         for zone in pending_zones:

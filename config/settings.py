@@ -26,6 +26,14 @@ for i in range(1, num_bots + 1):
 
 ALLY_NAMES = [bot["name"] for bot in BOTS]
 
+# Global shared co-op databases
+SHARED_LOOT_TARGETS = []
+SOS_TARGETS = []
+SHARED_VISITED_HISTORY = []
+
+# Tracks active battle status for each bot to synchronize matchmaking
+ACTIVE_BOTS_IN_GAME = {bot["name"]: False for bot in BOTS}
+
 def validate_config():
     """Validate critical configurations."""
     if not BOTS:

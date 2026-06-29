@@ -7,11 +7,19 @@ from src.websocket.battle.agent_handler import AgentHandler
 from src.utils.logger import logger
 
 async def run_single_bot(bot_name: str, api_key: str):
-    """Loop penanganan mandiri asinkron untuk masing-masing agen bot."""
+    """Asynchronous self-contained worker loop for each individual bot."""
     logger.info(f"Starting worker task for [ {bot_name} ]...")
     
     while True:
-        # Menghubungkan WebSocket lobi menggunakan API Key dinamis agen
+        # SYNC BARRIER: Wait until all allied bots are fully out of any matches
+        while any(settings.ACTIVE_BOTS_IN_GAME.values()):
+            await asyncio.sleep(1)
+        
+        # Flush shared databases to ensure clean slate for the upcoming new match
+        settings.SHARED_LOOT_TARGETS.clear()
+        settings.SOS_TARGETS.clear()
+        settings.SHARED_VISITED_HISTORY.clear()
+        
         lobby = JoinHandler(api_key=api_key)
         logger.info(f"Agent [ {bot_name} ] joining queue [ {settings.ROOM_PREFERENCE.upper()} ]...")
         
@@ -23,10 +31,11 @@ async def run_single_bot(bot_name: str, api_key: str):
             continue
 
         logger.info(f"[OK] Agent [ {bot_name} ] entered the arena!")
-        # Menghubungkan monitor pertempuran menggunakan Socket aktif dan nama agen dinamis
-        battle = AgentHandler(gameplay_socket, agent_name=bot_name)
         
-        # Mencatat waktu mulai koneksi monitor arena
+        # Mark this bot as actively playing
+        settings.ACTIVE_BOTS_IN_GAME[bot_name] = True
+        
+        battle = AgentHandler(gameplay_socket, agent_name=bot_name)
         start_time = asyncio.get_event_loop().time()
         
         try:
@@ -34,26 +43,28 @@ async def run_single_bot(bot_name: str, api_key: str):
         except KeyboardInterrupt:
             logger.info(f"Manual shutdown triggered for {bot_name}.")
             break
+        except Exception as e:
+            logger.error(f"[{bot_name}] Error during monitoring: {str(e)}")
         finally:
+            # Mark this bot as inactive immediately upon match termination/death
+            settings.ACTIVE_BOTS_IN_GAME[bot_name] = False
             try:
                 await gameplay_socket.close()
             except Exception:
                 pass
 
-        # Mengalkulasi durasi aktifnya monitor
         session_duration = asyncio.get_event_loop().time() - start_time
-        
-        # SPAM GUARD: Jika koneksi terputus instan kurang dari 5 detik, paksa jeda 10 detik agar aman
         if session_duration < 5:
-            logger.warning(f"[{bot_name}] Connection dropped prematurely. Sleeping 10 seconds to avoid spamming...")
+            logger.warning(f"[{bot_name}] Connection dropped prematurely. Sleeping 10 seconds...")
             await asyncio.sleep(10)
             continue
 
         if not battle.is_alive:
-            logger.info(f"[{bot_name}] Entering auto-matchmaking queue in 10 seconds...")
-            await asyncio.sleep(10)
+            logger.info(f"[{bot_name}] Waiting for other squad members to finish...")
+            # Loop restarts, but barrier will block entering queue until the remaining bot dies/ends
 
 async def start_bot():
+    """Validates configuration and launches parallel asynchronous bot tasks."""
     logger.info("Checking configuration files...")
     try:
         settings.validate_config()
@@ -68,7 +79,7 @@ async def start_bot():
         logger.error(f"\033[91mFailed to load game database assets: {str(e)}\033[0m")
         return
 
-    # Membuat daftar tugas asinkron untuk setiap bot aktif di dalam konfigurasi
+    # Create asynchronous tasks for all configured active bots
     tasks = []
     for bot in settings.BOTS:
         tasks.append(run_single_bot(bot["name"], bot["api_key"]))
@@ -77,7 +88,7 @@ async def start_bot():
         logger.error("No active bots configured in .env. Please check NUM_BOTS and BOTx_ keys.")
         return
 
-    # Menjalankan seluruh bot secara paralel asinkron dalam satu proses aplikasi
+    # Launch all bots concurrently under a single execution process
     await asyncio.gather(*tasks)
 
 if __name__ == "__main__":

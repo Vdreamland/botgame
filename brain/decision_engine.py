@@ -86,9 +86,11 @@ class DecisionEngine:
         # 4. KONTROL LOOTING & PEMBERSIHAN TAS (FREE ACTION)
         inv_action, target_id, details_id = self.inventory_manager.determine_pickup_and_cleanup()
         if inv_action == "PICKUP" and target_id:
-            self.logger.info(f"TACTICAL DECISION (Free Action): Found valuable item. Initiating PICKUP of item ID: {target_id}.")
+            # Tulis log pemungutan bersih hanya menggunakan tipe barang, menyembunyikan ID bising
+            self.logger.info(f"TACTICAL DECISION (Free Action): Found valuable item. Initiating PICKUP of '{details_id}'.")
             await self.dispatcher.execute_pickup(target_id)
         elif inv_action == "DROP_AND_PICKUP" and target_id and details_id:
+            # Cari nama barang lobi yang akan dibuang dari tas secara dinamis
             dropped_name = "Obsolete Item"
             for item in self.game_state.inventory:
                 if item.get("id") == details_id:
@@ -179,7 +181,6 @@ class DecisionEngine:
                 tactic, details = self.engagement.determine_spatial_tactic(target_data, distance)
                 
                 if tactic == "ATTACK":
-                    self.logger.warning(f"COMBAT DISPATCH: Target '{self.hunter.locked_target_name}' is in range. Initiating attack action [11]!")
                     await self.dispatcher.execute_attack(self.hunter.locked_target_id)
                 elif tactic == "APPROACH" and details:
                     t_region = target_data.get("regionId") or self.game_state.current_region_id
@@ -215,7 +216,7 @@ class DecisionEngine:
                 await self.dispatcher.execute_pickup(details["item_id"])
             elif action_type == "EXPLORE":
                 self.logger.info("TACTICAL DECISION: Standing on active ruins. Initiating ruin EXPLORE action [10].")
-                await self.dispatcher.explore()
+                await self.dispatcher.execute_explore()
             else:
                 await self._navigate_to_nearest_ruins(bot_pos)
             return
@@ -238,13 +239,11 @@ class DecisionEngine:
             if action_type == "MOVE_TO_FOREST":
                 await self._navigate_to_defensive_forest(bot_pos)
             elif action_type == "CONSERVE_REST":
-                self.logger.info("TACTICAL DECISION: Rest initiated to conserve energy in safe forest area.")
                 await self.dispatcher.execute_rest()
             else:
                 if battle_eval.get("recommendation") == "FIGHT" and battle_eval.get("target"):
                     await self.dispatcher.execute_attack(battle_eval["target"].get("id"))
                 else:
-                    self.logger.info("TACTICAL DECISION: Conserving energy (Default Rest).")
                     await self.dispatcher.execute_rest()
             return
 

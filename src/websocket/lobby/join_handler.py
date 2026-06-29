@@ -8,8 +8,8 @@ from src.websocket.client import BaseWebSocketClient
 class JoinHandler(BaseWebSocketClient):
     """Manages lobby matchmaking queue and assignment via /ws/join."""
     
-    def __init__(self):
-        super().__init__(settings.WS_JOIN_URL)
+    def __init__(self, api_key: Optional[str] = None):
+        super().__init__(settings.WS_JOIN_URL, api_key)
 
     async def execute_join_flow(self, entry_type: str = "free") -> Tuple[Optional[websockets.WebSocketClientProtocol], bool]:
         """Runs the queue joining protocol. Returns (socket, is_new_game)."""

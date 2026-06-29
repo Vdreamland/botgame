@@ -1,31 +1,41 @@
 import os
 from dotenv import load_dotenv
 
-# Memuat berkas .env
 load_dotenv()
 
 API_URL = os.getenv("API_URL", "https://cdn.clawroyale.ai/api")
 WS_JOIN_URL = os.getenv("WS_JOIN_URL", "wss://cdn.clawroyale.ai/ws/join")
 WS_AGENT_URL = os.getenv("WS_AGENT_URL", "wss://cdn.clawroyale.ai/ws/agent")
 X_VERSION = os.getenv("X_VERSION", "1.11.2")
-
-# Preferensi Room ("free" atau "paid")
 ROOM_PREFERENCE = os.getenv("ROOM_PREFERENCE", "free").lower()
 
-# Nama Identitas Agen Bot
-AGENT_NAME = os.getenv("AGENT_NAME", "ClawAgent").strip()
-
-# Kredensial Utama Bot
-API_KEY = os.getenv("API_KEY", "")
+AGENT_NAME = os.getenv("BOT1_NAME", "ClawAgent").strip()
+API_KEY = os.getenv("BOT1_API_KEY", "")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY", "")
 
+BOTS = []
+num_bots = int(os.getenv("NUM_BOTS", "1"))
+for i in range(1, num_bots + 1):
+    name = os.getenv(f"BOT{i}_NAME", "").strip()
+    api_key = os.getenv(f"BOT{i}_API_KEY", "").strip()
+    if name and api_key:
+        BOTS.append({
+            "name": name,
+            "api_key": api_key
+        })
+
+ALLY_NAMES = [bot["name"] for bot in BOTS]
+
 def validate_config():
-    """Memvalidasi kelengkapan konfigurasi kritis sebelum menjalankan bot."""
-    if not API_KEY:
-        raise ValueError("Error: API_KEY tidak ditemukan di file .env. Bot membutuhkan API_KEY untuk terhubung.")
+    """Validate critical configurations."""
+    if not BOTS:
+        raise ValueError("Configuration error: BOTS list is empty. Check NUM_BOTS in .env.")
     
+    for i, bot in enumerate(BOTS, 1):
+        if not bot["api_key"]:
+            raise ValueError(f"Configuration error: API_KEY for BOT{i} is missing in .env.")
+        if not bot["name"]:
+            raise ValueError(f"Configuration error: Name for BOT{i} is missing in .env.")
+            
     if ROOM_PREFERENCE not in ["free", "paid"]:
-        raise ValueError(f"Error: ROOM_PREFERENCE '{ROOM_PREFERENCE}' tidak valid. Gunakan 'free' atau 'paid'.")
-        
-    if not AGENT_NAME:
-        raise ValueError("Error: AGENT_NAME tidak boleh kosong.")
+        raise ValueError(f"Configuration error: ROOM_PREFERENCE '{ROOM_PREFERENCE}' is invalid. Use 'free' or 'paid'.")

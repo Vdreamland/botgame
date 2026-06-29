@@ -11,8 +11,9 @@ from src.websocket.battle.state_parser import StateParser
 
 class AgentHandler:
     
-    def __init__(self, socket: websockets.WebSocketClientProtocol):
+    def __init__(self, socket: websockets.WebSocketClientProtocol, agent_name: str = None):
         self.socket = socket
+        self.agent_name = agent_name or settings.AGENT_NAME
         self._is_active = True
         self.current_turn = 0
         self.last_rendered_turn = 0
@@ -31,7 +32,7 @@ class AgentHandler:
             pass
 
     async def start_monitoring(self):
-        logger.info("Battle monitor active. Monitoring turns and rendering stats...")
+        logger.info(f"Battle monitor active for [ {self.agent_name} ]. Monitoring turns and rendering stats...")
         
         try:
             while self._is_active:
@@ -60,7 +61,7 @@ class AgentHandler:
                     pending_zones = self.last_view.get("pendingDeathzones") or self.last_view.get("pendingDeathZones") or []
                     self.context.update_map(current_region, pending_zones)
 
-                    # PERBAIKAN UTAMA: Memasukkan data musuh hasil scan langsung ke dalam context sebelum keputusan dihitung
+                    # PEMINDAIAN DETAIL MUSUH: Data dimasukkan langsung ke context sebelum aksi dihitung
                     self.context.opponents_data = ThreatEvaluator.scan_detailed_opponents(
                         view=self.last_view,
                         self_id=view_self.get("id", "")
@@ -114,6 +115,7 @@ class AgentHandler:
                             is_new_turn=is_new_turn
                         )
 
+                        # Meneruskan parameter agent_name ke TerminalRenderer secara dinamis
                         TerminalRenderer.render_turn(
                             turn=self.current_turn,
                             server_is_alive=parsed_state["server_is_alive"],
@@ -135,38 +137,39 @@ class AgentHandler:
                             deadzone_warning=parsed_state["deadzone_warning"],
                             layer0=parsed_state["layer0"],
                             layer1=parsed_state["layer1"],
-                            layer2=parsed_state["layer2"]
+                            layer2=parsed_state["layer2"],
+                            agent_name=self.agent_name
                         )
 
-                        logger.info("Enemy stats scan: SUCCESSFUL")
+                        logger.info(f"[{self.agent_name}] Enemy stats scan: SUCCESSFUL")
 
                         if not self.initial_status_logged:
                             self.initial_status_logged = True
                             self.is_alive = server_is_alive
                             if not server_is_alive:
-                                logger.warning(f"[DEATH] Agent is connected in a DEAD state. Terminating monitor for testing rejoin...")
+                                logger.warning(f"[{self.agent_name}] Agent is connected in a DEAD state. Terminating monitor for testing rejoin...")
                                 self._is_active = False
                                 break
                         else:
                             if not server_is_alive and self.is_alive:
                                 self.is_alive = False
-                                logger.warning(f"[DEATH] Agent has been eliminated! (HP: {parsed_state['hp']}). Terminating monitor for testing rejoin...")
+                                logger.warning(f"[{self.agent_name}] Agent has been eliminated! (HP: {parsed_state['hp']}). Terminating monitor for testing rejoin...")
                                 self._is_active = False
                                 break
 
                 elif msg_type == "game_ended":
-                    logger.info("[FINISHED] The match has fully ended.")
+                    logger.info(f"[{self.agent_name}] The match has fully ended.")
                     self._is_active = False
                     break
                 
                 elif msg_type == "error":
-                    logger.error(f"Server Error: {data.get('message')}")
+                    logger.error(f"[{self.agent_name}] Server Error: {data.get('message')}")
                     break
 
         except websockets.exceptions.ConnectionClosed:
-            logger.warning("Connection to battle arena closed by server.")
+            logger.warning(f"[{self.agent_name}] Connection to battle arena closed by server.")
         except Exception as e:
-            logger.error(f"Error during battle monitoring: {str(e)}")
+            logger.error(f"[{self.agent_name}] Error during battle monitoring: {str(e)}")
         finally:
             self._is_active = False
 

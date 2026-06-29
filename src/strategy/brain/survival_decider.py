@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 from src.strategy.brain.game_context import GameContext
 from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.behaviors.utility_behavior import UtilityBehavior
+from config import settings
 
 class SurvivalDecider(BaseDecider):
     
@@ -54,7 +55,14 @@ class SurvivalDecider(BaseDecider):
                 )
 
         visible_agents = view.get("visibleAgents", [])
-        enemies_here = [a for a in visible_agents if a.get("id") != self_id and a.get("regionId") == region_id and a.get("isAlive", True)]
+        
+        enemies_here = [
+            a for a in visible_agents 
+            if a.get("id") != self_id 
+            and a.get("regionId") == region_id 
+            and a.get("isAlive", True)
+            and a.get("name") not in settings.ALLY_NAMES
+        ]
         
         visible_monsters = view.get("visibleMonsters", [])
         monsters_here = [m for m in visible_monsters if m.get("regionId") == region_id]

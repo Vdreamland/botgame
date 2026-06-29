@@ -8,8 +8,9 @@ from src.utils.logger import logger
 class BaseWebSocketClient:
     """Base class to manage WebSocket connections to Claw Royale backend."""
     
-    def __init__(self, url: str):
+    def __init__(self, url: str, api_key: Optional[str] = None):
         self.url = url
+        self.api_key = api_key or settings.API_KEY
         self.websocket: Optional[websockets.WebSocketClientProtocol] = None
         self._ping_task: Optional[asyncio.Task] = None
         self._is_active = False
@@ -17,7 +18,7 @@ class BaseWebSocketClient:
     def _get_headers(self) -> Dict[str, str]:
         """Construct required Claw Royale headers."""
         return {
-            "X-API-Key": settings.API_KEY,
+            "X-API-Key": self.api_key,
             "X-Version": settings.X_VERSION
         }
 

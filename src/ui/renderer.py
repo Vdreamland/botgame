@@ -24,10 +24,12 @@ class TerminalRenderer:
         deadzone_warning: str,
         layer0: tuple,
         layer1: tuple,
-        layer2: tuple
+        layer2: tuple,
+        agent_name: str = ""
     ):
+        name = agent_name if agent_name else settings.AGENT_NAME
         print(f"# TURN {turn}")
-        print(f"- Agent Name : {settings.AGENT_NAME} / Status : {'ALIVE' if server_is_alive else 'DEAD'}")
+        print(f"- Agent Name : {name} / Status : {'ALIVE' if server_is_alive else 'DEAD'}")
         print(f"- HP : {hp}/{max_hp} / EP/Energy : {ep}/{max_ep}")
         print(f"- ATK : {atk} / DEF : {def_val} / Kills : {kills}")
         print(f"- Equipped > Weapon : {weapon_name} / Armor : {armor_name}")

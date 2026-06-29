@@ -5,6 +5,7 @@ from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.behaviors.combat_behavior import CombatBehavior
 from src.strategy.behaviors.utility_behavior import UtilityBehavior
 from config.game_data import WEAPONS
+from config import settings
 
 class CombatDecider(BaseDecider):
     
@@ -23,9 +24,6 @@ class CombatDecider(BaseDecider):
         if equipped_weapon:
             equipped_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
 
-        # SENSOR TAKTIS SENJATA TERBENGKALAI:
-        # Jika bot tidak bersenjata (None atau Fist), tetapi terdeteksi ada senjata kuat yang 
-        # menganggur di tanah, kita kembalikan None agar UtilityDecider segera memungut senjata tersebut.
         current_region = view.get("currentRegion", {})
         ground_items = current_region.get("items", [])
         
@@ -39,14 +37,12 @@ class CombatDecider(BaseDecider):
         if equipped_weapon_name in ["None", "Fist"] and has_weapon_on_ground:
             return None
 
-        # Hanya masukkan senjata yang sanggup kita bayar biaya EP-nya saat ini
         weapons_we_have = []
         
         eq_cost = WEAPONS.get(equipped_weapon_name, {}).get("ep_cost", 1) if equipped_weapon_name in WEAPONS else 1
         if ep >= eq_cost:
             weapons_we_have.append(equipped_weapon_name)
         else:
-            # Jika EP tidak cukup untuk senjata terpasang, default ke Fist (Tinju) jika EP >= 1
             if ep >= 1:
                 weapons_we_have.append("Fist")
 
@@ -75,6 +71,8 @@ class CombatDecider(BaseDecider):
 
         opponents = []
         for p in context.opponents_data.get("players", []):
+            if p["name"] in settings.ALLY_NAMES:
+                continue
             opponents.append({"id": p["id"], "name": p["name"], "hp": p["hp"], "region_id": p["region_id"], "is_monster": False})
             
         for m in context.opponents_data.get("monsters", []):
@@ -104,7 +102,6 @@ class CombatDecider(BaseDecider):
         valid_targets.sort(key=lambda x: (x["is_monster"], x["hp"]))
         best_target = valid_targets[0]
         
-        # ALGORITMA PENYARINGAN CERDAS GUARDIAN (Smart Guardian Finisher)
         if "Guardian" in best_target["name"] and best_target["hp"] > 15:
             alternative_target = None
             for t in valid_targets:
@@ -123,7 +120,6 @@ class CombatDecider(BaseDecider):
 
         context.last_attack_region = best_target["region_id"]
 
-        # Logika Penyelamatan: Jika senjata aktif saat ini tidak terjangkau oleh sisa EP
         if ep < eq_cost:
             affordable_in_inv = [w for w in weapons_we_have if w != equipped_weapon_name and w != "Fist" and w != "None"]
             if affordable_in_inv:

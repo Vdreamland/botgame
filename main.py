@@ -6,6 +6,53 @@ from src.websocket.lobby.join_handler import JoinHandler
 from src.websocket.battle.agent_handler import AgentHandler
 from src.utils.logger import logger
 
+async def run_single_bot(bot_name: str, api_key: str):
+    """Loop penanganan mandiri asinkron untuk masing-masing agen bot."""
+    logger.info(f"Starting worker task for [ {bot_name} ]...")
+    
+    while True:
+        # Menghubungkan WebSocket lobi menggunakan API Key dinamis agen
+        lobby = JoinHandler(api_key=api_key)
+        logger.info(f"Agent [ {bot_name} ] joining queue [ {settings.ROOM_PREFERENCE.upper()} ]...")
+        
+        gameplay_socket, _ = await lobby.execute_join_flow(entry_type=settings.ROOM_PREFERENCE)
+        
+        if not gameplay_socket:
+            logger.error(f"[{bot_name}] Matchmaking failed. Retrying in 10 seconds...")
+            await asyncio.sleep(10)
+            continue
+
+        logger.info(f"[OK] Agent [ {bot_name} ] entered the arena!")
+        # Menghubungkan monitor pertempuran menggunakan Socket aktif dan nama agen dinamis
+        battle = AgentHandler(gameplay_socket, agent_name=bot_name)
+        
+        # Mencatat waktu mulai koneksi monitor arena
+        start_time = asyncio.get_event_loop().time()
+        
+        try:
+            await battle.start_monitoring()
+        except KeyboardInterrupt:
+            logger.info(f"Manual shutdown triggered for {bot_name}.")
+            break
+        finally:
+            try:
+                await gameplay_socket.close()
+            except Exception:
+                pass
+
+        # Mengalkulasi durasi aktifnya monitor
+        session_duration = asyncio.get_event_loop().time() - start_time
+        
+        # SPAM GUARD: Jika koneksi terputus instan kurang dari 5 detik, paksa jeda 10 detik agar aman
+        if session_duration < 5:
+            logger.warning(f"[{bot_name}] Connection dropped prematurely. Sleeping 10 seconds to avoid spamming...")
+            await asyncio.sleep(10)
+            continue
+
+        if not battle.is_alive:
+            logger.info(f"[{bot_name}] Entering auto-matchmaking queue in 10 seconds...")
+            await asyncio.sleep(10)
+
 async def start_bot():
     logger.info("Checking configuration files...")
     try:
@@ -21,47 +68,17 @@ async def start_bot():
         logger.error(f"\033[91mFailed to load game database assets: {str(e)}\033[0m")
         return
 
-    # Loop utama asinkron abadi penanganan antrean & pengaman spamming
-    while True:
-        lobby = JoinHandler()
-        logger.info(f"Agent [ {settings.AGENT_NAME} ] joining queue [ {settings.ROOM_PREFERENCE.upper()} ]...")
-        
-        gameplay_socket, _ = await lobby.execute_join_flow(entry_type=settings.ROOM_PREFERENCE)
-        
-        if not gameplay_socket:
-            logger.error("[FAILED] Matchmaking failed. Retrying in 10 seconds...")
-            await asyncio.sleep(10)
-            continue
+    # Membuat daftar tugas asinkron untuk setiap bot aktif di dalam konfigurasi
+    tasks = []
+    for bot in settings.BOTS:
+        tasks.append(run_single_bot(bot["name"], bot["api_key"]))
 
-        logger.info(f"[OK] Agent [ {settings.AGENT_NAME} ] entered the arena!")
-        battle = AgentHandler(gameplay_socket)
-        
-        # Mencatat waktu mulai koneksi monitor arena
-        start_time = asyncio.get_event_loop().time()
-        
-        try:
-            await battle.start_monitoring()
-        except KeyboardInterrupt:
-            logger.info("Manual shutdown triggered.")
-            break
-        finally:
-            try:
-                await gameplay_socket.close()
-            except Exception:
-                pass
+    if not tasks:
+        logger.error("No active bots configured in .env. Please check NUM_BOTS and BOTx_ keys.")
+        return
 
-        # Mengalkulasi durasi aktifnya monitor
-        session_duration = asyncio.get_event_loop().time() - start_time
-        
-        # SPAM GUARD: Jika koneksi terputus instan kurang dari 5 detik, paksa jeda 10 detik agar aman dari rate-limit
-        if session_duration < 5:
-            logger.warning("[WARNING] Connection dropped prematurely. Sleeping 10 seconds to avoid spamming...")
-            await asyncio.sleep(10)
-            continue
-
-        if not battle.is_alive:
-            logger.info("[DEATH] Entering auto-matchmaking queue in 10 seconds...")
-            await asyncio.sleep(10)
+    # Menjalankan seluruh bot secara paralel asinkron dalam satu proses aplikasi
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     if sys.platform == "win32":

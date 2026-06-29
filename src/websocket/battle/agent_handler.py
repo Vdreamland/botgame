@@ -55,7 +55,9 @@ class AgentHandler:
                     server_is_alive = view_self.get("isAlive", True)
 
                     current_region = self.last_view.get("currentRegion", {})
-                    pending_zones = self.last_view.get("pendingDeathzones", [])
+                    
+                    # Ekstraksi tangguh dengan pengaman casing Z besar / z kecil
+                    pending_zones = self.last_view.get("pendingDeathzones") or self.last_view.get("pendingDeathZones") or []
                     self.context.update_map(current_region, pending_zones)
 
                     computed_action = None
@@ -92,8 +94,7 @@ class AgentHandler:
                             elif action_type == "explore":
                                 location_planning = "EXPLORING RUIN"
 
-                    # Menyimpan hasil scan detail lawan langsung ke dalam memori GameContext
-                    self.context.opponents_data = ThreatEvaluator.scan_detailed_opponents(
+                    self.opponents_data = ThreatEvaluator.scan_detailed_opponents(
                         view=self.last_view,
                         self_id=view_self.get("id", "")
                     )
@@ -151,8 +152,9 @@ class AgentHandler:
                                 self._is_active = False
                                 break
 
-                # Mengabaikan perubahan nomor turn di turn_advanced agar tidak mengacaukan is_new_turn di agent_view
                 elif msg_type == "turn_advanced":
+                    new_turn = data.get("turn", 0)
+                    self.current_turn = new_turn
                     self.action_sent_this_turn = False
 
                 elif msg_type == "game_ended":

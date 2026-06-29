@@ -14,6 +14,7 @@ class AgentHandler:
         self.is_alive = True
         self.initial_status_logged = False
         self.last_view = {}
+        self.opponents_data = {"players": [], "monsters": []}  # Penampung memori internal data musuh
 
     async def start_monitoring(self):
         logger.info("Battle monitor active. Monitoring turns and rendering stats...")
@@ -80,9 +81,15 @@ class AgentHandler:
                     location_now = current_region.get("name", "Unknown Location")
                     location_planning = "None"
 
-                    # Mendelegasikan logika pemindaian musuh ke kelas ThreatEvaluator
-                    inside_count, detected_count = ThreatEvaluator.scan_enemies(
+                    # 1. Pemindaian Ringkas Jumlah Musuh per Layer
+                    layer0, layer1, layer2 = ThreatEvaluator.scan_enemies(
                         view=self.last_view, 
+                        self_id=view_self.get("id", "")
+                    )
+
+                    # 2. Pemindaian Mendalam Atribut & Stat Musuh (Disimpan ke Memori Internal)
+                    self.opponents_data = ThreatEvaluator.scan_detailed_opponents(
+                        view=self.last_view,
                         self_id=view_self.get("id", "")
                     )
 
@@ -93,24 +100,30 @@ class AgentHandler:
                     print(f"- Equipped > Weapon : {weapon_name} / Armor : {armor_name}")
                     print(f"- Inventory > {inventory_str}")
                     print(f"- Location > Now : {location_now} / Next : {location_planning}")
-                    print(f"- Enemy Scan > Inside : {inside_count} / Detected : {detected_count}")
+                    print(f"- Enemy Scan > Layer 0 (Here) : P:{layer0[0]} M:{layer0[1]} / "
+                          f"Layer 1 (Adjacent) : P:{layer1[0]} M:{layer1[1]} / "
+                          f"Layer 2 (Farther) : P:{layer2[0]} M:{layer2[1]}")
                     print("")
+
+                    # Cetak status kesuksesan pemindaian mendalam secara bersih tanpa mengotori PowerShell
+                    logger.info("Enemy stats scan: SUCCESSFUL")
 
                     if not self.initial_status_logged:
                         self.initial_status_logged = True
                         self.is_alive = server_is_alive
                         if not server_is_alive:
-                            logger.info("[POLICY] Rejoin restricted: Even though you are dead, you MUST wait for the entire match to end.")
-                            logger.info("[POLICY] Server allows only 1 active game per type. Waiting for 'game_ended' frame...")
+                            logger.warning(f"[DEATH] Agent is connected in a DEAD state. Terminating monitor for testing rejoin...")
+                            self._is_active = False
+                            break
                     else:
                         if not server_is_alive and self.is_alive:
                             self.is_alive = False
-                            logger.warning(f"[DEATH] Agent has been eliminated! (HP: {hp})")
-                            logger.info("[POLICY] Rejoin restricted: Even though you are dead, you MUST wait for the entire match to end.")
-                            logger.info("[POLICY] Server allows only 1 active game per type. Waiting for 'game_ended' frame...")
+                            logger.warning(f"[DEATH] Agent has been eliminated! (HP: {hp}). Terminating monitor for testing rejoin...")
+                            self._is_active = False
+                            break
 
                 elif msg_type == "game_ended":
-                    logger.info("[FINISHED] The match has fully ended. You are now free to join a new room!")
+                    logger.info("[FINISHED] The match has fully ended.")
                     self._is_active = False
                     break
                 

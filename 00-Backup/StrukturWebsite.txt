@@ -9,6 +9,11 @@ botgame/
 │       ├── monsters.py      # Kamus stat dasar Wolf, Bear, Bandit, dan Guardian
 │       ├── weapons.py       # Kamus stat kekuatan senjata & jangkauan range
 │       ├── items.py         # Kamus efek item pemulih & item utilitas
+│       ├── facilities.py    
+│       ├── cooldowns.py    
+│       ├── ruins.py    
+│       ├── relics.py    
+│       ├── packs.py    
 │       └── environmental.py # Kamus modifier Terrain (medan) dan Weather (cuaca)
 │
 ├── src/

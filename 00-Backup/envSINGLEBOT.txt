@@ -1,0 +1,12 @@
+# API URL dan WebSocket URLs
+API_URL=https://cdn.clawroyale.ai/api
+WS_JOIN_URL=wss://cdn.clawroyale.ai/ws/join
+WS_AGENT_URL=wss://cdn.clawroyale.ai/ws/agent
+
+# Versi API aktif (akan diverifikasi secara dinamis jika diperlukan)
+X_VERSION=1.11.2
+
+ROOM_PREFERENCE=free
+AGENT_NAME=Extravaro1
+API_KEY=mr_live_3JiEDObzgek3V3tRE6M4AAmFr3oDCUgX
+PRIVATE_KEY=

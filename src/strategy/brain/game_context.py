@@ -7,11 +7,15 @@ class GameContext:
         self.region_names: Dict[str, str] = {}
         self.visited_history: List[str] = []
         self.interacted_regions: List[str] = []
-        self.opponents_data: Dict[str, List[Dict[str, Any]]] = {"players": [], "monsters": []}  # Memori penampung data detail musuh
+        self.opponents_data: Dict[str, List[Dict[str, Any]]] = {"players": [], "monsters": []}
         self.pending_deathzones: List[str] = []
         self.active_deathzones: List[str] = []
         self.last_action_type = "rest"
         self.history_actions: List[Dict[str, Any]] = []
+        
+        self.last_kills_count = 0
+        self.last_attack_region = ""
+        self.loot_targets: List[str] = []
 
     def update_map(self, current_region: Dict[str, Any], pending_zones: List[Dict[str, Any]]):
         region_id = current_region.get("id")

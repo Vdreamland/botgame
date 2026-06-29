@@ -77,3 +77,15 @@ class UtilityBehavior:
         if thought:
             payload["thought"] = thought[:700]
         return payload
+
+    @staticmethod
+    def build_explore_action(thought: str = "") -> Dict[str, Any]:
+        payload = {
+            "type": "action",
+            "data": {
+                "type": "explore"
+            }
+        }
+        if thought:
+            payload["thought"] = thought[:700]
+        return payload

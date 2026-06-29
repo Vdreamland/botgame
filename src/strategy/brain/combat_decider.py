@@ -22,7 +22,6 @@ class CombatDecider(BaseDecider):
         if equipped_weapon:
             equipped_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
 
-        # 1. Mengalkulasi jangkauan maksimal senjata yang kita miliki saat ini
         weapons_we_have = [equipped_weapon_name]
         for item in inventory:
             if isinstance(item, dict):
@@ -46,8 +45,6 @@ class CombatDecider(BaseDecider):
         elif has_melee:
             max_available_range = 0
 
-        # 2. Memindai seluruh musuh hidup yang berada di dalam jangkauan jangkau tembak kita
-        # Kita memprioritaskan Pemain lain (untuk ranking Kills) dibanding Monster
         opponents = []
         for p in context.opponents_data.get("players", []):
             opponents.append({"id": p["id"], "name": p["name"], "hp": p["hp"], "region_id": p["region_id"], "is_monster": False})
@@ -77,18 +74,17 @@ class CombatDecider(BaseDecider):
         if not valid_targets:
             return None
 
-        # Menyortir target: Prioritaskan Pemain lain terlebih dahulu, kemudian cari yang HP-nya terkecil (sekarat)
         valid_targets.sort(key=lambda x: (x["is_monster"], x["hp"]))
         best_target = valid_targets[0]
         target_id = best_target["id"]
         target_name = best_target["name"]
         target_distance = best_target["distance"]
 
-        # 3. Eksekusi Taktik Tukar Senjata Dinamis (Dynamic Weapon Swapping) berdasarkan Jarak Layer
+        # Mencatat wilayah target serangan sebelum menembak
+        context.last_attack_region = best_target["region_id"]
+
         if target_distance == 0:
-            # Target berada di Layer 0 (Dekat). Kita ingin memakai Katana (Melee terkuat)
             if "Katana" in weapons_we_have and equipped_weapon_name != "Katana":
-                # Cari ID Katana di dalam tas untuk dipasang gratis
                 for item in inventory:
                     name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
                     i_id = item.get("id") or name if isinstance(item, dict) else str(item)
@@ -98,7 +94,6 @@ class CombatDecider(BaseDecider):
                             item_id=i_id,
                             thought=f"Target {target_name} is in Layer 0. Swapping to Katana for maximum DPS."
                         )
-            # Jika Katana sudah terpasang (atau tidak punya Katana), langsung hantam!
             context.last_action_type = "attack"
             return CombatBehavior.build_attack_action(
                 target_id=target_id,
@@ -106,7 +101,6 @@ class CombatDecider(BaseDecider):
             )
 
         elif target_distance >= 1:
-            # Target berada di Layer 1 atau 2 (Jauh). Kita wajib menggunakan Sniper Rifle atau Bow/Pistol
             preferred_ranged = "Sniper rifle" if has_sniper else ("Pistol" if "Pistol" in weapons_we_have else "Bow")
             if preferred_ranged in weapons_we_have and equipped_weapon_name != preferred_ranged:
                 for item in inventory:
@@ -118,7 +112,6 @@ class CombatDecider(BaseDecider):
                             item_id=i_id,
                             thought=f"Target {target_name} is in Layer {target_distance}. Swapping to {preferred_ranged}."
                         )
-            # Jika Senjata Ranged sudah terpasang, langsung tembak!
             context.last_action_type = "attack"
             return CombatBehavior.build_attack_action(
                 target_id=target_id,

@@ -6,6 +6,80 @@ from src.websocket.lobby.join_handler import JoinHandler
 from src.websocket.battle.agent_handler import AgentHandler
 from src.utils.logger import logger
 
+async def auto_equip_lobby(api_key: str, bot_name: str):
+    """Automatically optimize and equip the best available lobby loadout."""
+    logger.info(f"[{bot_name}] Evaluating lobby inventory for loadout optimization...")
+    from src.api.loadout import LobbyLoadoutManager
+    manager = LobbyLoadoutManager(api_key)
+    
+    # 1. OPTIMIZE ACTIVE PACK (T1 > T2 > T3)
+    packs = await manager.get_packs_inventory()
+    if isinstance(packs, list) and len(packs) > 0:
+        tier_weights = {"T1": 3, "T2": 2, "T3": 1}
+        # Sort descending by tier weight safely
+        packs.sort(key=lambda p: tier_weights.get(p.get("tier", "T3"), 0) if isinstance(p, dict) else 0, reverse=True)
+        best_pack = packs[0]
+        best_pack_id = best_pack.get("instanceId") if isinstance(best_pack, dict) else None
+        
+        loadout = await manager.get_loadout()
+        current_pack = loadout.get("activePack", {})
+        current_pack_id = current_pack.get("instanceId") if isinstance(current_pack, dict) else None
+        
+        if best_pack_id and best_pack_id != current_pack_id:
+            logger.info(f"[{bot_name}] Equipping stronger active pack...")
+            await manager.equip_pack(best_pack_id)
+
+    # 2. OPTIMIZE RELICS
+    relics = await manager.get_relics_inventory()
+    if isinstance(relics, list) and len(relics) > 0:
+        slots_to_check = [0, 1, 2]
+        for slot_index in slots_to_check:
+            # Use safe for-loop append instead of list comprehension to prevent indexing bugs
+            slot_relics = []
+            for r in relics:
+                if isinstance(r, dict):
+                    t_idx = r.get("typeIndex")
+                    if t_idx == slot_index:
+                        slot_relics.append(r)
+                        
+            if len(slot_relics) == 0:
+                continue
+                
+            # Score each relic based on cumulative positive/negative affix values
+            scored_relics = []
+            for relic in slot_relics:
+                score = 0
+                affixes = relic.get("affixes", [])
+                if isinstance(affixes, list):
+                    for affix in affixes:
+                        if isinstance(affix, dict):
+                            val = affix.get("rolledValue") or affix.get("value") or 0
+                            score += val
+                scored_relics.append((score, relic))
+                
+            # Sort descending by cumulative score safely
+            scored_relics.sort(key=lambda x: x[0], reverse=True)
+            
+            if len(scored_relics) > 0:
+                best_relic = scored_relics[0][1]
+                best_relic_id = best_relic.get("instanceId") if isinstance(best_relic, dict) else None
+                
+                loadout = await manager.get_loadout()
+                slots_equipped = loadout.get("slots", [])
+                if not isinstance(slots_equipped, list):
+                    slots_equipped = []
+                    
+                current_relic_id = None
+                if len(slots_equipped) > slot_index:
+                    curr_relic = slots_equipped[slot_index]
+                    current_relic_id = curr_relic.get("instanceId") if isinstance(curr_relic, dict) else None
+                    
+                if best_relic_id and best_relic_id != current_relic_id:
+                    slot_names = ["Red", "Green", "Blue"]
+                    slot_label = slot_names[slot_index] if slot_index < len(slot_names) else str(slot_index)
+                    logger.info(f"[{bot_name}] Equipping best relic in slot {slot_label}...")
+                    await manager.equip_relic(slot_index, best_relic_id)
+
 async def run_single_bot(bot_name: str, api_key: str):
     """Asynchronous self-contained worker loop for each individual bot."""
     logger.info(f"Starting worker task for [ {bot_name} ]...")
@@ -20,6 +94,12 @@ async def run_single_bot(bot_name: str, api_key: str):
         settings.SOS_TARGETS.clear()
         settings.SHARED_VISITED_HISTORY.clear()
         
+        # Run out-of-game loadout optimizer before entering queue
+        try:
+            await auto_equip_lobby(api_key, bot_name)
+        except Exception as e:
+            logger.error(f"[{bot_name}] Auto-loadout optimization failed: {str(e)}")
+
         lobby = JoinHandler(api_key=api_key)
         logger.info(f"Agent [ {bot_name} ] joining queue [ {settings.ROOM_PREFERENCE.upper()} ]...")
         

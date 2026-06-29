@@ -10,10 +10,12 @@ class BaseWebSocketClient:
     
     def __init__(self, url: str, api_key: Optional[str] = None):
         self.url = url
-        self.api_key = api_key or settings.API_KEY
         self.websocket: Optional[websockets.WebSocketClientProtocol] = None
         self._ping_task: Optional[asyncio.Task] = None
         self._is_active = False
+        
+        # Cleanly resolve base api key for dynamic injection
+        self.api_key = api_key or settings.API_KEY
 
     def _get_headers(self) -> Dict[str, str]:
         """Construct required Claw Royale headers."""

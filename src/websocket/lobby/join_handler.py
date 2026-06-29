@@ -73,7 +73,11 @@ class JoinHandler(BaseWebSocketClient):
                     break
 
                 response_type = response.get("type")
-                logger.info(f"Queue Status: {response}")
+                
+                # Menyembunyikan payload JSON antrean agar tidak mengotori PowerShell
+                if response_type == "queued":
+                    logger.info("Still in queue, waiting for players...")
+                    continue
 
                 if response_type == "sign_required":
                     logger.warning("EIP-712 signature required for Paid Room.")
@@ -81,10 +85,8 @@ class JoinHandler(BaseWebSocketClient):
                     break
 
                 if response_type == "assigned" or response_type == "joined":
-                    game_id = response.get("gameId")
-                    agent_id = response.get("agentId")
-                    logger.info(f"MATCHMAKING SUCCESSFUL! Assigned to Game ID: {game_id}, Agent ID: {agent_id}")
-                    logger.info("Transitioning socket to gameplay...")
+                    # Cukup tampilkan indikasi sukses yang bersih tanpa mencetak deretan angka UUID
+                    logger.info("Matchmaking successful! Entering battle arena...")
                     
                     active_socket = self.websocket
                     self.websocket = None

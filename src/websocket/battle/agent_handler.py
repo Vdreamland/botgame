@@ -130,6 +130,7 @@ class AgentHandler:
                             location_planning=location_planning,
                             action_thought=action_thought,
                             deadzone_status=parsed_state["deadzone_status"],
+                            deadzone_warning=parsed_state["deadzone_warning"],  # Meneruskan nama wilayah terancam ke UI
                             layer0=parsed_state["layer0"],
                             layer1=parsed_state["layer1"],
                             layer2=parsed_state["layer2"]

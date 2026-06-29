@@ -21,4 +21,9 @@ class WeightMap:
         base_cost = 1.0
         extra_ep = static_terrain.get("extra_ep", 0) + static_weather.get("extra_ep", 0)
         
+        if region_id in context.map_graph:
+            neighbors_count = len(context.map_graph[region_id])
+            if neighbors_count > 0 and neighbors_count <= 3:
+                base_cost += 10.0
+                
         return base_cost + float(extra_ep)

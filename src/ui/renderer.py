@@ -21,6 +21,7 @@ class TerminalRenderer:
         location_planning: str,
         action_thought: str,
         deadzone_status: str,
+        deadzone_warning: str,
         layer0: tuple,
         layer1: tuple,
         layer2: tuple
@@ -33,6 +34,7 @@ class TerminalRenderer:
         print(f"- Inventory > {inventory_str}")
         print(f"- Ground > {ground_str}")
         print(f"- Location > Now : {location_now} / Next : {location_planning} / Deadzone : {deadzone_status}")
+        print(f"- Deadzone > Warning : {deadzone_warning}")
         print(f"- Action Reason : {action_thought}")
         print(f"- Enemy Scan > Layer 0 (Here) : P:{layer0[0]} M:{layer0[1]} / "
               f"Layer 1 (Adjacent) : P:{layer1[0]} M:{layer1[1]} / "

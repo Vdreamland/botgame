@@ -4,7 +4,8 @@ class GameContext:
     
     def __init__(self):
         self.map_graph: Dict[str, List[str]] = {}
-        self.region_names: Dict[str, str] = {}  # Kamus pemetaan nama wilayah wajib terdefinisi
+        self.region_names: Dict[str, str] = {}
+        self.visited_history: List[str] = []
         self.pending_deathzones: List[str] = []
         self.active_deathzones: List[str] = []
         self.last_action_type = "rest"
@@ -19,6 +20,12 @@ class GameContext:
             
         if region_id and region_name:
             self.region_names[region_id] = region_name
+            
+        if region_id:
+            if not self.visited_history or self.visited_history[-1] != region_id:
+                self.visited_history.append(region_id)
+                if len(self.visited_history) > 4:
+                    self.visited_history.pop(0)
         
         self.pending_deathzones = []
         for zone in pending_zones:

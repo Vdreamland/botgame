@@ -81,6 +81,16 @@ class StateParser:
         else:
             deadzone_status = "SAFE"
 
+        if pending_zones:
+            pending_names = []
+            for zone in pending_zones:
+                z_id = zone.get("id")
+                z_name = zone.get("name") or context.region_names.get(z_id, f"Hex-{z_id[:8]}")
+                pending_names.append(z_name)
+            deadzone_warning = " / ".join(pending_names)
+        else:
+            deadzone_warning = "None"
+
         layer0, layer1, layer2 = ThreatEvaluator.scan_enemies(view, view_self.get("id", ""))
 
         return {
@@ -99,6 +109,7 @@ class StateParser:
             "location_now": location_now,
             "location_planning": location_planning,
             "deadzone_status": deadzone_status,
+            "deadzone_warning": deadzone_warning,
             "layer0": layer0,
             "layer1": layer1,
             "layer2": layer2

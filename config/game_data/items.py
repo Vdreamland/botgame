@@ -2,7 +2,7 @@ RECOVERY_ITEMS = {
     "Emergency Food": {"hp_bonus": 20, "ep_bonus": 0, "ep_cost": 0},
     "Bandage": {"hp_bonus": 10, "ep_bonus": 0, "ep_cost": 0},
     "Medkit": {"hp_bonus": 30, "ep_bonus": 5, "ep_cost": 0},
-    "Energy Drink": {"hp_bonus": 0, "ep_bonus": 5, "ep_cost": 0}
+    "Energy drink": {"hp_bonus": 0, "ep_bonus": 5, "ep_cost": 0}
 }
 
 UTILITY_ITEMS = {

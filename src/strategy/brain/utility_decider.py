@@ -4,6 +4,25 @@ from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.behaviors.utility_behavior import UtilityBehavior
 from config.game_data import WEAPONS
 
+LOOT_PRIORITY = {
+    "sMoltz": 11,
+    "Medkit": 10,
+    "Katana": 9,
+    "Sniper rifle": 9,
+    "Plate Armor": 8,
+    "Sword": 7,
+    "Emergency Food": 6,
+    "Binoculars": 5,
+    "Energy drink": 5,
+    "Bandage": 4,
+    "Megaphone": 4,
+    "Map": 4,
+    "Radio": 4,
+    "Pistol": 3,
+    "Bow": 2,
+    "Dagger": 1
+}
+
 class UtilityDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
@@ -68,7 +87,7 @@ class UtilityDecider(BaseDecider):
                     priority = 7
                 elif g_name == "Emergency Food":
                     priority = 6
-                elif g_name in ["Energy Drink", "Binoculars"]:
+                elif g_name in ["Energy drink", "Binoculars"]:
                     priority = 5
                 elif g_name in ["Bandage", "Megaphone", "Map", "Radio"]:
                     priority = 4
@@ -111,7 +130,7 @@ class UtilityDecider(BaseDecider):
                         thought="Collecting free sMoltz currency."
                     )
 
-                if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy Drink", "Megaphone", "Map", "Binoculars", "Radio"]:
+                if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy drink", "Megaphone", "Map", "Binoculars", "Radio"]:
                     context.last_action_type = "pickup"
                     return UtilityBehavior.build_pickup_action(
                         item_id=g_id,

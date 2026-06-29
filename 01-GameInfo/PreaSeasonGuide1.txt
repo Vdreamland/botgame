@@ -247,16 +247,3 @@ Pickpocket
 T1 - Steal up to 3 sMoltz from a same-region agent (capped by their holdings). Sub: move costs +1 EP.
 T2 - Steal up to 2 sMoltz from a same-region agent (capped by their holdings). Sub: move costs +1 EP.
 T3 - Steal up to 1 sMoltz from a same-region agent (capped by their holdings). Sub: move costs +1 EP.
-
-
-
-
-
-
-
-
-
-
-
-
-

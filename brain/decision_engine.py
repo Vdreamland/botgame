@@ -82,6 +82,8 @@ class DecisionEngine:
             item_id, slot_name = optimal_equip
             self.logger.warning(f"TACTICAL DECISION (Free Action): Equipping onto slot '{slot_name}' [9].")
             await self.dispatcher.execute_equip(item_id, slot_name)
+            # KELUAR INSTAN: Tunggu konfirmasi status senjata terpasang dari server di turn/ws-message berikutnya
+            return
 
         # 4. KONTROL LOOTING & PEMBERSIHAN TAS (FREE ACTION)
         inv_action, target_id, details_id = self.inventory_manager.determine_pickup_and_cleanup()
@@ -101,24 +103,27 @@ class DecisionEngine:
             await self.dispatcher.execute_pickup(target_id)
 
         # 5. PEMICU DARURAT MELARIKAN DIRI DARI PERTEMPURAN (EMERGENCY COMBAT FLEE OVERRIDE) [11]
-        # Jika musuh terlalu kuat di dekat kita, segera melarikan diri ke wilayah tetangga terdekat yang aman!
+        # Bot hanya diizinkan melarikan diri jika dikeroyok (>= 2 musuh di satu ubin) ATAU jika HP kritis (<35%)
         battle_eval = self.analyzer.evaluate_combat_situation()
         if battle_eval.get("recommendation") == "FLEE" and battle_eval.get("target"):
             enemy = battle_eval["target"]
             enemy_region = enemy.get("regionId") or self.game_state.current_region_id
             
-            if self.game_state.connections:
-                # Cari wilayah tetangga yang tidak ditempati oleh musuh tersebut, jika memungkinkan
-                escape_candidates = [conn for conn in self.game_state.connections if conn != enemy_region]
-                escape_region = escape_candidates[0] if escape_candidates else self.game_state.connections[0]
-                
-                self.logger.warning(
-                    f"COMBAT FLEE OVERRIDE: Danger! Enemy '{enemy.get('name')}' is too powerful "
-                    f"(Win Rate: {battle_eval.get('win_rate', 0.0)*100:.1f}%). "
-                    f"Evacuating immediately to safe region: {self.game_state.get_region_name(escape_region)} [11]."
-                )
-                await self.dispatcher.execute_move(escape_region)
-                return
+            # Hitung jumlah musuh nyata yang berdiri di ubin yang sama dengan kita saat ini (Layer 0)
+            local_enemies_count = sum(1 for e in self.game_state.enemies if (e.get("regionId") or self.game_state.current_region_id) == bot_pos)
+            
+            # Kriteria evakuasi tempur: Dikeroyok (musuh >= 2) ATAU HP kritis (< 35%)
+            if local_enemies_count >= 2 or self.game_state.hp < 35.0:
+                if self.game_state.connections:
+                    escape_candidates = [conn for conn in self.game_state.connections if conn != enemy_region]
+                    escape_region = escape_candidates[0] if escape_candidates else self.game_state.connections[0]
+                    
+                    self.logger.warning(
+                        f"COMBAT FLEE OVERRIDE: Danger! Ganked by {local_enemies_count} enemies! "
+                        f"Evacuating immediately to safe region: {self.game_state.get_region_name(escape_region)} [11]."
+                    )
+                    await self.dispatcher.execute_move(escape_region)
+                    return
 
         # 6. PEMICU PREDATOR GLOBAL (GLOBAL PREDATOR OVERRIDE)
         # Jika mendeteksi musuh sekarat atau peluang menang mutlak, bot langsung aktif mengejar

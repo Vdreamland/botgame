@@ -1,0 +1,20 @@
+Peningkatan 1: Pengintai Cedera Kritis (Low HP Scout Heuristic)
+Masalah pada Log (Turn 13-14):
+Extravaro1 kritis dengan 20 HP dan tanpa obat pemulih. Karena berada di zona aman, ia memutuskan berjalan acak melintasi ubin tetangga (adjacent tile) untuk mencari jarahan baru. Sialnya, ia memilih melangkah ke Beach yang ternyata sedang dihuni musuh bersenjata [1].
+Upgrade Cerdas yang Bisa Diterapkan:
+Kita dapat menambahkan Logika Sensor Pengintai HP Kritis di dalam IdleDecider.py.
+Jika bot sedang dalam kondisi kritis (HP 
+<
+40
+<40
+) dan tidak memiliki item penyembuh di tas, saat ia terpaksa melangkah berjelajah ke ubin tetangga, bot akan menyisir koordinat musuh/monster yang terlihat di ubin sekitar terlebih dahulu.
+Bot akan menyaring koneksi ubin sekitar, mencoret ubin yang terdeteksi sedang dihuni oleh musuh/monster, dan hanya akan melangkah ke ubin tetangga yang terbukti benar-benar kosong dari musuh [1].
+Dampak: Bot yang kritis tidak akan pernah lagi nekat berjalan menyodorkan nyawanya secara gratis ke mulut musuh yang sedang berjaga di ubin sebelah [1].
+Peningkatan 2: Radar Zona Kematian Aliansi (Shared Active Deathzone Memory)
+Masalah pada Log (Turn 28-29):
+Extravaro2 kritis melarikan diri dari kejaran monster di Warehouse dan melompat ke Grassland. Karena ia belum pernah menginjak Grassland sepanjang game, ubin tersebut berada di blind spot (titik buta) memorinya, padahal ubin tersebut sudah menyusut aktif menjadi zona kematian [1].
+Upgrade Cerdas yang Bisa Diterapkan:
+Kita bisa membuat Memori Zona Kematian Bersama secara global di settings.py (misalnya settings.SHARED_ACTIVE_DEATHZONES = []) [1].
+Jika salah satu bot (misalnya Bot 1) sedang menjelajah dan mendeteksi/menginjak suatu ubin yang berstatus Active Deathzone, koordinat ubin tersebut langsung didaftarkan ke dalam daftar hitam kelompok [1].
+Bot 2 (meskipun berada di ujung peta yang jauh dan belum pernah mendatangi ubin tersebut) akan langsung mendeteksi bahwa ubin tersebut beracun [1]. Saat ia terpaksa melarikan diri, ia tidak akan pernah memilih ubin beracun tersebut sebagai jalur pelariannya [1].
+Dampak: Bot Anda akan memiliki pemetaan zona bahaya yang sinkron dan jauh lebih akurat, menghindari kematian konyol akibat melarikan diri ke area beracun yang tidak terdeteksi [1].

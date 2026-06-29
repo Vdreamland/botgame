@@ -12,15 +12,19 @@ class StateParser:
         max_hp = view_self.get("maxHp", 100)
         ep = view_self.get("ep", 10)
         max_ep = view_self.get("maxEp", 10)
-        atk = view_self.get("atk", 25)
         def_val = view_self.get("def", 5)
         kills = view_self.get("kills", 0)
         server_is_alive = view_self.get("isAlive", True)
 
         equipped_weapon = view_self.get("equippedWeapon")
         weapon_name = "None"
+        weapon_atk_bonus = 0
         if equipped_weapon:
             weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
+            weapon_atk_bonus = WEAPONS.get(weapon_name, {}).get("atk_bonus", 0)
+
+        # Mengalkulasi stat ATK secara dinamis: ATK Dasar (25) + Bonus ATK Senjata Aktif
+        atk = 25 + weapon_atk_bonus
 
         equipped_armor = view_self.get("equippedArmor")
         armor_name = "None"

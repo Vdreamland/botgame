@@ -27,9 +27,8 @@ class AgentHandler:
     async def send_json(self, payload: dict):
         try:
             await self.socket.send(json.dumps(payload))
-            logger.info(f"[DEBUG] Action payload sent successfully: {payload.get('data', {}).get('type')}")
-        except Exception as e:
-            logger.error(f"[DEBUG] Failed to send JSON payload: {str(e)}")
+        except Exception:
+            pass
 
     async def start_monitoring(self):
         logger.info("Battle monitor active. Monitoring turns and rendering stats...")
@@ -39,8 +38,6 @@ class AgentHandler:
                 message = await self.socket.recv()
                 data = json.loads(message)
                 msg_type = data.get("type")
-                
-                logger.info(f"[DEBUG] Received message type: '{msg_type}'")
 
                 if msg_type == "waiting":
                     continue
@@ -49,12 +46,9 @@ class AgentHandler:
                     new_turn = data.get("turn", 0)
                     is_new_turn = (new_turn != self.current_turn)
                     
-                    logger.info(f"[DEBUG] turn_check: self.current_turn={self.current_turn}, new_turn={new_turn}, is_new_turn={is_new_turn}")
-                    
                     if is_new_turn:
                         self.current_turn = new_turn
                         self.action_sent_this_turn = False
-                        logger.info("[DEBUG] Reset action_sent_this_turn = False for new turn.")
 
                     if "view" in data:
                         self.last_view = data["view"]
@@ -72,10 +66,8 @@ class AgentHandler:
                     location_planning = "None"
                     action_thought = "None"
                     
-                    logger.info(f"[DEBUG] action_check: server_is_alive={server_is_alive}, action_sent_this_turn={self.action_sent_this_turn}")
                     if server_is_alive and not self.action_sent_this_turn:
                         computed_action = self.brain.compute_action(self.last_view, self.context)
-                        logger.info(f"[DEBUG] compute_action returned: {computed_action}")
                         if computed_action:
                             action_thought = computed_action.get("thought", "Executing strategic action.")
                             action_data = computed_action.get("data", {})
@@ -84,7 +76,6 @@ class AgentHandler:
                             is_cooldown_group = action_type in ["move", "explore", "attack", "use_item", "interact", "rest"]
                             if is_cooldown_group:
                                 self.action_sent_this_turn = True
-                                logger.info("[DEBUG] Main action detected. Setting action_sent_this_turn = True.")
                             
                             if action_type == "move":
                                 target_id = action_data.get("regionId", "")
@@ -111,7 +102,6 @@ class AgentHandler:
                     if computed_action:
                         await self.send_json(computed_action)
 
-                    logger.info(f"[DEBUG] render_check: current_turn={self.current_turn}, last_rendered_turn={self.last_rendered_turn}")
                     if self.current_turn != self.last_rendered_turn:
                         self.last_rendered_turn = self.current_turn
 

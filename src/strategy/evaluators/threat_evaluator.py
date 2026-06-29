@@ -70,10 +70,13 @@ class ThreatEvaluator:
             m_name = monster.get("name", "Unknown")
             clean_name = m_name.split(" #")[0]
             static_stats = MONSTERS.get(clean_name, {})
+            
+            # Memasang kembali parameter region_id secara utuh untuk kebutuhan kalkulasi range CombatDecider
             scanned_monsters.append({
                 "id": monster.get("id", ""),
                 "name": m_name,
                 "hp": monster.get("hp", 0),
+                "region_id": monster.get("regionId", ""),
                 "atk": static_stats.get("atk", 0)
             })
 

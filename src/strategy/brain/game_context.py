@@ -6,6 +6,8 @@ class GameContext:
         self.map_graph: Dict[str, List[str]] = {}
         self.region_names: Dict[str, str] = {}
         self.visited_history: List[str] = []
+        self.interacted_regions: List[str] = []
+        self.opponents_data: Dict[str, List[Dict[str, Any]]] = {"players": [], "monsters": []}  # Memori penampung data detail musuh
         self.pending_deathzones: List[str] = []
         self.active_deathzones: List[str] = []
         self.last_action_type = "rest"

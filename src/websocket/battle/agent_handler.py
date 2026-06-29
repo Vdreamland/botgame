@@ -20,7 +20,6 @@ class AgentHandler:
         self.initial_status_logged = False
         self.action_sent_this_turn = False
         self.last_view = {}
-        self.opponents_data = {"players": [], "monsters": []}
         self.context = GameContext()
         self.brain = DecisionEngine()
 
@@ -45,15 +44,11 @@ class AgentHandler:
                 if msg_type in ["agent_view", "turn_advanced"]:
                     new_turn = data.get("turn", 0)
                     is_new_turn = (new_turn != self.current_turn)
-                    
-                    if is_new_turn:
-                        self.current_turn = new_turn
-                        self.action_sent_this_turn = False
+                    self.current_turn = new_turn
+                    self.last_view = data.get("view", {})
 
-                    if "view" in data:
-                        self.last_view = data["view"]
-                    elif "view" not in data and not self.last_view:
-                        continue
+                    if is_new_turn:
+                        self.action_sent_this_turn = False
 
                     view_self = self.last_view.get("self", {})
                     server_is_alive = view_self.get("isAlive", True)
@@ -94,7 +89,8 @@ class AgentHandler:
                             elif action_type == "interact":
                                 location_planning = "INTERACTING"
 
-                    self.opponents_data = ThreatEvaluator.scan_detailed_opponents(
+                    # Menyimpan hasil scan detail lawan langsung ke dalam memori GameContext
+                    self.context.opponents_data = ThreatEvaluator.scan_detailed_opponents(
                         view=self.last_view,
                         self_id=view_self.get("id", "")
                     )
@@ -130,7 +126,7 @@ class AgentHandler:
                             location_planning=location_planning,
                             action_thought=action_thought,
                             deadzone_status=parsed_state["deadzone_status"],
-                            deadzone_warning=parsed_state["deadzone_warning"],  # Meneruskan nama wilayah terancam ke UI
+                            deadzone_warning=parsed_state["deadzone_warning"],
                             layer0=parsed_state["layer0"],
                             layer1=parsed_state["layer1"],
                             layer2=parsed_state["layer2"]
@@ -151,6 +147,10 @@ class AgentHandler:
                                 logger.warning(f"[DEATH] Agent has been eliminated! (HP: {parsed_state['hp']}). Terminating monitor for testing rejoin...")
                                 self._is_active = False
                                 break
+
+                # Mengabaikan perubahan nomor turn di turn_advanced agar tidak mengacaukan is_new_turn di agent_view
+                elif msg_type == "turn_advanced":
+                    self.action_sent_this_turn = False
 
                 elif msg_type == "game_ended":
                     logger.info("[FINISHED] The match has fully ended.")

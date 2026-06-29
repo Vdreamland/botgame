@@ -86,11 +86,9 @@ class DecisionEngine:
         # 4. KONTROL LOOTING & PEMBERSIHAN TAS (FREE ACTION)
         inv_action, target_id, details_id = self.inventory_manager.determine_pickup_and_cleanup()
         if inv_action == "PICKUP" and target_id:
-            # Tulis log pemungutan bersih hanya menggunakan tipe barang, menyembunyikan ID bising
-            self.logger.info(f"TACTICAL DECISION (Free Action): Found valuable item. Initiating PICKUP of '{details_id}'.")
+            self.logger.info(f"TACTICAL DECISION (Free Action): Found valuable item. Initiating PICKUP of item ID: {target_id}.")
             await self.dispatcher.execute_pickup(target_id)
         elif inv_action == "DROP_AND_PICKUP" and target_id and details_id:
-            # Cari nama barang lobi yang akan dibuang dari tas secara dinamis
             dropped_name = "Obsolete Item"
             for item in self.game_state.inventory:
                 if item.get("id") == details_id:
@@ -100,10 +98,29 @@ class DecisionEngine:
             await self.dispatcher.execute_equip(details_id, "drop")
             await self.dispatcher.execute_pickup(target_id)
 
-        # 5. PEMICU PREDATOR GLOBAL (GLOBAL PREDATOR OVERRIDE)
+        # 5. PEMICU DARURAT MELARIKAN DIRI DARI PERTEMPURAN (EMERGENCY COMBAT FLEE OVERRIDE) [11]
+        # Jika musuh terlalu kuat di dekat kita, segera melarikan diri ke wilayah tetangga terdekat yang aman!
+        battle_eval = self.analyzer.evaluate_combat_situation()
+        if battle_eval.get("recommendation") == "FLEE" and battle_eval.get("target"):
+            enemy = battle_eval["target"]
+            enemy_region = enemy.get("regionId") or self.game_state.current_region_id
+            
+            if self.game_state.connections:
+                # Cari wilayah tetangga yang tidak ditempati oleh musuh tersebut, jika memungkinkan
+                escape_candidates = [conn for conn in self.game_state.connections if conn != enemy_region]
+                escape_region = escape_candidates[0] if escape_candidates else self.game_state.connections[0]
+                
+                self.logger.warning(
+                    f"COMBAT FLEE OVERRIDE: Danger! Enemy '{enemy.get('name')}' is too powerful "
+                    f"(Win Rate: {battle_eval.get('win_rate', 0.0)*100:.1f}%). "
+                    f"Evacuating immediately to safe region: {self.game_state.get_region_name(escape_region)} [11]."
+                )
+                await self.dispatcher.execute_move(escape_region)
+                return
+
+        # 6. PEMICU PREDATOR GLOBAL (GLOBAL PREDATOR OVERRIDE)
         # Jika mendeteksi musuh sekarat atau peluang menang mutlak, bot langsung aktif mengejar
         # PROTEKSI MUTLAK: Bot dilarang melakukan PvP jika HP sekarat (<60%) atau tidak memegang senjata!
-        battle_eval = self.analyzer.evaluate_combat_situation()
         if self.game_state.equipped_weapon and self.game_state.hp >= 60.0:
             if battle_eval.get("recommendation") == "FIGHT" and battle_eval.get("target"):
                 enemy = battle_eval["target"]
@@ -119,8 +136,7 @@ class DecisionEngine:
                         )
                         self.hunter.lock_target(enemy)
 
-        # 6. PENGAWAS STATUS KUNCI BURUAN (PENGAMAN KEMATIAN TARGET)
-        # Jika target perburuan terdeteksi mati atau hilang dari sensor sekitar, segera lepaskan kunci target!
+        # 7. PENGAWAS STATUS KUNCI BURUAN (PENGAMAN KEMATIAN TARGET)
         if self.hunter.locked_target_id:
             locked_enemy_still_alive = False
             for p in self.game_state.enemies:
@@ -132,21 +148,20 @@ class DecisionEngine:
                 self.logger.warning(f"PREDATOR LOCK RELEASED: Target '{self.hunter.locked_target_name}' is dead or escaped. Releasing hunter lock!")
                 self.hunter.release_target()
 
-        # 7. PENANGANAN MOBS SEKITAR (MONSTER ENGAGEMENT RULE)
-        # Mobs hanya diserang jika berada di wilayah kita, HP kita > 60%, dan kita memegang senjata
+        # 8. PENANGANAN MOBS SEKITAR (MONSTER ENGAGEMENT RULE)
         if self.game_state.visible_monsters and self.game_state.hp > 60.0 and self.game_state.equipped_weapon:
             closest_mob = self.game_state.visible_monsters[0]
             mob_id = closest_mob.get("id")
             mob_name = closest_mob.get("name", "Monster")
             
-            # Guardian tidak dilawan kecuali fullSet terpasang lengkap
             if "guardian" not in mob_name.lower() or self.game_state.has_full_set:
                 self.logger.warning(f"PREY ALERT: Clearing hostile mob '{mob_name}' in current region [11].")
                 await self.dispatcher.execute_attack(mob_id)
                 return
 
-        # 8. EVAKUASI DINI DEAD ZONE WARNING
+        # 9. EVAKUASI DINI DEAD ZONE WARNING
         if self.deadzone_warning.is_warning_active():
+            self.logger.warning("Dead Zone warning received. Day 2 expansion is imminent [14].")
             if self.game_state.connections:
                 escape_region = random.choice(self.game_state.connections)
                 resolved_escape_name = self.game_state.get_region_name(escape_region)
@@ -154,7 +169,7 @@ class DecisionEngine:
                 await self.dispatcher.execute_move(escape_region)
                 return
 
-        # 9. JALANKAN PERBURUAN AKTIF JIKA LOCK AKTIF
+        # 10. JALANKAN PERBURUAN AKTIF JIKA LOCK AKTIF
         if self.hunter.locked_target_id:
             if self.hunter.verify_hunt_safety(battle_eval):
                 self.logger.info(f"HUNT STATUS: Hunter lock is active on player '{self.hunter.locked_target_name}'.")
@@ -192,7 +207,7 @@ class DecisionEngine:
                 self.logger.warning("HUNT STATUS: Deactivating Hunter Mode. Safety check failed or target escaped.")
                 self.hunter.release_target()
 
-        # 10. JALANKAN LOGIKA PHASE-BASED KONDISIONAL (JIKA TIDAK SEDANG BERBURU)
+        # 11. JALANKAN LOGIKA PHASE-BASED KONDISIONAL
         day = self.game_state.day
         if day == 1:
             action_type, details = self.early_strategy.determine_early_action()
@@ -200,7 +215,7 @@ class DecisionEngine:
                 await self.dispatcher.execute_pickup(details["item_id"])
             elif action_type == "EXPLORE":
                 self.logger.info("TACTICAL DECISION: Standing on active ruins. Initiating ruin EXPLORE action [10].")
-                await self.dispatcher.execute_explore()
+                await self.dispatcher.explore()
             else:
                 await self._navigate_to_nearest_ruins(bot_pos)
             return

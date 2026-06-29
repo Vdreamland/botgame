@@ -23,7 +23,6 @@ class StateParser:
             weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
             weapon_atk_bonus = WEAPONS.get(weapon_name, {}).get("atk_bonus", 0)
 
-        # Mengalkulasi stat ATK secara dinamis: ATK Dasar (25) + Bonus ATK Senjata Aktif
         atk = 25 + weapon_atk_bonus
 
         equipped_armor = view_self.get("equippedArmor")
@@ -72,6 +71,16 @@ class StateParser:
             elif action_type == "equip":
                 location_planning = "EQUIPPING WEAPON"
 
+        is_deathzone = current_region.get("isDeathZone", False)
+        pending_zones = view.get("pendingDeathzones", [])
+        
+        if is_deathzone:
+            deadzone_status = "ACTIVE"
+        elif pending_zones:
+            deadzone_status = "INCOMING"
+        else:
+            deadzone_status = "SAFE"
+
         layer0, layer1, layer2 = ThreatEvaluator.scan_enemies(view, view_self.get("id", ""))
 
         return {
@@ -89,6 +98,7 @@ class StateParser:
             "ground_str": ground_str,
             "location_now": location_now,
             "location_planning": location_planning,
+            "deadzone_status": deadzone_status,
             "layer0": layer0,
             "layer1": layer1,
             "layer2": layer2

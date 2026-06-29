@@ -23,6 +23,22 @@ class CombatDecider(BaseDecider):
         if equipped_weapon:
             equipped_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
 
+        # SENSOR TAKTIS SENJATA TERBENGKALAI:
+        # Jika bot tidak bersenjata (None atau Fist), tetapi terdeteksi ada senjata kuat yang 
+        # menganggur di tanah, kita kembalikan None agar UtilityDecider segera memungut senjata tersebut.
+        current_region = view.get("currentRegion", {})
+        ground_items = current_region.get("items", [])
+        
+        has_weapon_on_ground = False
+        for g_item in ground_items:
+            g_name = g_item.get("name") or g_item.get("displayName") or "" if isinstance(g_item, dict) else str(g_item)
+            if g_name in WEAPONS:
+                has_weapon_on_ground = True
+                break
+
+        if equipped_weapon_name in ["None", "Fist"] and has_weapon_on_ground:
+            return None
+
         # Hanya masukkan senjata yang sanggup kita bayar biaya EP-nya saat ini
         weapons_we_have = []
         
@@ -64,7 +80,6 @@ class CombatDecider(BaseDecider):
         for m in context.opponents_data.get("monsters", []):
             opponents.append({"id": m["id"], "name": m["name"], "hp": m["hp"], "region_id": m["region_id"], "is_monster": True})
 
-        current_region = view.get("currentRegion", {})
         current_region_id = current_region.get("id")
         connections = current_region.get("connections", [])
 
@@ -123,7 +138,6 @@ class CombatDecider(BaseDecider):
                             item_id=i_id,
                             thought=f"Current weapon {equipped_weapon_name} is too expensive ({eq_cost} EP). Swapping to affordable {swap_to}."
                         )
-            # Jika tidak ada alternatif senjata terjangkau di tas, serahkan giliran ke decider lain
             return None
 
         if target_distance == 0:

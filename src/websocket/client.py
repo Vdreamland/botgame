@@ -6,7 +6,7 @@ from config import settings
 from src.utils.logger import logger
 
 class BaseWebSocketClient:
-    """Kelas dasar untuk mengelola siklus hidup koneksi WebSocket ke server Claw Royale."""
+    """Base class to manage WebSocket connections to Claw Royale backend."""
     
     def __init__(self, url: str):
         self.url = url
@@ -15,35 +15,35 @@ class BaseWebSocketClient:
         self._is_active = False
 
     def _get_headers(self) -> Dict[str, str]:
-        """Menyusun header wajib sesuai protokol Claw Royale (X-API-Key & X-Version)."""
+        """Construct required Claw Royale headers."""
         return {
             "X-API-Key": settings.API_KEY,
             "X-Version": settings.X_VERSION
         }
 
     async def connect(self) -> bool:
-        """Membuka koneksi WebSocket ke server."""
+        """Open WebSocket connection."""
         if self.websocket:
             await self.disconnect()
             
-        logger.info(f"Mencoba membuka koneksi WebSocket ke: {self.url}")
+        logger.info(f"Connecting to: {self.url}")
         try:
+            # Menggunakan parameter modern 'additional_headers' untuk kompatibilitas websockets v16.0
             self.websocket = await websockets.connect(
                 self.url,
-                extra_headers=self._get_headers()
+                additional_headers=self._get_headers()
             )
             self._is_active = True
-            # Jalankan background task untuk ping/pong menjaga koneksi tetap hidup
             self._ping_task = asyncio.create_task(self._heartbeat_loop())
-            logger.info("Koneksi WebSocket berhasil dibuka.")
+            logger.info("WebSocket connection opened successfully.")
             return True
         except Exception as e:
-            logger.error(f"Gagal membuka koneksi WebSocket: {str(e)}")
+            logger.error(f"Failed to connect: {str(e)}")
             self.websocket = None
             return False
 
     async def disconnect(self):
-        """Menutup koneksi WebSocket secara aman."""
+        """Safely close WebSocket connection."""
         self._is_active = False
         if self._ping_task:
             self._ping_task.cancel()
@@ -54,44 +54,43 @@ class BaseWebSocketClient:
             self._ping_task = None
 
         if self.websocket:
-            logger.info("Menutup koneksi WebSocket...")
+            logger.info("Closing WebSocket...")
             await self.websocket.close()
             self.websocket = None
-            logger.info("Koneksi WebSocket berhasil ditutup.")
+            logger.info("WebSocket closed safely.")
 
     async def send_json(self, payload: Dict[str, Any]):
-        """Mengirim pesan JSON ke server."""
+        """Send JSON payload over socket."""
         if not self.websocket or not self._is_active:
-            raise ConnectionError("Koneksi WebSocket sedang tidak aktif. Tidak dapat mengirim pesan.")
+            raise ConnectionError("WebSocket is inactive. Cannot send payload.")
         
         message = json.dumps(payload)
         await self.websocket.send(message)
 
     async def receive_json(self) -> Optional[Dict[str, Any]]:
-        """Menerima pesan JSON dari server."""
+        """Receive JSON payload from socket."""
         if not self.websocket or not self._is_active:
-            raise ConnectionError("Koneksi WebSocket sedang tidak aktif. Tidak dapat menerima pesan.")
+            raise ConnectionError("WebSocket is inactive. Cannot receive payload.")
         
         try:
             message = await self.websocket.recv()
             return json.loads(message)
         except websockets.exceptions.ConnectionClosed as e:
-            logger.warning(f"Koneksi ditutup oleh server: Kode {e.code}, Alasan: {e.reason}")
+            logger.warning(f"Connection closed by server: Code {e.code}, Reason: {e.reason}")
             self._is_active = False
             return None
         except Exception as e:
-            logger.error(f"Error saat menerima pesan WebSocket: {str(e)}")
+            logger.error(f"Error receiving WebSocket payload: {str(e)}")
             return None
 
     async def _heartbeat_loop(self):
-        """Loop asinkron untuk mengirimkan ping ke server setiap 15 detik."""
+        """Keepalive heartbeat ping loop."""
         try:
             while self._is_active:
                 await asyncio.sleep(15)
                 if self.websocket and self._is_active:
-                    # Sesuai protokol, kirim { "type": "ping" } untuk menjaga status koneksi
                     await self.send_json({"type": "ping"})
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            logger.debug(f"Heartbeat loop terhenti: {str(e)}")
+            logger.debug(f"Heartbeat loop stopped: {str(e)}")

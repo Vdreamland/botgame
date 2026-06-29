@@ -1,16 +1,15 @@
 import logging
 import sys
 
-def setup_logger(name: str = "ClawRoyaleBot") -> logging.Logger:
-    """Mengonfigurasi logger terstruktur untuk konsol PowerShell."""
+def setup_logger(name: str = "Bot") -> logging.Logger:
+    """Mengonfigurasi logger minimalis, bersih, dan rapi untuk PowerShell."""
     logger = logging.getLogger(name)
     if not logger.handlers:
         logger.setLevel(logging.INFO)
         
-        # Format log yang bersih untuk CLI / PowerShell
+        # Format sangat bersih: [LEVEL] Pesan
         formatter = logging.Formatter(
-            fmt="[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
-            datefmt="%H:%M:%S"
+            fmt="[%(levelname)s] %(message)s"
         )
         
         console_handler = logging.StreamHandler(sys.stdout)
@@ -19,5 +18,5 @@ def setup_logger(name: str = "ClawRoyaleBot") -> logging.Logger:
         
     return logger
 
-# Ekspor instance logger global untuk kemudahan penggunaan
+# Ekspor logger global
 logger = setup_logger()

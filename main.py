@@ -4,35 +4,30 @@ from src.websocket.lobby.join_handler import JoinHandler
 from src.utils.logger import logger
 
 async def test_matchmaking_connection():
-    logger.info("=== MEMULAI PENGUJIAN KONEKSI ANTRIAN BOT ===")
+    logger.info("Checking configuration files...")
     
-    # 1. Validasi konfigurasi settings
+    # 1. Validate configuration
     try:
         settings.validate_config()
     except ValueError as e:
-        logger.error(str(e))
-        logger.error("Silakan lengkapi file .env terlebih dahulu.")
+        logger.error(f"Failed: {str(e)}")
+        logger.error("Please fix your .env file first.")
         return
 
-    # 2. Inisiasi antrean sesuai preferensi room di settings
+    # 2. Initialize Matchmaking
     handler = JoinHandler()
-    logger.info(f"Mulai mendaftar ke antrean [ {settings.ROOM_PREFERENCE.upper()} ROOM ]...")
+    logger.info(f"Agent [ {settings.AGENT_NAME} ] joining queue [ {settings.ROOM_PREFERENCE.upper()} ]...")
     
-    # Menjalankan alur matchmaking dinamis berdasarkan preferensi di .env
+    # Run join flow
     gameplay_socket = await handler.execute_join_flow(entry_type=settings.ROOM_PREFERENCE)
     
     if gameplay_socket:
-        logger.info("============================================================")
-        logger.info(f"SUKSES: Bot berhasil masuk antrean {settings.ROOM_PREFERENCE.upper()} dan teralokasi!")
-        logger.info("============================================================")
-        # Menutup socket tes setelah berhasil uji koneksi
+        logger.info(f"[OK] Agent [ {settings.AGENT_NAME} ] assigned to room successfully!")
         await gameplay_socket.close()
-        logger.info("Koneksi uji coba ditutup secara aman.")
+        logger.info("[OK] Test connection closed safely.")
     else:
-        logger.error("============================================================")
-        logger.error(f"GAGAL: Bot tidak berhasil mendapatkan alokasi room {settings.ROOM_PREFERENCE.upper()}.")
-        logger.error("============================================================")
+        logger.error(f"[FAILED] Agent [ {settings.AGENT_NAME} ] failed to allocate room [ {settings.ROOM_PREFERENCE.upper()} ].")
 
 if __name__ == "__main__":
-    # Menjalankan loop asinkron utama untuk tes koneksi
+    # Execute loop
     asyncio.run(test_matchmaking_connection())

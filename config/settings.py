@@ -12,6 +12,9 @@ X_VERSION = os.getenv("X_VERSION", "1.11.2")
 # Preferensi Room ("free" atau "paid")
 ROOM_PREFERENCE = os.getenv("ROOM_PREFERENCE", "free").lower()
 
+# Nama Identitas Agen Bot
+AGENT_NAME = os.getenv("AGENT_NAME", "ClawAgent").strip()
+
 # Kredensial Utama Bot
 API_KEY = os.getenv("API_KEY", "")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY", "")
@@ -23,3 +26,6 @@ def validate_config():
     
     if ROOM_PREFERENCE not in ["free", "paid"]:
         raise ValueError(f"Error: ROOM_PREFERENCE '{ROOM_PREFERENCE}' tidak valid. Gunakan 'free' atau 'paid'.")
+        
+    if not AGENT_NAME:
+        raise ValueError("Error: AGENT_NAME tidak boleh kosong.")

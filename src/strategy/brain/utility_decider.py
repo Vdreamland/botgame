@@ -29,6 +29,7 @@ class UtilityDecider(BaseDecider):
         view_self = view.get("self", {})
         inventory = view_self.get("inventory", [])
         current_region = view.get("currentRegion", {})
+        region_id = current_region.get("id")
         
         equipped_weapon = view_self.get("equippedWeapon")
         current_atk_bonus = -1
@@ -62,6 +63,26 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better weapon: {best_weapon_name} (+{best_weapon_bonus} ATK)."
             )
 
+        # 2. FITUR PEMBONGKARAN PETI PERSEDIAAN OTOMATIS (Supply Cache Interact)
+        # Menyeleksi jika ada Supply Cache aktif yang belum digunakan dan belum pernah kita buka sebelumnya
+        interactables = current_region.get("interactables", [])
+        for fac in interactables:
+            if isinstance(fac, dict):
+                fac_name = fac.get("name", "")
+                is_used = fac.get("isUsed", True)
+                if fac_name == "Supply Cache" and not is_used:
+                    already_interacted = any(
+                        act.get("type") == "interact" and act.get("regionId") == region_id 
+                        for act in context.history_actions
+                    )
+                    if not already_interacted:
+                        context.last_action_type = "interact"
+                        context.history_actions.append({"type": "interact", "regionId": region_id})
+                        return UtilityBehavior.build_interact_action(
+                            thought="Opening Supply Cache to secure valuable equipment loot."
+                        )
+
+        # 3. MEMUNGUT BARANG DI TANAH BERDASARKAN HIERARKI PRIORITAS
         ground_items = current_region.get("items", [])
         if ground_items and len(inventory) < 10:
             

@@ -14,23 +14,23 @@ async def test_matchmaking_connection():
         logger.error("Silakan lengkapi file .env terlebih dahulu.")
         return
 
-    # 2. Inisiasi antrean
+    # 2. Inisiasi antrean sesuai preferensi room di settings
     handler = JoinHandler()
-    logger.info("Mulai mendaftar ke antrean Free Room...")
+    logger.info(f"Mulai mendaftar ke antrean [ {settings.ROOM_PREFERENCE.upper()} ROOM ]...")
     
-    # Menjalankan alur matchmaking untuk Free Room
-    gameplay_socket = await handler.execute_join_flow(entry_type="free")
+    # Menjalankan alur matchmaking dinamis berdasarkan preferensi di .env
+    gameplay_socket = await handler.execute_join_flow(entry_type=settings.ROOM_PREFERENCE)
     
     if gameplay_socket:
         logger.info("============================================================")
-        logger.info("SUKSES: Bot berhasil terhubung dan siap masuk ke arena game!")
+        logger.info(f"SUKSES: Bot berhasil masuk antrean {settings.ROOM_PREFERENCE.upper()} dan teralokasi!")
         logger.info("============================================================")
-        # Sesuai fokus kita saat ini (koneksi saja dulu), kita tutup socket tes setelah berhasil
+        # Menutup socket tes setelah berhasil uji koneksi
         await gameplay_socket.close()
         logger.info("Koneksi uji coba ditutup secara aman.")
     else:
         logger.error("============================================================")
-        logger.error("GAGAL: Bot tidak berhasil mendapatkan alokasi room.")
+        logger.error(f"GAGAL: Bot tidak berhasil mendapatkan alokasi room {settings.ROOM_PREFERENCE.upper()}.")
         logger.error("============================================================")
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ class AgentHandler:
         self.initial_status_logged = False
         self.action_sent_this_turn = False
         self.last_view = {}
+        self.opponents_data = {"players": [], "monsters": []}
         self.context = GameContext()
         self.brain = DecisionEngine()
 
@@ -88,6 +89,8 @@ class AgentHandler:
                                 location_planning = "EQUIPPING WEAPON"
                             elif action_type == "interact":
                                 location_planning = "INTERACTING"
+                            elif action_type == "explore":
+                                location_planning = "EXPLORING RUIN"
 
                     # Menyimpan hasil scan detail lawan langsung ke dalam memori GameContext
                     self.context.opponents_data = ThreatEvaluator.scan_detailed_opponents(

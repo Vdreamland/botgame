@@ -5,3 +5,4 @@ from .idle_decider import IdleDecider
 from .survival_decider import SurvivalDecider
 from .utility_decider import UtilityDecider
 from .combat_decider import CombatDecider
+from .explore_decider import ExploreDecider

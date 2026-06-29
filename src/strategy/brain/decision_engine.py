@@ -3,6 +3,7 @@ from src.strategy.brain.game_context import GameContext
 from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.brain.survival_decider import SurvivalDecider
 from src.strategy.brain.combat_decider import CombatDecider
+from src.strategy.brain.explore_decider import ExploreDecider
 from src.strategy.brain.utility_decider import UtilityDecider
 from src.strategy.brain.idle_decider import IdleDecider
 
@@ -12,6 +13,7 @@ class DecisionEngine:
         self.deciders: List[BaseDecider] = [
             SurvivalDecider(),
             CombatDecider(),
+            ExploreDecider(),
             UtilityDecider(),
             IdleDecider()
         ]

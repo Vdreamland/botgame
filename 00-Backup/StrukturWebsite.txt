@@ -1,0 +1,99 @@
+botgame/
+│
+├── config/
+│   ├── __init__.py
+│   ├── settings.py          # Konfigurasi koneksi (URL API/WS, X-Version, API Key dari .env)
+│   │
+│   └── game_data/           # PORTAL DATA STATIS GAME
+│       ├── __init__.py      # Konsolidasi ekspor data game
+│       ├── monsters.py      # Kamus stat dasar Wolf, Bear, Bandit, dan Guardian
+│       ├── weapons.py       # Kamus stat kekuatan senjata & jangkauan range
+│       ├── items.py         # Kamus efek item pemulih & item utilitas
+│       └── environmental.py # Kamus modifier Terrain (medan) dan Weather (cuaca)
+│
+├── src/
+│   ├── __init__.py
+│   │
+│   ├── api/                 # LAPISAN REST API CLIENT
+│   │   ├── __init__.py
+│   │   ├── client.py        # Base HTTP Client (ETag caching, timeout, penanganan rate-limit 429)
+│   │   ├── account.py       # Endpoint /accounts (Registrasi, wallet setup, & check me/readiness)
+│   │   ├── wallet.py        # Endpoint SC Wallet (/create/wallet dan whitelist request)
+│   │   ├── identity.py      # Endpoint ERC-8004 Identity NFT (/identity)
+│   │   ├── loadout.py       # Endpoint /api/loadout (pasang/lepas pack & relics di lobby)
+│   │   └── reforge.py       # Endpoint /api/reforge (reroll affixes relic)
+│   │
+│   ├── websocket/           # LAPISAN WS REAL-TIME
+│   │   ├── __init__.py
+│   │   ├── client.py        # Base WebSocket Client (Menjaga koneksi, retry backoff, ping/pong)
+│   │   │
+│   │   ├── lobby/           # --- MODUL KONEKSI LUAR GAME (MATCHMAKING) ---
+│   │   │   ├── __init__.py
+│   │   │   └── join_handler.py  # Handler '/ws/join' (Handshake queue & tanda tangan EIP-712)
+│   │   │
+│   │   └── battle/          # --- MODUL KONEKSI DALAM GAME (PERTARUNGAN) ---
+│   │       ├── __init__.py
+│   │       └── agent_handler.py # Handler '/ws/agent' (Menghubungkan agent_view ke otak bot)
+│   │
+│   ├── models/              # TYPE SAFETY & VALIDASI DATA (Skema Pydantic)
+│   │   ├── __init__.py
+│   │   ├── enums.py         # Seluruh enumerasi game (Terrain, Weather, Actions, ErrorCodes)
+│   │   ├── account.py       # Model data akun & readiness flag
+│   │   ├── loadout.py       # Model data pack, relic, affixes, dan stats preview
+│   │   ├── game_state.py    # Model parsing visual arena (Map, Region, Agent, Monster, Ruin)
+│   │   └── payloads.py      # Model request/response REST & WebSocket payloads
+│   │
+│   ├── strategy/            # LAPISAN INTELEKTUAL / OTAK BOT
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── brain/           # --- SUB-MODUL PENGAMBIL KEPUTUSAN (BRAIN ENGINE) ---
+│   │   │   ├── __init__.py
+│   │   │   ├── decision_engine.py   # Pengendali Utama (Mengatur alur rantai keputusan per giliran)
+│   │   │   ├── game_context.py      # Memori Jangka Pendek (Menyimpan ingatan status bot lintas turn)
+│   │   │   ├── base_decider.py      # Kontrak interface standar untuk Deciders
+│   │   │   ├── survival_decider.py  # Decider Prioritas 1: Logika penyelamatan hidup (Emergency)
+│   │   │   ├── combat_decider.py    # Decider Prioritas 2: Logika penyerangan target
+│   │   │   ├── explore_decider.py   # Decider Prioritas 3: Logika pengerjaan ruins & alert gauge
+│   │   │   ├── utility_decider.py   # Decider Prioritas 4: Logika pickup senjata & pakai item
+│   │   │   └── idle_decider.py      # Decider Prioritas 5: Logika cadangan jika aman (Rest EP / talk)
+│   │   │
+│   │   ├── evaluators/      # --- SUB-MODUL PENGANALISIS (EVALUATORS) ---
+│   │   │   ├── __init__.py
+│   │   │   ├── threat_evaluator.py  # Mengukur ancaman bahaya di region sekitar
+│   │   │   ├── zone_evaluator.py    # Menganalisis perluasan deathzone & cuaca buruk
+│   │   │   └── status_evaluator.py  # Mengukur kelemahan internal bot (HP, EP, sisa slot tas)
+│   │   │
+│   │   ├── behaviors/       # --- SUB-MODUL EKSEKUTOR AKSI (BEHAVIORS) ---
+│   │   │   ├── __init__.py
+│   │   │   ├── combat_behavior.py   # Logika teknis merangkai aksi menyerang musuh
+│   │   │   ├── evasion_behavior.py  # Logika teknis merangkai rute pelarian dari bahaya
+│   │   │   ├── explore_behavior.py  # Logika teknis pengerjaan / charging gauge ruin
+│   │   │   └── utility_behavior.py  # Logika teknis penggunaan item, pickup, & interaksi fasilitas
+│   │   │
+│   │   └── navigation/      # --- SUB-MODUL NAVIGASI ---
+│   │       ├── __init__.py
+│   │       ├── pathfinder.py        # Algoritma pencari rute aman tercepat (A*)
+│   │       └── weight_map.py        # Kalkulator beban biaya langkah melintasi region peta
+│   │
+│   ├── ui/                  # 5. LAPISAN ANTARMUKA DASHBOARD POWERSHELL (TERMINAL TUI)
+│   │   ├── __init__.py
+│   │   ├── dashboard.py     # Pengendali utama live dashboard (Layout panel HP, EP, Turn, Actions)
+│   │   └── renderer.py      # Mesin pemformatan teks CLI (warna ANSI, peta ASCII, dan live log panel)
+│   │
+│   └── utils/               # 6. UTILITAS & HELPER
+│       ├── __init__.py
+│       ├── logger.py        # Logger harian terstruktur ke file & konsol
+│       ├── crypto.py        # Penandatangan EIP-712 (untuk join Paid Room)
+│       ├── cache.py         # HTTP ETag Cache Manager
+│       ├── exceptions.py    # Kumpulan custom exception classes
+│       └── time.py          # Kalkulator konversi jam in-game ke turn nyata
+│
+├── tests/                   # 7. PENGUJIAN OTOMATIS
+│   ├── __init__.py
+│   ├── test_pathfinder.py   # Menguji kalkulasi rute navigasi
+│   └── test_deciders.py     # Menguji prioritas kerja rantai keputusan otak
+│
+├── main.py                  # Orchestrator Startup (Heartbeat State Router Loop)
+├── requirements.txt         # Package dependencies
+├── .env                     # API_KEY & PRIVATE_KEY (tidak di-commit)
+└── README.md                # Panduan Proyek

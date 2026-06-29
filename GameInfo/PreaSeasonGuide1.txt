@@ -1,0 +1,262 @@
+# Ruins & Alert Gauge Pre-S1
+Special map regions containing relics or packs. Use explore (1 EP, cooldown) to charge the ruin gauge. Free rooms: 15 ruins — 13 relic + 2 pack. Paid rooms: 2 ruins — 1 relic + 1 pack.
+
+| Room | Ruins | Relic ruins | Pack ruins | Guardians | 
+| free | 15    | 13          | 2          | 15        | 
+| paid | 2     | 1           | 1          | 2         | 
+
+- Gauge max: 3. Each explore: +1 base + explore-affix bonus from equipped relics (minimum 1 per explore).
+- Occupant limit: 1 agent at a time. If the occupant leaves or dies, occupant clears and gauge resets to 0.
+- Gauge reaches 3 → content acquired automatically, ruin becomes empty.
+- Content type (relic/pack) is visible to all; details are masked until game end.
+
+Alert Gauge
+
+Every agent has an alert gauge (0–10). At 10, alert activates and guardians target you.
+
+| Trigger                                         | Change
+| Each explore action                             | +2
+| Ruin fully cleared (same turn as final explore) | +4 extra
+| Turn end while alert is active                  | -4
+
+*Example: clearing 1 ruin (3 explores) = +2, +2, +(2+4) = 10 → instant alert. Gauge decays -4/turn while active; reaches 0 → guardians stop targeting
+
+- WebSocket Events
+
+Event : ruin_state_changed
+Key fields : ruinId, gauge, maxGauge, occupiedBy, isEmpty, contentType
+When : Explore / cleared / occupant reset
+
+Event : alert_gauge_changed
+Key fields : agentId, alertGauge, alertActive
+When : Any alert gauge change
+
+- Relics Pre-S1
+
+Stat-boosting gems acquired from relic ruins. Each relic has 0–3 random affixes. Color determines which loadout slot it can be equipped in — not its stats.
+
+Base types — 21 total (7 per color)
+
+| Color     | Theme          | Slot
+| R (Red)   | Fire/Attack    | slot 0
+| G (Green) | Nature/Balance | slot 1
+| B (Blue)  | Wisdom/Defense | slot 2
+
+Affixes — 16 types
+
+Stat : atk
+Display name : Ferocious  | Range +1 to +10
+Display name : Feeble     | Range -10 to -1
+
+Stat : def
+Display name : Unyielding | Range +1 to +5
+Display name : Fragile    | Range -5 to -1
+
+Stat : explore
+Display name : Insightful | Range +1 (fixed)
+Display name : Deluded    | Range -1 (fixed)
+
+Stat : item_atk
+Display name : Sharp      | Range +5 to +15
+Display name : Blunt      | Range -15 to -5
+
+Stat : max_hp
+Display name : Sturdy     | Range +1 to +10
+Display name : Sickly     | Range -10 to -1
+
+Stat : max_ep
+Display name : Bountiful  | Range +1 to +2
+Display name : Withered   | Range -2 to -1
+
+Stat : ep_regen
+Display name : Energized  | Range +1 (fixed)
+Display name : Sluggish   | Range -1 (fixed)
+
+Stat : hp_regen
+Display name : Regenerating | Range +1 to +3
+Display name : Festering    | Range -3 to -1
+
+Each relic: 0–3 affixes, randomly drawn from the pool above. Same stat can appear multiple times (values stack).
+- Display name format: Ferocious Sturdy Ruby (affixes + gem name). 0-affix relic = gem name only.
+- On death: relic drops to its origin ruin (not the death location). The ruin refills and can be explored again.
+- Relic details are masked during gameplay. Full details (gem name, affixes, values) revealed at game end via game_settled.
+
+- WebSocket Events
+| Event           | Key fields                                | When
+| relic_acquired  | agentId, ruinId, instanceId, kind="relic" | Ruin cleared → relic picked up (details masked)
+| relic_dropped   | agentId, ruinId, instanceId               | Agent died → relic returned to origin ruin
+| relic_discarded | agentId, instanceId, reason="inv_full"    | In-game inventory (5 cap) exceeded
+
+# Loadout
+
+Main Pack 100% + Sub Pack ×0.5 + Relic ×3 ·shared
+
+A pack in the Main slot applies its full effect (100%); a pack in the Sub slot applies an attenuated effect (default ×0.5, varies per pack). The 3 relic slots are shared by Main and Sub.
+You cannot run the same category pack in both Main and Sub, and a Main-only pack cannot go in the Sub slot.
+
+# Tiers & Sub slots
+
+Tiers (T1–T3) — T1 is the strongest and T3 the weakest.
+Sub attenuation — each pack's description (DB original) also lists its Sub-slot value as Sub …. The attenuation mode varies per pack:
+
+| Mode      | Effect
+| ×0.5      | Final value halved (default)
+| Partial   | Only certain coefficients reduced
+| Sub value | Replaced with a Sub-only value
+| Main only | Cannot be placed in the Sub slot
+
+# Packs · 20
+CAT-00 · No.01
+Moltz Expert
+
+T1 - Converts acquired weapons and armor into Moltz by grade. Per item: high 12, middle 8, low 4 Moltz. Sub: halved.
+T2 - Converts acquired weapons and armor into Moltz by grade. Per item: high 9, middle 6, low 3 Moltz. Sub: halved.
+T3 - Converts acquired weapons and armor into Moltz by grade. Per item: high 6, middle 4, low 2 Moltz. Sub: halved.
+
+
+CAT-01 · No.02
+Item Expert
+
+T1 - Adds item attack power from Relic item ATK: Max(Relic ItemATK / 20 x 2, 0.7) (added to combat ATK while a weapon is equipped). Sub: halved.
+T2 - Adds item attack power from Relic item ATK: Max(Relic ItemATK / 20 x 1.5, 0.6) (added to combat ATK while a weapon is equipped). Sub: halved.
+T3 - Adds item attack power from Relic item ATK: Max(Relic ItemATK / 20 x 1, 0.5) (added to combat ATK while a weapon is equipped). Sub: halved.
+
+CAT-02 · No.03
+Goliath
+
+T1 - Area-of-effect attack that hits every targeted tile. Weapon attack power x0.85. Costs +1 EP per attack. Sub: attack multiplier halved (AoE and EP cost unchanged).
+T2 - Area-of-effect attack that hits every targeted tile. Weapon attack power x0.75. Costs +1 EP per attack. Sub: attack multiplier halved (AoE and EP cost unchanged).
+T3 Area-of-effect attack that hits every targeted tile. Weapon attack power x0.65. Costs +1 EP per attack. Sub: attack multiplier halved (AoE and EP cost unchanged).
+
+CAT-03 · No.04
+Thorns
+
+T1 - Reduces incoming combat damage by 50% and reflects 100% of absorbed damage back to the attacker. Dealt damage x0.2. Sub: halved, and no DEF-based bonus.
+T2 - Reduces incoming combat damage by 45% and reflects 95% of absorbed damage back to the attacker. Dealt damage x0.2. Sub: halved, and no DEF-based bonus.
+T3 - Reduces incoming combat damage by 40% and reflects 90% of absorbed damage back to the attacker. Dealt damage x0.2. Sub: halved, and no DEF-based bonus.
+
+CAT-04 · No.05
+Scout
+Main Only
+
+T1 - Vision +2 and move costs 2 less EP. Dealt damage x0.8. Main slot only.
+T2 - Vision +2 and move costs 1 less EP. Dealt damage x0.7. Main slot only.
+T3 - Vision +1 and no move EP discount. Dealt damage x0.6. Main slot only.
+
+CAT-05 · No.06
+Ruin Expert
+
+T1 - Grants collected relics and packs immediately, regardless of survival. Fills the guardian alert gauge to maximum on each collection. Guardian deals ×1.5 damage. ※ Explore +2 must be set manually via equipped relic affixes. Sub: same as Main.
+T2 - Grants collected relics and packs immediately, regardless of survival. Fills the guardian alert gauge to maximum on each collection. Guardian deals ×2.0 damage. ※ Explore +2 must be set manually via equipped relic affixes. Sub: same as Main.
+T3 - Grants collected relics and packs immediately, regardless of survival. Fills the guardian alert gauge to maximum on each collection. Guardian deals ×2.5 damage. ※ Explore +2 must be set manually via equipped relic affixes. Sub: same as Main.
+
+CAT-06 · No.07
+Berserker
+
+T1 - When HP drops below 50, damage dealt is multiplied by ×1.7. Sub: ×1.3.
+T2 - When HP drops below 50, damage dealt is multiplied by ×1.5. Sub: ×1.2.
+T3 - When HP drops below 50, damage dealt is multiplied by ×1.3. Sub: ×1.1.
+
+CAT-07 · No.08
+Double Attack
+
+T1 - Attack resolves twice. Each hit deals x0.65 damage (Sub x0.55). Costs +1 EP.
+T2 - Attack resolves twice. Each hit deals x0.55 damage (Sub x0.525). Costs +1 EP.
+T3 - Attack resolves twice. Each hit deals x0.5 damage (Sub x0.5). Costs +1 EP.
+
+CAT-08 · No.09
+Heart of the Giant
+
+T1 - Healing items restore +75% of max-HP gain. Self-heal 3%/turn (ceil). Base DEF 0 (+5 flat taken), base ATK 20 (-5 ATK). Sub: heal effects halved.
+T2 - Healing items restore +50% of max-HP gain. Self-heal 2%/turn (ceil). Base DEF 0 (+5 flat taken), base ATK 20 (-5 ATK). Sub: heal effects halved.
+T3 - Healing items restore +25% of max-HP gain. Self-heal 1%/turn (ceil). Base DEF 0 (+5 flat taken), base ATK 20 (-5 ATK). Sub: heal effects halved.
+
+CAT-09 · No.10
+Bomber
+
+T1 - Convert up to 3 passed-tile items into bombs. Bomb deals ATK x0.2 (Item ATK excluded, ceil). Sub: bomb damage halved (bomb count unchanged).
+T2 - Convert up to 2 passed-tile items into bombs. Bomb deals ATK x0.15 (Item ATK excluded, ceil). Sub: bomb damage halved (bomb count unchanged).
+T3 - Convert up to 1 passed-tile item into a bomb. Bomb deals ATK x0.10 (Item ATK excluded, ceil). Sub: bomb damage halved (bomb count unchanged).
+
+CAT-10 · No.11
+Trail Ward
+
+T1 - Start with 3 vision wards (1 inv slot, stacked). Drop a ward to grant +1 vision around it. Sub: 2 wards.
+T2 - Start with 2 vision wards (1 inv slot, stacked). Drop a ward to grant +1 vision around it. Sub: 1 ward.
+T3 - Start with 1 vision ward (1 inv slot). Drop a ward to grant +1 vision around it. Sub: 0 wards.
+
+CAT-11 · No.12
+Ranged
+
+T1 - Ranged weapon range +1, ranged damage +15%. No melee, no same-region attack. Sub costs +1 EP.
+T2 - Ranged weapon range +1, ranged damage +10%. No melee, no same-region attack. Sub costs +1 EP.
+T3 - Ranged weapon range +1, ranged damage +5%. No melee, no same-region attack. Sub costs +1 EP.
+
+CAT-12 · No.13
+Sword Master
+
+T1 - No ranged. Ignore ranged damage from 1+ hops away (Sub 2+ hops). Relic Item ATK x1 (Sub x0.5).
+T2 - No ranged. Ignore ranged damage from 1+ hops away (Sub 2+ hops). Relic Item ATK x0.75 (Sub x0.5).
+T3 - No ranged. Ignore ranged damage from 1+ hops away (Sub 2+ hops). Relic Item ATK x0.5 (Sub x0.5).
+
+CAT-13 · No.14
+Duelist
+
+T1 - When alone with one other target, gain relic ATK x0.9 and DEF x0.9. Sub: halved.
+T2 - When alone with one other target, gain relic ATK x0.7 and DEF x0.7. Sub: halved.
+T3 - When alone with one other target, gain relic ATK x0.5 and DEF x0.5. Sub: halved.
+
+CAT-14 · No.15
+Raider
+
+T1 - Attack steals 1 inventory slot from the target. Cannot pick up floor drops. Extra EP increases steal count (TBD). Sub: same steal, but costs +1 extra EP.
+T1 only — no tier split (decided by additional EP investment).
+
+CAT-15 · No.16
+Last Stand
+
+T1 - Survive lethal at HP1, then berserk 3 turns. HP regen +500%, ATK = regen x1000%. Once per game (Sub berserk 1 turn).
+T2 - Survive lethal at HP1, then berserk 2 turns. HP regen +400%, ATK = regen x1000%. Once per game (Sub berserk 1 turn).
+T3 - Survive lethal at HP1, then berserk 1 turn. HP regen +300%, ATK = regen x1000%. Once per game (Sub berserk 1 turn).
+
+CAT-16 · No.17
+Iron Heart
+
+T1 - On attack, gain max-HP (extra HP stat/10 + 5) and DEF +1 (stack cap 10). Dealt damage x0.90. Sub: stack bonus halved.
+T2 - On attack, gain max-HP (extra HP stat/10 + 3) and DEF +1 (stack cap 10). Dealt damage x0.80. Sub: stack bonus halved.
+T3 - On attack, gain max-HP (extra HP stat/10 + 1) and DEF +1 (stack cap 10). Dealt damage x0.70. Sub: stack bonus halved.
+
+CAT-17 · No.18
+Sunflame Cloak
+
+T1 - Aura radius 1. Per-turn damage = 1.0 x (MAX HP + DEF) / 10. Outgoing combat damage x0.65. Sub: aura damage halved.
+T2 - Aura radius 1. Per-turn damage = 0.8 x (MAX HP + DEF) / 10. Outgoing combat damage x0.55. Sub: aura damage halved.
+T3 - Aura radius 0. Per-turn damage = 0.6 x (MAX HP + DEF) / 10. Outgoing combat damage x0.45. Sub: aura damage halved.
+
+CAT-18 · No.19
+Assassin
+Main Only
+
+T1 - Stealth: expose-vision +3 (higher = harder to detect). Bonus damage (ATK+ITEM) x0.6. Hit -> exposed 2 turns. Main slot only.
+T2 - Stealth: expose-vision +2 (higher = harder to detect). Bonus damage (ATK+ITEM) x0.5. Hit -> exposed 2 turns. Main slot only.
+T3 - Stealth: expose-vision +1 (higher = harder to detect). Bonus damage (ATK+ITEM) x0.4. Hit -> exposed 2 turns. Main slot only.
+
+CAT-19 · No.20
+Pickpocket
+
+T1 - Steal up to 3 sMoltz from a same-region agent (capped by their holdings). Sub: move costs +1 EP.
+T2 - Steal up to 2 sMoltz from a same-region agent (capped by their holdings). Sub: move costs +1 EP.
+T3 - Steal up to 1 sMoltz from a same-region agent (capped by their holdings). Sub: move costs +1 EP.
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -4,26 +4,6 @@ from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.behaviors.utility_behavior import UtilityBehavior
 from config.game_data import WEAPONS
 
-# Tabel skala prioritas pemungutan barang terlengkap (Mencakup sMoltz & seluruh Utility Items)
-LOOT_PRIORITY = {
-    "sMoltz": 11,           # Koin sMoltz (Skor tertinggi, tanpa memakan slot tas!)
-    "Medkit": 10,
-    "Katana": 9,
-    "Sniper rifle": 9,
-    "Plate Armor": 8,
-    "Sword": 7,
-    "Emergency Food": 6,
-    "Binoculars": 5,        # Utility: Vision Boost +1 Pasif
-    "Energy Drink": 5,
-    "Bandage": 4,
-    "Megaphone": 4,         # Utility: Megaphone item
-    "Map": 4,               # Utility: Reveals entire map
-    "Radio": 4,             # Utility: Long-range comms
-    "Pistol": 3,
-    "Bow": 2,
-    "Dagger": 1
-}
-
 class UtilityDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
@@ -43,14 +23,18 @@ class UtilityDecider(BaseDecider):
 
         for item in inventory:
             if isinstance(item, dict):
-                item_name = item.get("name") or item.get("displayName", "")
-                item_id = item.get("id", "")
-                if item_name in WEAPONS and item_id:
-                    atk_bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
-                    if atk_bonus > best_weapon_bonus:
-                        best_weapon_bonus = atk_bonus
-                        best_weapon_id = item_id
-                        best_weapon_name = item_name
+                item_name = item.get("name") or item.get("displayName") or ""
+                item_id = item.get("id") or item_name
+            else:
+                item_name = str(item)
+                item_id = item_name
+
+            if item_name in WEAPONS:
+                atk_bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
+                if atk_bonus > best_weapon_bonus:
+                    best_weapon_bonus = atk_bonus
+                    best_weapon_id = item_id
+                    best_weapon_name = item_name
 
         if best_weapon_id:
             context.last_action_type = "equip"
@@ -62,6 +46,39 @@ class UtilityDecider(BaseDecider):
         ground_items = current_region.get("items", [])
         if ground_items and len(inventory) < 10:
             
+            prioritized_items = []
+            for g_item in ground_items:
+                if isinstance(g_item, dict):
+                    g_name = g_item.get("name") or g_item.get("displayName") or ""
+                    g_id = g_item.get("id") or g_name
+                else:
+                    g_name = str(g_item)
+                    g_id = g_name
+
+                priority = 0
+                if g_name == "sMoltz":
+                    priority = 11
+                elif g_name == "Medkit":
+                    priority = 10
+                elif g_name in ["Katana", "Sniper rifle"]:
+                    priority = 9
+                elif "Armor" in g_name or g_name == "Chainmail":
+                    priority = 8
+                elif g_name == "Sword":
+                    priority = 7
+                elif g_name == "Emergency Food":
+                    priority = 6
+                elif g_name in ["Energy Drink", "Binoculars"]:
+                    priority = 5
+                elif g_name in ["Bandage", "Megaphone", "Map", "Radio"]:
+                    priority = 4
+                else:
+                    priority = 1
+                
+                prioritized_items.append((priority, g_name, g_id))
+
+            prioritized_items.sort(key=lambda x: x[0], reverse=True)
+
             carried_weapons = []
             carried_armors = []
             
@@ -76,45 +93,31 @@ class UtilityDecider(BaseDecider):
 
             for item in inventory:
                 if isinstance(item, dict):
-                    item_name = item.get("name") or item.get("displayName", "")
-                    if item_name in WEAPONS:
-                        bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
-                        carried_weapons.append({"name": item_name, "atk_bonus": bonus})
-                    elif "Armor" in item_name:
-                        carried_armors.append({"name": item_name})
+                    item_name = item.get("name") or item.get("displayName") or ""
+                else:
+                    item_name = str(item)
 
-            sorted_ground_items = []
-            for g_item in ground_items:
-                if isinstance(g_item, dict):
-                    g_name = g_item.get("name") or g_item.get("displayName", "")
-                    g_id = g_item.get("id", "")
-                    if g_id:
-                        priority_score = LOOT_PRIORITY.get(g_name, 0)
-                        sorted_ground_items.append((priority_score, g_name, g_id))
+                if item_name in WEAPONS:
+                    bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
+                    carried_weapons.append({"name": item_name, "atk_bonus": bonus})
+                elif "Armor" in item_name or item_name == "Chainmail":
+                    carried_armors.append({"name": item_name})
 
-            sorted_ground_items.sort(key=lambda x: x[0], reverse=True)
-
-            for score, g_name, g_id in sorted_ground_items:
-                if score == 0:
-                    continue
-
-                # Pengecekan khusus sMoltz (Selalu diprioritaskan utama karena tidak memakan kuota slot tas!)
+            for priority, g_name, g_id in prioritized_items:
                 if g_name == "sMoltz":
                     context.last_action_type = "pickup"
                     return UtilityBehavior.build_pickup_action(
                         item_id=g_id,
-                        thought="Collecting free sMoltz currency reward."
+                        thought="Collecting free sMoltz currency."
                     )
 
-                # Kategori A: Item Medis & Item Utilitas (Diambil tanpa batasan angka 2)
                 if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy Drink", "Megaphone", "Map", "Binoculars", "Radio"]:
                     context.last_action_type = "pickup"
                     return UtilityBehavior.build_pickup_action(
                         item_id=g_id,
-                        thought=f"Looting valuable utility/recovery item: {g_name}."
+                        thought=f"Looting vital recovery/utility: {g_name}."
                     )
 
-                # Kategori B: Senjata (Maksimal 2 senjata terbaik)
                 elif g_name in WEAPONS:
                     if len(carried_weapons) < 2:
                         context.last_action_type = "pickup"
@@ -132,8 +135,7 @@ class UtilityDecider(BaseDecider):
                                 thought=f"Looting stronger weapon: {g_name} to replace {weakest_carried_weapon['name']}."
                             )
 
-                # Kategori C: Armor (Maksimal 2 armor terbaik)
-                elif "Armor" in g_name:
+                elif "Armor" in g_name or g_name == "Chainmail":
                     if len(carried_armors) < 2:
                         context.last_action_type = "pickup"
                         return UtilityBehavior.build_pickup_action(

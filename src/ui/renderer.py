@@ -19,6 +19,7 @@ class TerminalRenderer:
         ground_str: str,
         location_now: str,
         location_planning: str,
+        action_thought: str,  # Parameter baru untuk audit alasan AI
         layer0: tuple,
         layer1: tuple,
         layer2: tuple
@@ -31,6 +32,7 @@ class TerminalRenderer:
         print(f"- Inventory > {inventory_str}")
         print(f"- Ground > {ground_str}")
         print(f"- Location > Now : {location_now} / Next : {location_planning}")
+        print(f"- Action Reason : {action_thought}")  # Baris baru audit log
         print(f"- Enemy Scan > Layer 0 (Here) : P:{layer0[0]} M:{layer0[1]} / "
               f"Layer 1 (Adjacent) : P:{layer1[0]} M:{layer1[1]} / "
               f"Layer 2 (Farther) : P:{layer2[0]} M:{layer2[1]}")

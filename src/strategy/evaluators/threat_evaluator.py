@@ -19,6 +19,9 @@ class ThreatEvaluator:
         for agent in visible_agents:
             if agent.get("id") == self_id:
                 continue
+            if not agent.get("isAlive", True):
+                continue
+                
             r_id = agent.get("regionId")
             if r_id == current_region_id:
                 layer0[0] += 1
@@ -49,6 +52,8 @@ class ThreatEvaluator:
         for agent in visible_agents:
             a_id = agent.get("id", "")
             if a_id == self_id:
+                continue
+            if not agent.get("isAlive", True):
                 continue
             
             weapon = agent.get("equippedWeapon", {})

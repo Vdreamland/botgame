@@ -15,9 +15,10 @@ class AgentHandler:
         self.socket = socket
         self._is_active = True
         self.current_turn = 0
-        self.last_rendered_turn = 0  # Memori pelacak nomor turn yang sudah digambar ke PowerShell
+        self.last_rendered_turn = 0
         self.is_alive = True
         self.initial_status_logged = False
+        self.action_sent_this_turn = False
         self.last_view = {}
         self.opponents_data = {"players": [], "monsters": []}
         self.context = GameContext()
@@ -41,15 +42,14 @@ class AgentHandler:
                 if msg_type == "waiting":
                     continue
 
-                if msg_type in ["agent_view", "turn_advanced"]:
+                if msg_type == "agent_view":
                     new_turn = data.get("turn", 0)
                     is_new_turn = (new_turn != self.current_turn)
                     self.current_turn = new_turn
+                    self.last_view = data.get("view", {})
 
-                    if "view" in data:
-                        self.last_view = data["view"]
-                    elif "view" not in data and not self.last_view:
-                        continue
+                    if is_new_turn:
+                        self.action_sent_this_turn = False
 
                     view_self = self.last_view.get("self", {})
                     server_is_alive = view_self.get("isAlive", True)
@@ -59,17 +59,46 @@ class AgentHandler:
                     self.context.update_map(current_region, pending_zones)
 
                     computed_action = None
-                    if is_new_turn and server_is_alive:
+                    location_planning = "None"
+                    action_thought = "None"
+                    
+                    # Izinkan kalkulasi aksi tanpa syarat is_new_turn agar multi-action / chaining bebas hambatan
+                    if server_is_alive and not self.action_sent_this_turn:
                         computed_action = self.brain.compute_action(self.last_view, self.context)
                         if computed_action:
-                            await self.send_json(computed_action)
+                            action_thought = computed_action.get("thought", "Executing strategic action.")
+                            action_data = computed_action.get("data", {})
+                            action_type = action_data.get("type")
+                            
+                            is_cooldown_group = action_type in ["move", "explore", "attack", "use_item", "interact", "rest"]
+                            if is_cooldown_group:
+                                self.action_sent_this_turn = True
+                            
+                            if action_type == "move":
+                                target_id = action_data.get("regionId", "")
+                                if target_id in self.context.region_names:
+                                    location_planning = self.context.region_names[target_id]
+                                else:
+                                    location_planning = f"Hex-{target_id[:8]}"
+                            elif action_type == "rest":
+                                location_planning = "RESTING"
+                            elif action_type == "use_item":
+                                location_planning = "HEALING"
+                            elif action_type == "pickup":
+                                location_planning = "PICKING UP ITEM"
+                            elif action_type == "equip":
+                                location_planning = "EQUIPPING WEAPON"
+                            elif action_type == "interact":
+                                location_planning = "INTERACTING"
 
                     self.opponents_data = ThreatEvaluator.scan_detailed_opponents(
                         view=self.last_view,
                         self_id=view_self.get("id", "")
                     )
 
-                    # MEMUTUSKAN APAKAH PERLU RENDERING (Hanya digambar tepat 1 kali saja per nomor turn)
+                    if computed_action:
+                        await self.send_json(computed_action)
+
                     if self.current_turn != self.last_rendered_turn:
                         self.last_rendered_turn = self.current_turn
 
@@ -95,7 +124,7 @@ class AgentHandler:
                             inventory_str=parsed_state["inventory_str"],
                             ground_str=parsed_state["ground_str"],
                             location_now=parsed_state["location_now"],
-                            location_planning=parsed_state["location_planning"],
+                            location_planning=location_planning,
                             layer0=parsed_state["layer0"],
                             layer1=parsed_state["layer1"],
                             layer2=parsed_state["layer2"]
@@ -116,6 +145,11 @@ class AgentHandler:
                                 logger.warning(f"[DEATH] Agent has been eliminated! (HP: {parsed_state['hp']}). Terminating monitor for testing rejoin...")
                                 self._is_active = False
                                 break
+
+                elif msg_type == "turn_advanced":
+                    new_turn = data.get("turn", 0)
+                    self.current_turn = new_turn
+                    self.action_sent_this_turn = False
 
                 elif msg_type == "game_ended":
                     logger.info("[FINISHED] The match has fully ended.")

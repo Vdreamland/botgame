@@ -30,9 +30,12 @@ class IdleDecider(BaseDecider):
         if chosen_connections:
             target_region_id = random.choice(chosen_connections)
             context.last_action_type = "move"
+            
+            # Menerjemahkan ID wilayah menjadi nama asli atau Hex pendek secara bersih
+            target_name = context.region_names.get(target_region_id, f"Hex-{target_region_id[:8]}")
             return UtilityBehavior.build_move_action(
                 region_id=target_region_id, 
-                thought=f"Exploring adjacent region: {target_region_id}"
+                thought=f"Exploring adjacent region: {target_name}"
             )
             
         return None

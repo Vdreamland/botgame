@@ -17,7 +17,7 @@ class SurvivalDecider(BaseDecider):
         if hp < 50:
             for item in inventory:
                 if isinstance(item, dict):
-                    item_name = item.get("name") or item.get("displayName", "")
+                    item_name = item.get("name") or item.get("displayName") or ""
                     item_id = item.get("id", "")
                     if item_name in ["Medkit", "Emergency Food", "Bandage"] and item_id:
                         context.last_action_type = "use_item"
@@ -29,7 +29,7 @@ class SurvivalDecider(BaseDecider):
         if ep < 2:
             for item in inventory:
                 if isinstance(item, dict):
-                    item_name = item.get("name") or item.get("displayName", "")
+                    item_name = item.get("name") or item.get("displayName") or ""
                     item_id = item.get("id", "")
                     if item_name in ["Energy Drink", "Medkit"] and item_id:
                         context.last_action_type = "use_item"
@@ -64,9 +64,10 @@ class SurvivalDecider(BaseDecider):
             if safe_options:
                 target_id = random.choice(safe_options)
                 context.last_action_type = "move"
+                target_name = context.region_names.get(target_id, f"Hex-{target_id[:8]}")
                 return UtilityBehavior.build_move_action(
                     region_id=target_id,
-                    thought="HP low or Zone shrinking. Escaping to adjacent safe region."
+                    thought=f"HP low or Zone shrinking. Escaping to adjacent safe region: {target_name}"
                 )
 
         return None

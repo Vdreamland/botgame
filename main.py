@@ -21,7 +21,7 @@ async def start_bot():
         logger.error(f"\033[91mFailed to load game database assets: {str(e)}\033[0m")
         return
 
-    # Loop utama asinkron abadi untuk penanganan antrean dan pertempuran otomatis
+    # Loop utama asinkron abadi penanganan antrean & pengaman spamming
     while True:
         lobby = JoinHandler()
         logger.info(f"Agent [ {settings.AGENT_NAME} ] joining queue [ {settings.ROOM_PREFERENCE.upper()} ]...")
@@ -36,8 +36,10 @@ async def start_bot():
         logger.info(f"[OK] Agent [ {settings.AGENT_NAME} ] entered the arena!")
         battle = AgentHandler(gameplay_socket)
         
+        # Mencatat waktu mulai koneksi monitor arena
+        start_time = asyncio.get_event_loop().time()
+        
         try:
-            # Selalu aktifkan monitor terlebih dahulu untuk mendeteksi status riil agen di arena
             await battle.start_monitoring()
         except KeyboardInterrupt:
             logger.info("Manual shutdown triggered.")
@@ -48,13 +50,20 @@ async def start_bot():
             except Exception:
                 pass
 
-        # Jika keluar dari monitor karena tereliminasi (mati), jeda 10 detik sebelum antre ulang
+        # Mengalkulasi durasi aktifnya monitor
+        session_duration = asyncio.get_event_loop().time() - start_time
+        
+        # SPAM GUARD: Jika koneksi terputus instan kurang dari 5 detik, paksa jeda 10 detik agar aman dari rate-limit
+        if session_duration < 5:
+            logger.warning("[WARNING] Connection dropped prematurely. Sleeping 10 seconds to avoid spamming...")
+            await asyncio.sleep(10)
+            continue
+
         if not battle.is_alive:
             logger.info("[DEATH] Entering auto-matchmaking queue in 10 seconds...")
             await asyncio.sleep(10)
 
 if __name__ == "__main__":
-    # Trik sistem Windows untuk mengaktifkan rendering warna ANSI di PowerShell secara native
     if sys.platform == "win32":
         os.system("")
         

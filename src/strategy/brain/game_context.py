@@ -4,10 +4,10 @@ class GameContext:
     
     def __init__(self):
         self.map_graph: Dict[str, List[str]] = {}
-        self.region_names: Dict[str, str] = {}  # Kamus perekam nama wilayah
+        self.region_names: Dict[str, str] = {}  # Kamus pemetaan nama wilayah wajib terdefinisi
         self.pending_deathzones: List[str] = []
         self.active_deathzones: List[str] = []
-        self.last_action_type: str = "rest"
+        self.last_action_type = "rest"
         self.history_actions: List[Dict[str, Any]] = []
 
     def update_map(self, current_region: Dict[str, Any], pending_zones: List[Dict[str, Any]]):

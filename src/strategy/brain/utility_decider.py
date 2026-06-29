@@ -123,7 +123,7 @@ class UtilityDecider(BaseDecider):
 
         # 3. MEMUNGUT BARANG DI TANAH BERDASARKAN HIERARKI PRIORITAS
         ground_items = current_region.get("items", [])
-        if ground_items and len(inventory) < 10:
+        if ground_items:
             
             prioritized_items = []
             for g_item in ground_items:
@@ -189,36 +189,37 @@ class UtilityDecider(BaseDecider):
                         thought="Collecting free sMoltz currency."
                     )
 
-                if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy drink", "Megaphone", "Map", "Binoculars", "Radio"]:
-                    context.last_action_type = "pickup"
-                    return UtilityBehavior.build_pickup_action(
-                        item_id=g_id,
-                        thought=f"Looting vital recovery/utility: {g_name}."
-                    )
-
-                elif g_name in WEAPONS:
-                    if len(carried_weapons) < 2:
+                if len(inventory) < 10:
+                    if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy drink", "Megaphone", "Map", "Binoculars", "Radio"]:
                         context.last_action_type = "pickup"
                         return UtilityBehavior.build_pickup_action(
                             item_id=g_id,
-                            thought=f"Looting weapon: {g_name}."
+                            thought=f"Looting vital recovery/utility: {g_name}."
                         )
-                    else:
-                        g_bonus = WEAPONS.get(g_name, {}).get("atk_bonus", 0)
-                        weakest_carried_weapon = min(carried_weapons, key=lambda x: x["atk_bonus"])
-                        if g_bonus > weakest_carried_weapon["atk_bonus"]:
+
+                    elif g_name in WEAPONS:
+                        if len(carried_weapons) < 2:
                             context.last_action_type = "pickup"
                             return UtilityBehavior.build_pickup_action(
                                 item_id=g_id,
-                                thought=f"Looting stronger weapon: {g_name} to replace {weakest_carried_weapon['name']}."
+                                thought=f"Looting weapon: {g_name}."
                             )
+                        else:
+                            g_bonus = WEAPONS.get(g_name, {}).get("atk_bonus", 0)
+                            weakest_carried_weapon = min(carried_weapons, key=lambda x: x["atk_bonus"])
+                            if g_bonus > weakest_carried_weapon["atk_bonus"]:
+                                context.last_action_type = "pickup"
+                                return UtilityBehavior.build_pickup_action(
+                                    item_id=g_id,
+                                    thought=f"Looting stronger weapon: {g_name} to replace {weakest_carried_weapon['name']}."
+                                )
 
-                elif "Armor" in g_name or g_name == "Chainmail" or g_name in ARMORS:
-                    if len(carried_armors) < 2:
-                        context.last_action_type = "pickup"
-                        return UtilityBehavior.build_pickup_action(
-                            item_id=g_id,
-                            thought=f"Looting armor: {g_name}."
-                        )
+                    elif "Armor" in g_name or g_name == "Chainmail" or g_name in ARMORS:
+                        if len(carried_armors) < 2:
+                            context.last_action_type = "pickup"
+                            return UtilityBehavior.build_pickup_action(
+                                item_id=g_id,
+                                thought=f"Looting armor: {g_name}."
+                            )
 
         return None

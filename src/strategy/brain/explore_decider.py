@@ -9,6 +9,7 @@ class ExploreDecider(BaseDecider):
         view_self = view.get("self", {})
         ep = view_self.get("ep", 10)
         alert_gauge = view_self.get("alertGauge", 0)
+        alert_active = view_self.get("alertActive", False)
         
         current_region = view.get("currentRegion", {})
         current_region_id = current_region.get("id")
@@ -22,10 +23,10 @@ class ExploreDecider(BaseDecider):
                 break
                 
         if current_ruin and not current_ruin.get("isEmpty", True):
-            if alert_gauge >= 8:
+            if alert_active:
                 context.last_action_type = "rest"
                 return UtilityBehavior.build_rest_action(
-                    thought=f"Alert gauge is high ({alert_gauge}/10). Resting to cool down."
+                    thought=f"Alert is ACTIVE ({alert_gauge}/10). Resting to cool down and clear guardian targeting."
                 )
                 
             if ep >= 1:

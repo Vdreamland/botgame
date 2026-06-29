@@ -152,11 +152,6 @@ class AgentHandler:
                                 self._is_active = False
                                 break
 
-                elif msg_type == "turn_advanced":
-                    new_turn = data.get("turn", 0)
-                    self.current_turn = new_turn
-                    self.action_sent_this_turn = False
-
                 elif msg_type == "game_ended":
                     logger.info("[FINISHED] The match has fully ended.")
                     self._is_active = False

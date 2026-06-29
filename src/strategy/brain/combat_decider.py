@@ -23,15 +23,26 @@ class CombatDecider(BaseDecider):
         if equipped_weapon:
             equipped_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
 
-        weapons_we_have = [equipped_weapon_name]
+        # Hanya masukkan senjata yang sanggup kita bayar biaya EP-nya saat ini
+        weapons_we_have = []
+        
+        eq_cost = WEAPONS.get(equipped_weapon_name, {}).get("ep_cost", 1) if equipped_weapon_name in WEAPONS else 1
+        if ep >= eq_cost:
+            weapons_we_have.append(equipped_weapon_name)
+        else:
+            # Jika EP tidak cukup untuk senjata terpasang, default ke Fist (Tinju) jika EP >= 1
+            if ep >= 1:
+                weapons_we_have.append("Fist")
+
         for item in inventory:
             if isinstance(item, dict):
                 item_name = item.get("name") or item.get("displayName") or ""
-                if item_name in WEAPONS:
-                    weapons_we_have.append(item_name)
             else:
                 item_name = str(item)
-                if item_name in WEAPONS:
+
+            if item_name in WEAPONS:
+                cost = WEAPONS[item_name].get("ep_cost", 1)
+                if ep >= cost:
                     weapons_we_have.append(item_name)
 
         max_available_range = 0
@@ -79,7 +90,6 @@ class CombatDecider(BaseDecider):
         best_target = valid_targets[0]
         
         # ALGORITMA PENYARINGAN CERDAS GUARDIAN (Smart Guardian Finisher)
-        # Jika target terlemah adalah Guardian yang masih sehat (HP > 15), bot akan mencari target alternatif lain
         if "Guardian" in best_target["name"] and best_target["hp"] > 15:
             alternative_target = None
             for t in valid_targets:
@@ -90,7 +100,6 @@ class CombatDecider(BaseDecider):
             if alternative_target:
                 best_target = alternative_target
             else:
-                # Jika tidak ada target alternatif, bot kembali patroli/menjarah kuil daripada stuck membuang turn
                 return None
 
         target_id = best_target["id"]
@@ -98,6 +107,24 @@ class CombatDecider(BaseDecider):
         target_distance = best_target["distance"]
 
         context.last_attack_region = best_target["region_id"]
+
+        # Logika Penyelamatan: Jika senjata aktif saat ini tidak terjangkau oleh sisa EP
+        if ep < eq_cost:
+            affordable_in_inv = [w for w in weapons_we_have if w != equipped_weapon_name and w != "Fist" and w != "None"]
+            if affordable_in_inv:
+                affordable_in_inv.sort(key=lambda w: WEAPONS.get(w, {}).get("atk_bonus", 0), reverse=True)
+                swap_to = affordable_in_inv[0]
+                for item in inventory:
+                    name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
+                    i_id = item.get("id") or name if isinstance(item, dict) else str(item)
+                    if name == swap_to:
+                        context.last_action_type = "equip"
+                        return UtilityBehavior.build_equip_action(
+                            item_id=i_id,
+                            thought=f"Current weapon {equipped_weapon_name} is too expensive ({eq_cost} EP). Swapping to affordable {swap_to}."
+                        )
+            # Jika tidak ada alternatif senjata terjangkau di tas, serahkan giliran ke decider lain
+            return None
 
         if target_distance == 0:
             if "Katana" in weapons_we_have and equipped_weapon_name != "Katana":

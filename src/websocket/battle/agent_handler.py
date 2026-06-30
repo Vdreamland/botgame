@@ -9,6 +9,9 @@ from src.strategy.brain.decision_engine import DecisionEngine
 from src.ui.renderer import TerminalRenderer
 from src.websocket.battle.state_parser import StateParser
 
+# Mengimpor modul alat pemindai diagnostik dari file baru
+from src.websocket.battle.diagnostics import scan_keys_for_death_or_zone
+
 class AgentHandler:
     
     def __init__(self, socket: websockets.WebSocketClientProtocol, agent_name: str = None):
@@ -58,7 +61,7 @@ class AgentHandler:
                     self.cooldown_remaining_ms = data.get("cooldownRemainingMs", 0)
                     
                     # REAL-TIME TRIGGER: Jika cooldown habis dan bot belum beraksi di turn ini, langsung tembak instan!
-                    view_self = self.last_view.get("self", {})
+                    view_self = self.last_view.get("self", {}) if self.last_view else {}
                     server_is_alive = view_self.get("isAlive", True) if view_self else True
                     
                     if self.can_act and server_is_alive and not self.action_sent_this_turn and self.last_view:
@@ -92,6 +95,12 @@ class AgentHandler:
                     if bot_name and region_id:
                         settings.BOT_POSITIONS[bot_name] = region_id
 
+                    # SILENT REAL-TIME KEY SCANNER FOR DEATHZONE DIAGNOSTICS
+                    found_keys = scan_keys_for_death_or_zone(data)
+                    if found_keys:
+                        for path, val in found_keys:
+                            logger.info(f"[Deadzone Key Scan] [{bot_name}] Discovered Path: {path} = {val}")
+
                     # Ekstraksi tangguh multi-sumber dari root data dan view (Mengamankan sinkronisasi deadzone)
                     pending_zones = (
                         self.last_view.get("pendingDeathzones") or 
@@ -110,37 +119,17 @@ class AgentHandler:
                     self.opponents_data = self.context.opponents_data
 
                     computed_action = None
-                    location_planning = "None"
-                    action_thought = "None"
                     
                     # COOLDOWN-SAFE CHECK: Hanya hitung aksi jika status izin aksi kelompok (can_act) aktif
                     if server_is_alive and self.can_act and not self.action_sent_this_turn:
                         computed_action = self.brain.compute_action(self.last_view, self.context)
                         if computed_action:
-                            action_thought = computed_action.get("thought", "Executing strategic action.")
                             action_data = computed_action.get("data", {})
                             action_type = action_data.get("type")
                             
                             is_cooldown_group = action_type in ["move", "explore", "attack", "use_item", "interact", "rest"]
                             if is_cooldown_group:
                                 self.action_sent_this_turn = True
-                            
-                            if action_type == "move":
-                                target_id = action_data.get("regionId", "")
-                                planned_name = self.context.region_names.get(target_id, "Hex")
-                                location_planning = f"{planned_name} (Hex-{target_id[:8]})"
-                            elif action_type == "rest":
-                                location_planning = "RESTING"
-                            elif action_type == "use_item":
-                                location_planning = "HEALING"
-                            elif action_type == "pickup":
-                                location_planning = "PICKING UP ITEM"
-                            elif action_type == "equip":
-                                location_planning = "EQUIPPING WEAPON"
-                            elif action_type == "interact":
-                                location_planning = "INTERACTING"
-                            elif action_type == "explore":
-                                location_planning = "EXPLORING RUIN"
 
                     if computed_action:
                         await self.send_json(computed_action)
@@ -154,6 +143,9 @@ class AgentHandler:
                             computed_action=computed_action,
                             is_new_turn=is_new_turn
                         )
+
+                        # Membaca pikiran tindakan langsung dari computed_action tanpa variabel menumpuk
+                        action_thought = computed_action.get("thought", "Executing strategic action.") if computed_action else "None"
 
                         # Mengirimkan seluruh data telemetri taktis baru ke TerminalRenderer
                         TerminalRenderer.render_turn(
@@ -171,7 +163,7 @@ class AgentHandler:
                             inventory_str=parsed_state["inventory_str"],
                             ground_str=parsed_state["ground_str"],
                             location_now=parsed_state["location_now"],
-                            location_planning=location_planning,
+                            location_planning=parsed_state["location_planning"],  # Membaca langsung dari parsed_state
                             action_thought=action_thought,
                             deadzone_status=parsed_state["deadzone_status"],
                             deadzone_warning=parsed_state["deadzone_warning"],

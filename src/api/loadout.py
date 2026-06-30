@@ -69,6 +69,62 @@ class LobbyLoadoutManager(BaseHttpClient):
             logger.error(f"Failed to equip active pack: {str(e)}")
             return False
 
+    async def equip_subpack(self, pack_instance_id: str) -> bool:
+        """Equip selected active sub pack with robust, exception-safe fallback routing."""
+        headers = self._get_headers()
+        headers["Idempotency-Key"] = str(uuid.uuid4())
+        
+        # Coba Rute 1: /api/loadout/subpack
+        try:
+            res = await self.put(
+                path="/api/loadout/subpack",
+                json_data={"packInstanceId": pack_instance_id},
+                headers_override=headers
+            )
+            if res.get("success"):
+                return True
+        except Exception:
+            pass
+
+        # Coba Rute 2: /api/loadout/sub-pack
+        try:
+            res_alt = await self.put(
+                path="/api/loadout/sub-pack",
+                json_data={"packInstanceId": pack_instance_id},
+                headers_override=headers
+            )
+            if res_alt.get("success"):
+                return True
+        except Exception:
+            pass
+
+        # Coba Rute 3: /api/loadout/pack/sub
+        try:
+            res_three = await self.put(
+                path="/api/loadout/pack/sub",
+                json_data={"packInstanceId": pack_instance_id},
+                headers_override=headers
+            )
+            if res_three.get("success"):
+                return True
+        except Exception:
+            pass
+
+        # Coba Rute 4: /api/loadout/sub
+        try:
+            res_four = await self.put(
+                path="/api/loadout/sub",
+                json_data={"packInstanceId": pack_instance_id},
+                headers_override=headers
+            )
+            if res_four.get("success"):
+                return True
+        except Exception:
+            pass
+            
+        logger.error(f"All sub-pack equip endpoints failed (404/409). Check skill.md or server connection.")
+        return False
+
     async def equip_relic(self, slot_index: int, relic_instance_id: str) -> bool:
         """Equip selected relic into slot index."""
         try:
@@ -82,5 +138,5 @@ class LobbyLoadoutManager(BaseHttpClient):
             )
             return res.get("success", False)
         except Exception as e:
-            logger.error(f"Failed to equip relic in slot {slot_index}: {str(e)}") [2]
+            logger.error(f"Failed to equip relic in slot {slot_index}: {str(e)}")
             return False

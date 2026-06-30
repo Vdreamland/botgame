@@ -12,25 +12,60 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
     from src.api.loadout import LobbyLoadoutManager
     manager = LobbyLoadoutManager(api_key)
     
-    # 1. OPTIMIZE ACTIVE PACK (T1 > T2 > T3)
+    # 1. OPTIMIZE ACTIVE PACKS (Main Pack + Sub Pack)
     packs = await manager.get_packs_inventory()
     if isinstance(packs, list) and len(packs) > 0:
-        # Maps integer and string tiers to dynamic weights (1 or T1 is highest weight)
+        # Urutkan pack berdasarkan tier terbaik (T1 > T2 > T3)
         tier_weights = {1: 3, 2: 2, 3: 1, "T1": 3, "T2": 2, "T3": 1}
-        # Sort descending by tier weight safely
         packs.sort(key=lambda p: tier_weights.get(p.get("tier", 3), 0) if isinstance(p, dict) else 0, reverse=True)
-        best_pack = packs[0]
-        best_pack_id = best_pack.get("id") if isinstance(best_pack, dict) else None
         
-        loadout = await manager.get_loadout()
-        current_pack = loadout.get("activePack", {})
-        current_pack_id = current_pack.get("id") if isinstance(current_pack, dict) else None
+        # A. Tentukan Main Pack terbaik
+        best_main = None
+        for p in packs:
+            if isinstance(p, dict):
+                best_main = p
+                break
+                
+        # B. Tentukan Sub Pack terbaik (Kategori harus beda dari Main, dan dilarang tipe Main-only)
+        best_sub = None
+        if best_main:
+            main_category = best_main.get("category") or best_main.get("displayName") or ""
+            for p in packs:
+                if isinstance(p, dict):
+                    p_id = p.get("id")
+                    p_category = p.get("category") or p.get("displayName") or ""
+                    
+                    # Syarat 1: Bukan barang yang sama dengan Main Pack
+                    if p_id == best_main.get("id"):
+                        continue
+                    # Syarat 2: Bukan kategori/tipe yang sama dengan Main Pack
+                    if p_category == main_category:
+                        continue
+                    # Syarat 3: Bukan tipe Main-only (Scout / CAT-04 atau Assassin / CAT-18)
+                    if p_category in ["CAT-04", "Scout", "CAT-18", "Assassin"]:
+                        continue
+                        
+                    best_sub = p
+                    break
         
-        if best_pack_id and best_pack_id != current_pack_id:
-            logger.info(f"[{bot_name}] Equipping stronger active pack...")
-            await manager.equip_pack(best_pack_id)
+        # Eksekusi pemasangan Main Pack
+        if best_main:
+            best_main_id = best_main.get("id")
+            loadout = await manager.get_loadout()
+            current_pack = loadout.get("activePack", {})
+            current_pack_id = current_pack.get("id") if isinstance(current_pack, dict) else None
+            
+            if best_main_id and best_main_id != current_pack_id:
+                logger.info(f"[{bot_name}] Equipping stronger Main Pack...")
+                await manager.equip_pack(best_main_id)
+                
+        # Eksekusi pemasangan Sub Pack
+        if best_sub:
+            best_sub_id = best_sub.get("id")
+            logger.info(f"[{bot_name}] Equipping compatible Sub Pack...")
+            await manager.equip_subpack(best_sub_id)
 
-    # Record the active pack category to global settings to guide CombatDecider pack restrictions
+    # Catat kategori Main Pack untuk panduan jangkauan serangan CombatDecider
     loadout = await manager.get_loadout()
     current_pack = loadout.get("activePack", {})
     if isinstance(current_pack, dict):
@@ -39,12 +74,11 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
         pack_category = str(current_pack)
     settings.BOT_ACTIVE_PACKS[bot_name] = pack_category
 
-    # 2. OPTIMIZE RELICS
+    # 2. OPTIMIZE RELICS (Mengisi penuh ketiga slot Red, Green, Blue)
     relics = await manager.get_relics_inventory()
     if isinstance(relics, list) and len(relics) > 0:
         slots_to_check = [0, 1, 2]
         for slot_index in slots_to_check:
-            # Use safe for-loop append instead of list comprehension to prevent indexing bugs
             slot_relics = []
             for r in relics:
                 if isinstance(r, dict):
@@ -55,7 +89,6 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
             if len(slot_relics) == 0:
                 continue
                 
-            # Score each relic based on cumulative positive/negative affix values
             scored_relics = []
             for relic in slot_relics:
                 score = 0
@@ -67,7 +100,6 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
                             score += val
                 scored_relics.append((score, relic))
                 
-            # Sort descending by cumulative score safely
             scored_relics.sort(key=lambda x: x[0], reverse=True)
             
             if len(scored_relics) > 0:

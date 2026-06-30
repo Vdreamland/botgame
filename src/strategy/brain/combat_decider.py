@@ -135,7 +135,25 @@ class CombatDecider(BaseDecider):
         if not valid_targets:
             return None
 
-        # 3. ADVANCED TARGET SORTING (Estimated Time-to-Kill / DEF Mitigation)
+        # 3. TACTICAL ADJACENT LOOTING IN COMBAT
+        # Jika bot sehat dan tidak ada ancaman jarak dekat (Layer 0 kosong),
+        # bot akan memotong pertempuran selama 1 giliran untuk melangkah ke ubin mayat terdekat untuk menjarah koin sMoltz!
+        no_enemies_here = not any(opp["distance"] == 0 for opp in valid_targets)
+        if hp >= 70 and no_enemies_here and settings.SHARED_LOOT_TARGETS:
+            adjacent_loot_region = None
+            for loot_r in settings.SHARED_LOOT_TARGETS:
+                if loot_r in connections:
+                    adjacent_loot_region = loot_r
+                    break
+            if adjacent_loot_region:
+                context.last_action_type = "move"
+                target_name = context.region_names.get(adjacent_loot_region, f"Hex-{adjacent_loot_region[:8]}")
+                return UtilityBehavior.build_move_action(
+                    region_id=adjacent_loot_region,
+                    thought=f"Tactical looting: Stepping 1-hex to adjacent secured kill site: {target_name} to harvest sMoltz."
+                )
+
+        # 4. ADVANCED TARGET SORTING (Estimated Time-to-Kill / DEF Mitigation)
         weapon_atk_bonus = WEAPONS.get(equipped_weapon_name, {}).get("atk_bonus", 0) if equipped_weapon_name in WEAPONS else 0
         our_atk = 25 + weapon_atk_bonus
 
@@ -157,9 +175,20 @@ class CombatDecider(BaseDecider):
             damage = max(1, our_atk - t_def)
             return t_hp / damage
 
-        # Prioritize monsters first, then sort by estimated hits required to kill (lowest first)
-        valid_targets.sort(key=lambda x: (x["is_monster"], estimate_hits_to_kill(x)))
-        best_target = valid_targets[0]
+        # TARGET LOCKING LOGIC
+        best_target = None
+        if context.last_target_id:
+            # Check if our locked target is still alive and remains in range
+            for t in valid_targets:
+                if t["id"] == context.last_target_id:
+                    best_target = t
+                    break
+                    
+        if not best_target:
+            # Prioritize monsters first, then sort by estimated hits required to kill (lowest first)
+            valid_targets.sort(key=lambda x: (x["is_monster"], estimate_hits_to_kill(x)))
+            best_target = valid_targets[0]
+            context.last_target_id = best_target["id"]
         
         if "Guardian" in best_target["name"] and best_target["hp"] > 15:
             alternative_target = None
@@ -170,6 +199,7 @@ class CombatDecider(BaseDecider):
             
             if alternative_target:
                 best_target = alternative_target
+                context.last_target_id = best_target["id"]
             else:
                 return None
 
@@ -179,7 +209,7 @@ class CombatDecider(BaseDecider):
 
         context.last_attack_region = best_target["region_id"]
 
-        # 4. EP LOCKOUT REST FALLBACK
+        # 5. EP LOCKOUT REST FALLBACK
         # If we can't afford the equipped weapon's EP cost, swap to an affordable one.
         # If we have no affordable swap option, Rest immediately instead of idling/leaving.
         if ep < eq_cost:

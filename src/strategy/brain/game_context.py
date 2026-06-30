@@ -19,6 +19,9 @@ class GameContext:
         self.last_kills_count = 0
         self.last_attack_region = ""
         self.loot_targets: List[str] = []
+        
+        # Memori pengunci target pertempuran
+        self.last_target_id = ""
 
     def update_map(self, current_region: Dict[str, Any], pending_zones: List[Dict[str, Any]]):
         region_id = current_region.get("id")

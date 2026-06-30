@@ -1,5 +1,6 @@
 from typing import Dict, Any, Optional
 from config.game_data import WEAPONS
+from config import settings
 from src.strategy.evaluators.threat_evaluator import ThreatEvaluator
 
 class StateParser:
@@ -7,6 +8,7 @@ class StateParser:
     @staticmethod
     def parse(view: Dict[str, Any], context: Any, computed_action: Optional[Dict[str, Any]], is_new_turn: bool) -> Dict[str, Any]:
         view_self = view.get("self", {})
+        bot_name = view_self.get("name", "")
         
         hp = view_self.get("hp", 100)
         max_hp = view_self.get("maxHp", 100)
@@ -84,10 +86,10 @@ class StateParser:
                 location_planning = "EQUIPPING WEAPON"
             elif action_type == "interact":
                 location_planning = "INTERACTING"
+            elif action_type == "explore":
+                location_planning = "EXPLORING RUIN"
 
         is_deathzone = current_region.get("isDeathZone", False)
-        
-        # Robust case-insensitive check for pending death zones
         pending_zones = view.get("pendingDeathzones") or view.get("pendingDeathZones") or []
         
         if is_deathzone:
@@ -109,6 +111,20 @@ class StateParser:
 
         layer0, layer1, layer2 = ThreatEvaluator.scan_enemies(view, view_self.get("id", ""))
 
+        # Ekstraksi bidang telemetri taktis yang baru
+        active_pack = settings.BOT_ACTIVE_PACKS.get(bot_name, "None")
+        weather = view.get("weather") or current_region.get("weather") or "clear"
+        
+        # Ekstraksi dinamis sisa HP musuh saat menyerang
+        target_hp_info = ""
+        if computed_action and computed_action.get("data", {}).get("type") == "attack":
+            t_id = computed_action["data"].get("targetId", "")
+            opps = context.opponents_data.get("players", []) + context.opponents_data.get("monsters", [])
+            for o in opps:
+                if o.get("id") == t_id:
+                    target_hp_info = f" (Target HP: {o.get('hp', 0)})"
+                    break
+
         return {
             "server_is_alive": server_is_alive,
             "hp": hp,
@@ -128,5 +144,8 @@ class StateParser:
             "deadzone_warning": deadzone_warning,
             "layer0": layer0,
             "layer1": layer1,
-            "layer2": layer2
+            "layer2": layer2,
+            "active_pack": active_pack,
+            "weather": weather,
+            "target_hp_info": target_hp_info
         }

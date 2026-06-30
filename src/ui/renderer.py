@@ -25,17 +25,22 @@ class TerminalRenderer:
         layer0: tuple,
         layer1: tuple,
         layer2: tuple,
+        active_pack: str,
+        weather: str,
+        can_act: bool,
+        cooldown_ms: int,
+        target_hp_info: str = "",
         agent_name: str = ""
     ):
         name = agent_name if agent_name else settings.AGENT_NAME
         print(f"# TURN {turn}")
-        print(f"- Agent Name : {name} / Status : {'ALIVE' if server_is_alive else 'DEAD'}")
-        print(f"- HP : {hp}/{max_hp} / EP/Energy : {ep}/{max_ep}")
-        print(f"- ATK : {atk} / DEF : {def_val} / Kills : {kills}")
+        print(f"- Agent Name : {name} / Status : {'ALIVE' if server_is_alive else 'DEAD'} / Active Pack : {active_pack}")
+        print(f"- HP : {hp}/{max_hp} / EP/Energy : {ep}/{max_ep} / Weather : {weather.upper()}")
+        print(f"- ATK : {atk} / DEF : {def_val} / Kills : {kills} / Can Act : {can_act} (Cooldown: {cooldown_ms}ms)")
         print(f"- Equipped > Weapon : {weapon_name} / Armor : {armor_name}")
         print(f"- Inventory > {inventory_str}")
         print(f"- Ground > {ground_str}")
-        print(f"- Location > Now : {location_now} / Next : {location_planning} / Deadzone : {deadzone_status}")
+        print(f"- Location > Now : {location_now} / Next : {location_planning}{target_hp_info} / Deadzone : {deadzone_status}")
         print(f"- Deadzone > Warning : {deadzone_warning}")
         print(f"- Action Reason : {action_thought}")
         print(f"- Enemy Scan > Layer 0 (Here) : P:{layer0[0]} M:{layer0[1]} / "

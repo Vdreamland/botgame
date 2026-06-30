@@ -24,6 +24,10 @@ class AgentHandler:
         self.opponents_data = {"players": [], "monsters": []}
         self.context = GameContext()
         self.brain = DecisionEngine()
+        
+        # Perekam cooldown dan status izin aksi kelompok
+        self.can_act = True
+        self.cooldown_remaining_ms = 0
 
     async def send_json(self, payload: dict):
         try:
@@ -42,8 +46,18 @@ class AgentHandler:
 
                 if msg_type == "waiting":
                     continue
+                    
+                elif msg_type == "action_result":
+                    # Update status cooldown setelah menerima aksi dari server
+                    self.can_act = data.get("canAct", True)
+                    self.cooldown_remaining_ms = data.get("cooldownRemainingMs", 0)
+                    
+                elif msg_type == "can_act_changed":
+                    # Cooldown telah berakhir di tingkat server
+                    self.can_act = data.get("canAct", True)
+                    self.cooldown_remaining_ms = data.get("cooldownRemainingMs", 0)
 
-                if msg_type in ["agent_view", "turn_advanced"]:
+                elif msg_type in ["agent_view", "turn_advanced"]:
                     new_turn = data.get("turn", 0)
                     is_new_turn = (new_turn != self.current_turn)
                     self.current_turn = new_turn
@@ -62,9 +76,11 @@ class AgentHandler:
                     if bot_name and region_id:
                         settings.BOT_POSITIONS[bot_name] = region_id
 
+                    # Ekstraksi tangguh dengan pengaman casing Z besar / z kecil
                     pending_zones = self.last_view.get("pendingDeathzones") or self.last_view.get("pendingDeathZones") or []
                     self.context.update_map(current_region, pending_zones)
 
+                    # PEMINDAIAN DETAIL MUSUH: Data dimasukkan langsung ke context sebelum aksi dihitung
                     self.context.opponents_data = ThreatEvaluator.scan_detailed_opponents(
                         view=self.last_view,
                         self_id=view_self.get("id", "")
@@ -118,6 +134,7 @@ class AgentHandler:
                             is_new_turn=is_new_turn
                         )
 
+                        # Mengirimkan seluruh data telemetri taktis baru ke TerminalRenderer
                         TerminalRenderer.render_turn(
                             turn=self.current_turn,
                             server_is_alive=parsed_state["server_is_alive"],
@@ -140,6 +157,11 @@ class AgentHandler:
                             layer0=parsed_state["layer0"],
                             layer1=parsed_state["layer1"],
                             layer2=parsed_state["layer2"],
+                            active_pack=parsed_state["active_pack"],
+                            weather=parsed_state["weather"],
+                            can_act=self.can_act,
+                            cooldown_ms=self.cooldown_remaining_ms,
+                            target_hp_info=parsed_state["target_hp_info"],
                             agent_name=self.agent_name
                         )
 

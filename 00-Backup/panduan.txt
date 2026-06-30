@@ -23,3 +23,5 @@ clear cache
 Get-ChildItem -Path . -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
 
 python rungame.py
+
+relic unequip python tools/setup_loadout.py

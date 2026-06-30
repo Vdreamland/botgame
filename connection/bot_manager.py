@@ -9,18 +9,18 @@ from connection.socket_client import ClawRoyaleSocketClient
 from connection.loadout import ClawRoyaleLoadoutClient
 from ui import log_system, log_connection
 
-async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, version: str):
-    """
-    Runs verify, loadout check, and WebSocket connections for each bot instance.
-    """
+async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, version: str) -> dict:
+    main_name = "None"
+    sub_name = "None"
+    full_set_status = "[No]"
+    ws_status = "[FAILED]"
+
     async with aiohttp.ClientSession() as session:
         http_client = ClawRoyaleHTTPClient(session)
         loadout_client = ClawRoyaleLoadoutClient(session)
         try:
-            # 1. Silently verify account details
             await http_client.get_account_me(api_key, version)
 
-            # 2. Fetch loadout details and print active packs
             loadout = await loadout_client.get_loadout(api_key, version)
             main_pack = loadout.get("activePack")
             sub_pack = loadout.get("subPack")
@@ -29,29 +29,35 @@ async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, ve
             main_name = main_pack.get("displayName", "None") if main_pack else "None"
             sub_name = sub_pack.get("displayName", "None") if sub_pack else "None"
 
-            log_connection.bot_success(bot_name, f"Loadout: {main_name} (Main) + {sub_name} (Sub)")
-            
-            # 3. Print final fullSet configuration status and optimal stats confirmation
             if full_set:
-                log_connection.bot_success(bot_name, "Status: fullSet active - Using optimal combat stats!")
+                full_set_status = "[OK]"
             else:
-                log_connection.bot_warning(bot_name, "Status: Loadout partial - fullSet effects are inactive.")
+                full_set_status = "[No]"
 
-        except Exception as e:
-            log_connection.bot_error(bot_name, f"Verification failed: {str(e)}")
-            return
+        except Exception:
+            full_set_status = "[No]"
 
-    socket_client = ClawRoyaleSocketClient(api_key, version, room_preference)
-    await socket_client.connect_and_listen(bot_name)
+    try:
+        socket_client = ClawRoyaleSocketClient(api_key, version, room_preference)
+        ws_success = await socket_client.connect_and_listen(bot_name, silent=True)
+        if ws_success:
+            ws_status = "[OK]"
+        else:
+            ws_status = "[FAILED]"
+    except Exception:
+        ws_status = "[FAILED]"
+
+    return {
+        "bot_name": bot_name,
+        "loadout": f"{main_name} + {sub_name}",
+        "full_set": full_set_status,
+        "ws_test": ws_status
+    }
 
 async def start_multi_bots():
-    """
-    Orchestrates the bot manager flow and structures the PowerShell output cleanly.
-    """
     room_pref = os.getenv("ROOM_PREFERENCE", "free")
     num_bots = int(os.getenv("NUM_BOTS", "1"))
     
-    # 1. Fetch and print game version status
     async with aiohttp.ClientSession() as session:
         http_client = ClawRoyaleHTTPClient(session)
         try:
@@ -61,10 +67,8 @@ async def start_multi_bots():
             log_system.error(f"Failed to fetch game version: {str(e)}")
             return
 
-    # 2. Print database loaded status
     log_system.success("Game database loaded successfully.")
 
-    # Gather configured bots
     bot_tasks = []
     active_bot_names = []
     for i in range(1, num_bots + 1):
@@ -77,18 +81,40 @@ async def start_multi_bots():
         else:
             log_system.warning(f"Configuration for BOT{i} is incomplete.")
 
-    # 3. Print total bots status
     log_system.success(f"Total Bot [{len(bot_tasks)}]")
-
-    # 4. Print active bot list
-    if active_bot_names:
-        bot_list_str = ", ".join(active_bot_names)
-        print(f"[+] Active bots: {bot_list_str}")
-        sys.stdout.flush()
 
     if not bot_tasks:
         log_system.error("No valid bot configurations found.")
         return
 
-    # Run the connection and testing cycle
-    await asyncio.gather(*bot_tasks)
+    results = await asyncio.gather(*bot_tasks)
+
+    print()
+    headers = f"{'BOT NAME':<13}  {'LOADOUT (MAIN + SUB)':<40}{'fullSet':<10}{'WS TEST'}"
+    separator = "-" * len(headers)
+    print(headers)
+    print(separator)
+    sys.stdout.flush()
+
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    RESET = "\033[0m"
+
+    for idx, res in enumerate(results, start=1):
+        bot_name = res["bot_name"]
+        loadout_str = res["loadout"]
+        full_set_raw = res["full_set"]
+        ws_test_raw = res["ws_test"]
+
+        bot_idx_str = f"{idx}. {bot_name}"
+        
+        bot_idx_padded = f"{bot_idx_str:<13}  "
+        loadout_padded = f"{loadout_str:<40}"
+        full_set_padded = f"{full_set_raw:<10}"
+        ws_test_padded = ws_test_raw
+
+        full_set_colored = full_set_padded.replace("[OK]", f"{GREEN}[OK]{RESET}").replace("[No]", f"{RED}[No]{RESET}")
+        ws_test_colored = ws_test_padded.replace("[OK]", f"{GREEN}[OK]{RESET}").replace("[FAILED]", f"{RED}[FAILED]{RESET}")
+
+        print(f"{bot_idx_padded}{loadout_padded}{full_set_colored}{ws_test_colored}")
+        sys.stdout.flush()

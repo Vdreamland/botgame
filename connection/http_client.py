@@ -9,9 +9,6 @@ class ClawRoyaleHTTPClient:
         self.session = session
 
     async def get_current_version(self) -> str:
-        """
-        Fetches active game version, supporting plain text, nested JSON, or flat JSON.
-        """
         try:
             async with self.session.get(VERSION_URL) as response:
                 text_response = await response.text()

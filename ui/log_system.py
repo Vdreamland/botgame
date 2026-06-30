@@ -3,12 +3,10 @@
 import sys
 import os
 
-# ANSI escape codes for coloring
 GREEN = "\033[92m"
 RED = "\033[91m"
 RESET = "\033[0m"
 
-# Enable ANSI escape sequences support on Windows Console
 if os.name == 'nt':
     import ctypes
     try:
@@ -18,20 +16,16 @@ if os.name == 'nt':
         pass
 
 def info(message: str):
-    """Silent"""
     pass
 
 def success(message: str):
-    """Log system success with colored OK tag"""
-    print(f"[+] {message} {GREEN}[OK]{RESET}")
+    print(f"{GREEN}[OK]{RESET} {message}")
     sys.stdout.flush()
 
 def error(message: str):
-    """Log system error with colored FAILED tag"""
-    print(f"[-] {message} {RED}[FAILED]{RESET}")
+    print(f"{RED}[FAILED]{RESET} {message}")
     sys.stdout.flush()
 
 def warning(message: str):
-    """Log system warning with colored WARNING tag"""
-    print(f"[!] {message} {RED}[WARNING]{RESET}")
+    print(f"{RED}[WARNING]{RESET} {message}")
     sys.stdout.flush()

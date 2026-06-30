@@ -1,29 +1,32 @@
 /botgame
-├── .env
-├── requirements.txt
-├── rungame.py                    
-├── connection/
-│   ├── __init__.py
-│   ├── loadout.py
-│   ├── api_endpoints.py
-│   ├── http_client.py
-│   ├── socket_client.py          
-│   ├── loadout.py
-│   └── bot_manager.py 
-├── tools/                        
-│   ├── setup_loadout.py          
-│   # ── reforge_relic.py        
-├── game_data/
-│   ├── __init__.py
-│   ├── player_info.py
-│   ├── monster_info.py
-│   ├── weapon_info.py
-│   ├── item_info.py
-│   ├── action_info.py
-│   ├── relic_info.py
-│   ├── pack_info.py
-│   └── world_info.py
-└── ui/
-    ├── __init__.py               
-    ├── log_system.py             
-    └── log_connection.py         
+├── .env                          # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
+├── requirements.txt              # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)
+├── rungame.py                    # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
+│
+├── connection/                   # Modul komunikasi jaringan (REST API dan WebSockets)
+│   ├── __init__.py               # Penanda paket Python untuk folder connection
+│   ├── api_endpoints.py          # Menyimpan konfigurasi URL REST API dan alamat WebSocket server game
+│   ├── http_client.py            # Mengelola permintaan HTTP dasar (pengecekan versi game dan verifikasi akun)
+│   ├── socket_client.py          # Mengelola jabat tangan (handshake) WebSocket awal dan memverifikasi koneksi
+│   ├── loadout.py                # Mengelola REST API pemakaian pack, sub pack, serta relic ke slot akun
+│   └── bot_manager.py            # Mengorkestrasi seluruh siklus inisiasi bot secara asinkronus dan menyajikan tabel status
+│
+├── tools/                        # Folder peralatan utility pembantu di luar game loop
+│   ├── setup_loadout.py          # Skrip otomatisasi loadout aman untuk semua bot (menyaring & melepas relic berbahaya)
+│   # ── reforge_relic.py         # Skrip perencanaan untuk memproses reforge afiks relic di lobi menggunakan reforge stones
+│
+├── game_data/                    # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
+│   ├── __init__.py               # Penanda paket Python untuk folder game_data
+│   ├── player_info.py            # Menyimpan data statistik dasar bawaan bot (HP, EP, ATK, DEF, Vision)
+│   ├── monster_info.py           # Ensiklopedia statistik musuh (Wolf, Bear, Bandit, Guardian)
+│   ├── weapon_info.py            # Ensiklopedia statistik senjata tipe Melee dan Ranged
+│   ├── item_info.py              # Ensiklopedia data item pemulihan (Recovery) dan utilitas (Utility)
+│   ├── action_info.py            # Konfigurasi aksi game beserta konsumsi EP, cooldown, dan aturan Alert Gauge
+│   ├── relic_info.py             # Panduan warna slot relic serta seluruh rentang nilai afiks positif/negatif
+│   ├── pack_info.py              # Ensiklopedia 20 kategori pack dari T1 sampai T3 beserta persentase attenuasi Sub-slot
+│   └── world_info.py             # Aturan modifikasi medan (Terrain), cuaca (Weather), sistem waktu, dan fasilitas peta
+│
+└── ui/                           # Modul antarmuka pengguna berbasis terminal
+    ├── __init__.py               # Penanda paket Python untuk folder ui
+    ├── log_system.py             # Log sistem global menggunakan penanda kode warna ANSI (di awal baris)
+    └── log_connection.py         # Log aktivitas koneksi instansi bot individual (dipertahankan untuk kompatibilitas)

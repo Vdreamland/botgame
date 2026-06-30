@@ -64,7 +64,6 @@ class ClawRoyaleLoadoutClient:
         headers = self._get_headers(api_key, version, is_mutation=True)
         payload = {"packInstanceId": pack_instance_id}
         
-        # Route 1: /api/loadout/subpack
         try:
             url = f"{BASE_URL}/loadout/subpack"
             async with self.session.put(url, headers=headers, json=payload) as r:
@@ -74,7 +73,6 @@ class ClawRoyaleLoadoutClient:
         except Exception:
             pass
 
-        # Route 2: /api/loadout/sub-pack
         try:
             url = f"{BASE_URL}/loadout/sub-pack"
             async with self.session.put(url, headers=headers, json=payload) as r:
@@ -84,7 +82,6 @@ class ClawRoyaleLoadoutClient:
         except Exception:
             pass
 
-        # Route 3: /api/loadout/pack/sub
         try:
             url = f"{BASE_URL}/loadout/pack/sub"
             async with self.session.put(url, headers=headers, json=payload) as r:
@@ -94,7 +91,6 @@ class ClawRoyaleLoadoutClient:
         except Exception:
             pass
 
-        # Route 4: /api/loadout/sub
         try:
             url = f"{BASE_URL}/loadout/sub"
             async with self.session.put(url, headers=headers, json=payload) as r:

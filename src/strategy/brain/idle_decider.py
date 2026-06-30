@@ -5,6 +5,7 @@ from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.behaviors.utility_behavior import UtilityBehavior
 from src.strategy.navigation.pathfinder import Pathfinder
 from config import settings
+from src.utils.logger import logger
 
 class IdleDecider(BaseDecider):
     
@@ -115,12 +116,14 @@ class IdleDecider(BaseDecider):
                         thought=f"Squad tactic: Regrouping with leader {leader_name}."
                     )
             
-        safe_connections = [
-            r_id for r_id in connections 
-            if r_id not in context.pending_deathzones 
-            and r_id not in context.active_deathzones
-            and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-        ]
+        # PETA PENYARINGAN DEADZONE: Mencoret ubin menyusut/aktif dengan mencetak log audit transparan
+        safe_connections = []
+        for r_id in connections:
+            if (r_id in context.pending_deathzones) or (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                rejected_name = context.region_names.get(r_id, f"Hex-{r_id[:8]}")
+                logger.warning(f"[Deadzone Filter] [{bot_name}] Rejecting connection: {rejected_name} (Hex-{r_id[:8]}) - DANGEROUS/DEADZONE!")
+            else:
+                safe_connections.append(r_id)
         
         if current_turn > 15 and safe_connections:
             safe_non_corners = [
@@ -135,11 +138,13 @@ class IdleDecider(BaseDecider):
                 if len(context.map_graph.get(r_id, [1, 2, 3, 4])) > 3
             ]
         
-        pending_connections = [
-            r_id for r_id in connections 
-            if r_id not in context.active_deathzones
-            and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-        ]
+        # Peta cadangan jika terpaksa
+        pending_connections = []
+        for r_id in connections:
+            if (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                pass
+            else:
+                pending_connections.append(r_id)
         
         if safe_non_corners and current_turn <= 15:
             chosen_connections = safe_non_corners

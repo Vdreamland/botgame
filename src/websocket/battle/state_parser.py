@@ -97,7 +97,7 @@ class StateParser:
                 location_planning = "EXPLORING RUIN"
 
         is_deathzone = current_region.get("isDeathZone", False)
-        pending_zones = view.get("pendingDeathzones") or view.get("pendingDeathZones") or []
+        pending_zones = context.pending_deathzones  # Membaca data tersinkronisasi dari memori taktis aliansi
         
         if is_deathzone:
             deadzone_status = "ACTIVE"
@@ -108,9 +108,8 @@ class StateParser:
 
         if pending_zones:
             pending_names = []
-            for zone in pending_zones:
-                z_id = zone.get("id")
-                z_name = zone.get("name") or context.region_names.get(z_id, f"Hex-{z_id[:8]}")
+            for z_id in pending_zones:
+                z_name = context.region_names.get(z_id, f"Hex-{z_id[:8]}")
                 pending_names.append(f"{z_name} (Hex-{z_id[:8]})")
             deadzone_warning = " / ".join(pending_names)
         else:

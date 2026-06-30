@@ -1,5 +1,6 @@
 from typing import Dict, Any, List
 from config import settings
+from src.utils.logger import logger
 
 class GameContext:
     
@@ -57,6 +58,11 @@ class GameContext:
                 if z_id not in settings.SHARED_ACTIVE_DEATHZONES:
                     settings.SHARED_ACTIVE_DEATHZONES.append(z_id)
         
+        # Log radar peringatan deadzone incoming
+        if pending_zones:
+            zone_labels = [zone.get("name") or f"Hex-{zone.get('id')[:8]}" for zone in pending_zones]
+            logger.warning(f"[Deadzone Radar] INCOMING DEATHZONE DETECTED: {', '.join(zone_labels)}")
+
         if current_region.get("isDeathZone"):
             if region_id not in self.active_deathzones:
                 self.active_deathzones.append(region_id)

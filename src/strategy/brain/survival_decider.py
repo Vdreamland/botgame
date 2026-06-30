@@ -4,12 +4,14 @@ from src.strategy.brain.game_context import GameContext
 from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.behaviors.utility_behavior import UtilityBehavior
 from config import settings
+from src.utils.logger import logger
 
 class SurvivalDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
         self_id = view_self.get("id", "")
+        bot_name = view_self.get("name", "")  # Mengembalikan inisialisasi bot_name untuk log Deadzone Filter
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
@@ -21,12 +23,15 @@ class SurvivalDecider(BaseDecider):
         # PRIORITY 1: MELARIKAN DIRI DARI ACTIVE DEATHZONE
         if is_active_deathzone:
             connections = current_region.get("connections", [])
-            safe_options = [
-                r_id for r_id in connections 
-                if r_id not in context.pending_deathzones 
-                and r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            
+            # PETA PENYARINGAN DEADZONE: Mencoret ubin menyusut/aktif dengan mencetak log audit transparan
+            safe_options = []
+            for r_id in connections:
+                if (r_id in context.pending_deathzones) or (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    rejected_name = context.region_names.get(r_id, f"Hex-{r_id[:8]}")
+                    logger.warning(f"[Deadzone Filter] [{bot_name}] Rejecting escape connection: {rejected_name} (Hex-{r_id[:8]}) - DANGEROUS/DEADZONE!")
+                else:
+                    safe_options.append(r_id)
             
             if current_turn > 15 and safe_options:
                 safe_non_corners = [
@@ -36,11 +41,12 @@ class SurvivalDecider(BaseDecider):
                 if safe_non_corners:
                     safe_options = safe_non_corners
 
-            pending_options = [
-                r_id for r_id in connections 
-                if r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            pending_options = []
+            for r_id in connections:
+                if (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    pass
+                else:
+                    pending_options.append(r_id)
             
             chosen_target = None
             if safe_options:
@@ -63,17 +69,18 @@ class SurvivalDecider(BaseDecider):
         threats_here = enemies_here + monsters_here
 
         # PRIORITY 1.5: OUTNUMBERED ESCAPE (KABUR SAAT KALAH JUMLAH)
-        # Jika jumlah ancaman di ubin kita lebih banyak dari jumlah aliansi kita, langsung kabur untuk mencegah burst ganking!
         allies_here = sum(1 for name, pos in settings.BOT_POSITIONS.items() if pos == region_id)
         is_outnumbered = len(threats_here) > allies_here
         if is_outnumbered and len(threats_here) >= 2:
             connections = current_region.get("connections", [])
-            safe_options = [
-                r_id for r_id in connections 
-                if r_id not in context.pending_deathzones 
-                and r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            
+            safe_options = []
+            for r_id in connections:
+                if (r_id in context.pending_deathzones) or (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    rejected_name = context.region_names.get(r_id, f"Hex-{r_id[:8]}")
+                    logger.warning(f"[Deadzone Filter] [{bot_name}] Rejecting escape connection (outnumbered): {rejected_name} (Hex-{r_id[:8]}) - DANGEROUS/DEADZONE!")
+                else:
+                    safe_options.append(r_id)
             
             if current_turn > 15 and safe_options:
                 safe_non_corners = [
@@ -83,11 +90,12 @@ class SurvivalDecider(BaseDecider):
                 if safe_non_corners:
                     safe_options = safe_non_corners
 
-            pending_options = [
-                r_id for r_id in connections 
-                if r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            pending_options = []
+            for r_id in connections:
+                if (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    pass
+                else:
+                    pending_options.append(r_id)
             
             chosen_target = None
             if safe_options:
@@ -127,12 +135,14 @@ class SurvivalDecider(BaseDecider):
                 settings.SOS_TARGETS.append(region_id)
 
             connections = current_region.get("connections", [])
-            safe_options = [
-                r_id for r_id in connections 
-                if r_id not in context.pending_deathzones 
-                and r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            
+            safe_options = []
+            for r_id in connections:
+                if (r_id in context.pending_deathzones) or (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    rejected_name = context.region_names.get(r_id, f"Hex-{r_id[:8]}")
+                    logger.warning(f"[Deadzone Filter] [{bot_name}] Rejecting escape connection (threat): {rejected_name} (Hex-{r_id[:8]}) - DANGEROUS/DEADZONE!")
+                else:
+                    safe_options.append(r_id)
             
             if current_turn > 15 and safe_options:
                 safe_non_corners = [
@@ -142,11 +152,12 @@ class SurvivalDecider(BaseDecider):
                 if safe_non_corners:
                     safe_options = safe_non_corners
 
-            pending_options = [
-                r_id for r_id in connections 
-                if r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            pending_options = []
+            for r_id in connections:
+                if (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    pass
+                else:
+                    pending_options.append(r_id)
             
             chosen_target = None
             if safe_options:
@@ -203,12 +214,14 @@ class SurvivalDecider(BaseDecider):
                 settings.SOS_TARGETS.append(region_id)
 
             connections = current_region.get("connections", [])
-            safe_options = [
-                r_id for r_id in connections 
-                if r_id not in context.pending_deathzones 
-                and r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            
+            safe_options = []
+            for r_id in connections:
+                if (r_id in context.pending_deathzones) or (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    rejected_name = context.region_names.get(r_id, f"Hex-{r_id[:8]}")
+                    logger.warning(f"[Deadzone Filter] [{bot_name}] Rejecting escape connection (pending zone): {rejected_name} (Hex-{r_id[:8]}) - DANGEROUS/DEADZONE!")
+                else:
+                    safe_options.append(r_id)
             
             if current_turn > 15 and safe_options:
                 safe_non_corners = [
@@ -218,11 +231,12 @@ class SurvivalDecider(BaseDecider):
                 if safe_non_corners:
                     safe_options = safe_non_corners
 
-            pending_options = [
-                r_id for r_id in connections 
-                if r_id not in context.active_deathzones
-                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
-            ]
+            pending_options = []
+            for r_id in connections:
+                if (r_id in context.active_deathzones) or (r_id in settings.SHARED_ACTIVE_DEATHZONES):
+                    pass
+                else:
+                    pending_options.append(r_id)
             
             chosen_target = None
             if safe_options:

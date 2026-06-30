@@ -92,8 +92,14 @@ class AgentHandler:
                     if bot_name and region_id:
                         settings.BOT_POSITIONS[bot_name] = region_id
 
-                    # Ekstraksi tangguh dengan pengaman casing Z besar / z kecil
-                    pending_zones = self.last_view.get("pendingDeathzones") or self.last_view.get("pendingDeathZones") or []
+                    # Ekstraksi tangguh multi-sumber dari root data dan view (Mengamankan sinkronisasi deadzone)
+                    pending_zones = (
+                        self.last_view.get("pendingDeathzones") or 
+                        self.last_view.get("pendingDeathZones") or 
+                        data.get("pendingDeathzones") or 
+                        data.get("pendingDeathZones") or 
+                        []
+                    )
                     self.context.update_map(current_region, pending_zones)
 
                     # PEMINDAIAN DETAIL MUSUH: Data dimasukkan langsung ke context sebelum aksi dihitung

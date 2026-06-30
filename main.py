@@ -105,6 +105,8 @@ async def run_single_bot(bot_name: str, api_key: str):
         settings.SHARED_VISITED_HISTORY.clear()
         settings.SHARED_ACTIVE_DEATHZONES.clear()
         settings.BOT_POSITIONS.clear()
+        settings.SHARED_MAP_GRAPH.clear()       # Reset cooperative map for the new game
+        settings.SHARED_REGION_NAMES.clear()     # Reset cooperative region names for the new game
         
         # Run out-of-game loadout optimizer before entering queue
         try:

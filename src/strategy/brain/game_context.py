@@ -4,8 +4,10 @@ from config import settings
 class GameContext:
     
     def __init__(self):
-        self.map_graph: Dict[str, List[str]] = {}
-        self.region_names: Dict[str, str] = {}
+        # Mengarahkan memori lokal ke database global aliansi agar otomatis tersinkronisasi
+        self.map_graph = settings.SHARED_MAP_GRAPH
+        self.region_names = settings.SHARED_REGION_NAMES
+        
         self.visited_history: List[str] = []
         self.interacted_regions: List[str] = []
         self.opponents_data: Dict[str, List[Dict[str, Any]]] = {"players": [], "monsters": []}

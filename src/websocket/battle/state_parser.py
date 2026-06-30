@@ -17,6 +17,8 @@ class StateParser:
         def_val = view_self.get("def", 5)
         kills = view_self.get("kills", 0)
         server_is_alive = view_self.get("isAlive", True)
+        alert_gauge = view_self.get("alertGauge", 0)
+        alert_active = view_self.get("alertActive", False)
 
         equipped_weapon = view_self.get("equippedWeapon")
         weapon_name = "None"
@@ -50,7 +52,11 @@ class StateParser:
             inventory_str = " / ".join(f"{name} x{qty}" for name, qty in inventory_counts.items())
 
         current_region = view.get("currentRegion", {})
-        location_now = current_region.get("name", "Unknown Location")
+        region_id = current_region.get("id")
+        
+        # Append unique hex ID suffix to prevent duplicate Library name confusion
+        z_id_short = region_id[:8] if region_id else "unknown"
+        location_now = f"{current_region.get('name', 'Unknown')} (Hex-{z_id_short})"
 
         # Parse ground items and stack quantities correctly
         ground_raw = current_region.get("items", [])
@@ -75,7 +81,8 @@ class StateParser:
             action_type = action_data.get("type")
             if action_type == "move":
                 target_id = action_data.get("regionId", "")
-                location_planning = context.region_names.get(target_id, f"Hex-{target_id[:8]}")
+                planned_name = context.region_names.get(target_id, "Hex")
+                location_planning = f"{planned_name} (Hex-{target_id[:8]})"
             elif action_type == "rest":
                 location_planning = "RESTING"
             elif action_type == "use_item":
@@ -104,18 +111,41 @@ class StateParser:
             for zone in pending_zones:
                 z_id = zone.get("id")
                 z_name = zone.get("name") or context.region_names.get(z_id, f"Hex-{z_id[:8]}")
-                pending_names.append(z_name)
+                pending_names.append(f"{z_name} (Hex-{z_id[:8]})")
             deadzone_warning = " / ".join(pending_names)
         else:
             deadzone_warning = "None"
 
         layer0, layer1, layer2 = ThreatEvaluator.scan_enemies(view, view_self.get("id", ""))
 
-        # Ekstraksi bidang telemetri taktis yang baru
-        active_pack = settings.BOT_ACTIVE_PACKS.get(bot_name, "None")
+        # Map index-based packs to human-readable names safely
+        raw_pack = settings.BOT_ACTIVE_PACKS.get(bot_name, "None")
+        pack_names = {
+            "0": "Moltz Expert (CAT-00)", "CAT-00": "Moltz Expert (CAT-00)",
+            "1": "Item Expert (CAT-01)", "CAT-01": "Item Expert (CAT-01)",
+            "2": "Goliath (CAT-02)", "CAT-02": "Goliath (CAT-02)",
+            "3": "Thorns (CAT-03)", "CAT-03": "Thorns (CAT-03)",
+            "4": "Scout (CAT-04)", "CAT-04": "Scout (CAT-04)",
+            "5": "Ruin Expert (CAT-05)", "CAT-05": "Ruin Expert (CAT-05)",
+            "6": "Berserker (CAT-06)", "CAT-06": "Berserker (CAT-06)",
+            "7": "Double Attack (CAT-07)", "CAT-07": "Double Attack (CAT-07)",
+            "8": "Heart of the Giant (CAT-08)", "CAT-08": "Heart of the Giant (CAT-08)",
+            "9": "Bomber (CAT-09)", "CAT-09": "Bomber (CAT-09)",
+            "10": "Trail Ward (CAT-10)", "CAT-10": "Trail Ward (CAT-10)",
+            "11": "Ranged (CAT-11)", "CAT-11": "Ranged (CAT-11)",
+            "12": "Sword Master (CAT-12)", "CAT-12": "Sword Master (CAT-12)",
+            "13": "Duelist (CAT-13)", "CAT-13": "Duelist (CAT-13)",
+            "14": "Raider (CAT-14)", "CAT-14": "Raider (CAT-14)",
+            "15": "Last Stand (CAT-15)", "CAT-15": "Last Stand (CAT-15)",
+            "16": "Iron Heart (CAT-16)", "CAT-16": "Iron Heart (CAT-16)",
+            "17": "Sunflame Cloak (CAT-17)", "CAT-17": "Sunflame Cloak (CAT-17)",
+            "18": "Assassin (CAT-18)", "CAT-18": "Assassin (CAT-18)",
+            "19": "Pickpocket (CAT-19)", "CAT-19": "Pickpocket (CAT-19)"
+        }
+        active_pack = pack_names.get(str(raw_pack), f"Unknown ({raw_pack})")
+        
         weather = view.get("weather") or current_region.get("weather") or "clear"
         
-        # Ekstraksi dinamis sisa HP musuh saat menyerang
         target_hp_info = ""
         if computed_action and computed_action.get("data", {}).get("type") == "attack":
             t_id = computed_action["data"].get("targetId", "")
@@ -124,6 +154,16 @@ class StateParser:
                 if o.get("id") == t_id:
                     target_hp_info = f" (Target HP: {o.get('hp', 0)})"
                     break
+
+        # Extract and format the real-time event feed messages
+        recent_raw = view.get("recentMessages", [])
+        recent_messages = []
+        for msg in recent_raw:
+            if isinstance(msg, dict):
+                text = msg.get("text") or msg.get("message") or str(msg)
+            else:
+                text = str(msg)
+            recent_messages.append(text)
 
         return {
             "server_is_alive": server_is_alive,
@@ -147,5 +187,8 @@ class StateParser:
             "layer2": layer2,
             "active_pack": active_pack,
             "weather": weather,
-            "target_hp_info": target_hp_info
+            "target_hp_info": target_hp_info,
+            "alert_gauge": alert_gauge,
+            "alert_active": alert_active,
+            "recent_messages": recent_messages[-5:]  # rolling view of the last 5 logs
         }

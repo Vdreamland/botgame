@@ -104,10 +104,8 @@ class AgentHandler:
                             
                             if action_type == "move":
                                 target_id = action_data.get("regionId", "")
-                                if target_id in self.context.region_names:
-                                    location_planning = self.context.region_names[target_id]
-                                else:
-                                    location_planning = f"Hex-{target_id[:8]}"
+                                planned_name = self.context.region_names.get(target_id, "Hex")
+                                location_planning = f"{planned_name} (Hex-{target_id[:8]})"
                             elif action_type == "rest":
                                 location_planning = "RESTING"
                             elif action_type == "use_item":
@@ -121,74 +119,77 @@ class AgentHandler:
                             elif action_type == "explore":
                                 location_planning = "EXPLORING RUIN"
 
-                    if computed_action:
-                        await self.send_json(computed_action)
+                            if computed_action:
+                                await self.send_json(computed_action)
 
-                    if self.current_turn != self.last_rendered_turn:
-                        self.last_rendered_turn = self.current_turn
+                            if self.current_turn != self.last_rendered_turn:
+                                self.last_rendered_turn = self.current_turn
 
-                        parsed_state = StateParser.parse(
-                            view=self.last_view,
-                            context=self.context,
-                            computed_action=computed_action,
-                            is_new_turn=is_new_turn
-                        )
+                                parsed_state = StateParser.parse(
+                                    view=self.last_view,
+                                    context=self.context,
+                                    computed_action=computed_action,
+                                    is_new_turn=is_new_turn
+                                )
 
-                        # Mengirimkan seluruh data telemetri taktis baru ke TerminalRenderer
-                        TerminalRenderer.render_turn(
-                            turn=self.current_turn,
-                            server_is_alive=parsed_state["server_is_alive"],
-                            hp=parsed_state["hp"],
-                            max_hp=parsed_state["max_hp"],
-                            ep=parsed_state["ep"],
-                            max_ep=parsed_state["max_ep"],
-                            atk=parsed_state["atk"],
-                            def_val=parsed_state["def_val"],
-                            kills=parsed_state["kills"],
-                            weapon_name=parsed_state["weapon_name"],
-                            armor_name=parsed_state["armor_name"],
-                            inventory_str=parsed_state["inventory_str"],
-                            ground_str=parsed_state["ground_str"],
-                            location_now=parsed_state["location_now"],
-                            location_planning=location_planning,
-                            action_thought=action_thought,
-                            deadzone_status=parsed_state["deadzone_status"],
-                            deadzone_warning=parsed_state["deadzone_warning"],
-                            layer0=parsed_state["layer0"],
-                            layer1=parsed_state["layer1"],
-                            layer2=parsed_state["layer2"],
-                            active_pack=parsed_state["active_pack"],
-                            weather=parsed_state["weather"],
-                            can_act=self.can_act,
-                            cooldown_ms=self.cooldown_remaining_ms,
-                            target_hp_info=parsed_state["target_hp_info"],
-                            agent_name=self.agent_name
-                        )
+                                # Mengirimkan seluruh data telemetri taktis baru ke TerminalRenderer
+                                TerminalRenderer.render_turn(
+                                    turn=self.current_turn,
+                                    server_is_alive=parsed_state["server_is_alive"],
+                                    hp=parsed_state["hp"],
+                                    max_hp=parsed_state["max_hp"],
+                                    ep=parsed_state["ep"],
+                                    max_ep=parsed_state["max_ep"],
+                                    atk=parsed_state["atk"],
+                                    def_val=parsed_state["def_val"],
+                                    kills=parsed_state["kills"],
+                                    weapon_name=parsed_state["weapon_name"],
+                                    armor_name=parsed_state["armor_name"],
+                                    inventory_str=parsed_state["inventory_str"],
+                                    ground_str=parsed_state["ground_str"],
+                                    location_now=parsed_state["location_now"],
+                                    location_planning=location_planning,
+                                    action_thought=action_thought,
+                                    deadzone_status=parsed_state["deadzone_status"],
+                                    deadzone_warning=parsed_state["deadzone_warning"],
+                                    layer0=parsed_state["layer0"],
+                                    layer1=parsed_state["layer1"],
+                                    layer2=parsed_state["layer2"],
+                                    active_pack=parsed_state["active_pack"],
+                                    weather=parsed_state["weather"],
+                                    can_act=self.can_act,
+                                    cooldown_ms=self.cooldown_remaining_ms,
+                                    alert_gauge=parsed_state["alert_gauge"],
+                                    alert_active=parsed_state["alert_active"],
+                                    recent_messages=parsed_state["recent_messages"],
+                                    target_hp_info=parsed_state["target_hp_info"],
+                                    agent_name=self.agent_name
+                                )
 
-                        logger.info(f"[{self.agent_name}] Enemy stats scan: SUCCESSFUL")
+                                logger.info(f"[{self.agent_name}] Enemy stats scan: SUCCESSFUL")
 
-                        if not self.initial_status_logged:
-                            self.initial_status_logged = True
-                            self.is_alive = server_is_alive
-                            if not server_is_alive:
-                                logger.warning(f"[{self.agent_name}] Agent is connected in a DEAD state. Terminating monitor for testing rejoin...")
-                                self._is_active = False
-                                break
-                        else:
-                            if not server_is_alive and self.is_alive:
-                                self.is_alive = False
-                                logger.warning(f"[{self.agent_name}] Agent has been eliminated! (HP: {parsed_state['hp']}). Terminating monitor for testing rejoin...")
-                                self._is_active = False
-                                break
+                                if not self.initial_status_logged:
+                                    self.initial_status_logged = True
+                                    self.is_alive = server_is_alive
+                                    if not server_is_alive:
+                                        logger.warning(f"[{self.agent_name}] Agent is connected in a DEAD state. Terminating monitor for testing rejoin...")
+                                        self._is_active = False
+                                        break
+                                else:
+                                    if not server_is_alive and self.is_alive:
+                                        self.is_alive = False
+                                        logger.warning(f"[{self.agent_name}] Agent has been eliminated! (HP: {parsed_state['hp']}). Terminating monitor for testing rejoin...")
+                                        self._is_active = False
+                                        break
 
-                elif msg_type == "game_ended":
-                    logger.info(f"[{self.agent_name}] The match has fully ended.")
-                    self._is_active = False
-                    break
-                
-                elif msg_type == "error":
-                    logger.error(f"[{self.agent_name}] Server Error: {data.get('message')}")
-                    break
+                        elif msg_type == "game_ended":
+                            logger.info(f"[{self.agent_name}] The match has fully ended.")
+                            self._is_active = False
+                            break
+                        
+                        elif msg_type == "error":
+                            logger.error(f"[{self.agent_name}] Server Error: {data.get('message')}")
+                            break
 
         except websockets.exceptions.ConnectionClosed:
             logger.warning(f"[{self.agent_name}] Connection to battle arena closed by server.")

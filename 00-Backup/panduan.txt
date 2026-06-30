@@ -22,4 +22,4 @@ $env:CLAWROYALE_API_KEY="mr_live_3JiEDObzgek3V3tRE6M4AAmFr3oDCUgX"
 clear cache
 Get-ChildItem -Path . -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
 
-python main.py
+python rungame.py

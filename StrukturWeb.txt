@@ -1,0 +1,29 @@
+/botgame
+├── .env
+├── requirements.txt
+├── rungame.py                    
+├── connection/
+│   ├── __init__.py
+│   ├── loadout.py
+│   ├── api_endpoints.py
+│   ├── http_client.py
+│   ├── socket_client.py          
+│   ├── loadout.py
+│   └── bot_manager.py 
+├── tools/                        
+│   ├── setup_loadout.py          
+│   # ── reforge_relic.py        
+├── game_data/
+│   ├── __init__.py
+│   ├── player_info.py
+│   ├── monster_info.py
+│   ├── weapon_info.py
+│   ├── item_info.py
+│   ├── action_info.py
+│   ├── relic_info.py
+│   ├── pack_info.py
+│   └── world_info.py
+└── ui/
+    ├── __init__.py               
+    ├── log_system.py             
+    └── log_connection.py         

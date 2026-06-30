@@ -10,6 +10,7 @@ class SurvivalDecider(BaseDecider):
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
         self_id = view_self.get("id", "")
+        bot_name = view_self.get("name", "")
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
@@ -17,6 +18,9 @@ class SurvivalDecider(BaseDecider):
         region_id = current_region.get("id")
         is_active_deathzone = current_region.get("isDeathZone", False)
         current_turn = view.get("turn", 0)
+
+        if bot_name and region_id:
+            settings.BOT_POSITIONS[bot_name] = region_id
 
         if is_active_deathzone:
             connections = current_region.get("connections", [])

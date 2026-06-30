@@ -23,7 +23,6 @@ LOOT_PRIORITY = {
     "Dagger": 1
 }
 
-# Tabel kekuatan pelindung badan (Armor)
 ARMORS = {
     "Plate Armor": 3,
     "Chainmail": 2,
@@ -38,7 +37,6 @@ class UtilityDecider(BaseDecider):
         current_region = view.get("currentRegion", {})
         region_id = current_region.get("id")
         
-        # Calculate real inventory slots consumed (ignoring sMoltz)
         real_inv_count = 0
         for item in inventory:
             i_name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
@@ -77,7 +75,6 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better weapon: {best_weapon_name} (+{best_weapon_bonus} ATK)."
             )
 
-        # 1.1 LOGIKA PEMAKAIAN ARMOR TERBAIK OTOMATIS (0 EP, Free Action)
         equipped_armor = view_self.get("equippedArmor")
         current_armor_score = 0
         if equipped_armor:
@@ -110,7 +107,6 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better armor: {best_armor_name}."
             )
 
-        # 1.5 USE MAP UTILITY TO REMOVE FOG OF WAR
         for item in inventory:
             if isinstance(item, dict):
                 item_name = item.get("name") or item.get("displayName") or ""
@@ -125,7 +121,6 @@ class UtilityDecider(BaseDecider):
                     thought="Using Map utility to permanently reveal all enemy positions."
                 )
 
-        # 2. FITUR PEMBONGKARAN PETI PERSEDIAAN OTOMATIS
         interactables = current_region.get("interactables", [])
         for fac in interactables:
             if isinstance(fac, dict):
@@ -143,7 +138,6 @@ class UtilityDecider(BaseDecider):
                             thought="Opening Supply Cache to secure valuable equipment loot."
                         )
 
-        # 3. MEMUNGUT BARANG DI TANAH BERDASARKAN HIERARKI PRIORITAS
         ground_items = current_region.get("items", [])
         if ground_items:
             prioritized_items = []
@@ -183,7 +177,6 @@ class UtilityDecider(BaseDecider):
                 elif "Armor" in item_name or item_name == "Chainmail" or item_name in ARMORS:
                     carried_armors.append({"name": item_name})
 
-            # Identify currently equipped items to protect them from dropping
             eq_w_id = equipped_weapon.get("id") if isinstance(equipped_weapon, dict) else None
             eq_a_id = equipped_armor.get("id") if isinstance(equipped_armor, dict) else None
 
@@ -228,7 +221,6 @@ class UtilityDecider(BaseDecider):
                                 thought=f"Looting armor: {g_name}."
                             )
                 else:
-                    # INVENTORY FULL LOGIC: Drop weak items to make room for high priority loot
                     lowest_inv_item = None
                     lowest_prio = 999
                     for item in inventory:

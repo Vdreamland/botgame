@@ -31,6 +31,7 @@ SHARED_LOOT_TARGETS = []
 SOS_TARGETS = []
 SHARED_VISITED_HISTORY = []
 SHARED_ACTIVE_DEATHZONES = []
+BOT_POSITIONS = {}
 
 # Tracks active battle status for each bot to synchronize matchmaking
 ACTIVE_BOTS_IN_GAME = {bot["name"]: False for bot in BOTS}

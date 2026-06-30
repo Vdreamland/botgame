@@ -48,6 +48,9 @@ class GameContext:
                 self.pending_deathzones.append(z_id)
                 if z_name:
                     self.region_names[z_id] = z_name
+                # AMNESIA FIX: Permanently register pending zones to global deathzone memory
+                if z_id not in settings.SHARED_ACTIVE_DEATHZONES:
+                    settings.SHARED_ACTIVE_DEATHZONES.append(z_id)
         
         if current_region.get("isDeathZone"):
             if region_id not in self.active_deathzones:

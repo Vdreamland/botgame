@@ -10,10 +10,18 @@ class IdleDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
+        bot_name = view_self.get("name", "")
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         kills = view_self.get("kills", 0)
         current_turn = view.get("turn", 0)
+        
+        # Update global position for squad tracking
+        current_region = view.get("currentRegion", {})
+        current_region_id = current_region.get("id")
+        
+        if bot_name and current_region_id:
+            settings.BOT_POSITIONS[bot_name] = current_region_id
         
         # 1. PLAYER KILLS RECORDING
         if kills > context.last_kills_count:
@@ -32,8 +40,6 @@ class IdleDecider(BaseDecider):
                     settings.SHARED_LOOT_TARGETS.append(context.last_attack_region)
                 context.last_attack_region = ""
 
-        current_region = view.get("currentRegion", {})
-        current_region_id = current_region.get("id")
         connections = current_region.get("connections", [])
         
         if not connections:
@@ -76,6 +82,21 @@ class IdleDecider(BaseDecider):
                 )
             else:
                 settings.SHARED_LOOT_TARGETS.pop(0)
+
+        # PRIORITY 3: SQUAD FOLLOWER LOGIC (Regroup)
+        leader_name = settings.ALLY_NAMES[0] if settings.ALLY_NAMES else ""
+        if bot_name and leader_name and bot_name != leader_name:
+            leader_pos = settings.BOT_POSITIONS.get(leader_name)
+            if leader_pos and leader_pos != current_region_id:
+                path = Pathfinder.find_shortest_path(current_region_id, leader_pos, context)
+                if path and len(path) >= 2:
+                    next_step_id = path[1]
+                    context.last_action_type = "move"
+                    target_name = context.region_names.get(leader_pos, f"Hex-{leader_pos[:8]}")
+                    return UtilityBehavior.build_move_action(
+                        region_id=next_step_id,
+                        thought=f"Squad tactic: Regrouping with leader {leader_name}."
+                    )
             
         safe_connections = [
             r_id for r_id in connections 

@@ -5,7 +5,6 @@ from src.utils.logger import logger
 class GameContext:
     
     def __init__(self):
-        # Mengarahkan memori lokal ke database global aliansi agar otomatis tersinkronisasi
         self.map_graph = settings.SHARED_MAP_GRAPH
         self.region_names = settings.SHARED_REGION_NAMES
         
@@ -20,11 +19,9 @@ class GameContext:
         self.last_kills_count = 0
         self.last_attack_region = ""
         self.loot_targets: List[str] = []
-        
-        # Memori pengunci target pertempuran
         self.last_target_id = ""
 
-    def update_map(self, current_region: Dict[str, Any], pending_zones: List[Dict[str, Any]]):
+    def update_map(self, current_region: Dict[str, Any], pending_zones: List[Any]):
         region_id = current_region.get("id")
         region_name = current_region.get("name")
         
@@ -40,32 +37,29 @@ class GameContext:
                 if len(self.visited_history) > 4:
                     self.visited_history.pop(0)
 
-            # Record visited history globally for co-op routing
             if not settings.SHARED_VISITED_HISTORY or settings.SHARED_VISITED_HISTORY[-1] != region_id:
                 settings.SHARED_VISITED_HISTORY.append(region_id)
                 if len(settings.SHARED_VISITED_HISTORY) > 8:
                     settings.SHARED_VISITED_HISTORY.pop(0)
         
+        # Reset pending zones tiap update untuk sinkronisasi
         self.pending_deathzones = []
         for zone in pending_zones:
-            z_id = zone.get("id")
-            z_name = zone.get("name")
+            # Bisa berupa ID string langsung atau objek dict
+            z_id = zone.get("id") if isinstance(zone, dict) else str(zone)
             if z_id:
                 self.pending_deathzones.append(z_id)
-                if z_name:
-                    self.region_names[z_id] = z_name
-                # AMNESIA FIX: Permanently register pending zones to global deathzone memory
+                if isinstance(zone, dict) and zone.get("name"):
+                    self.region_names[z_id] = zone.get("name")
+                
                 if z_id not in settings.SHARED_ACTIVE_DEATHZONES:
                     settings.SHARED_ACTIVE_DEATHZONES.append(z_id)
         
-        # Log radar peringatan deadzone incoming
         if pending_zones:
-            zone_labels = [zone.get("name") or f"Hex-{zone.get('id')[:8]}" for zone in pending_zones]
-            logger.warning(f"[Deadzone Radar] INCOMING DEATHZONE DETECTED: {', '.join(zone_labels)}")
+            logger.warning(f"[Deadzone Radar] {len(pending_zones)} regions are INCOMING DEADZONES.")
 
         if current_region.get("isDeathZone"):
             if region_id not in self.active_deathzones:
                 self.active_deathzones.append(region_id)
-            # Register to global shared active deathzones
             if region_id not in settings.SHARED_ACTIVE_DEATHZONES:
                 settings.SHARED_ACTIVE_DEATHZONES.append(region_id)

@@ -34,7 +34,6 @@ class StateParser:
         if equipped_armor:
             armor_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
 
-        # Parse inventory and stack quantities correctly
         inventory_raw = view_self.get("inventory", [])
         inventory_counts = {}
         for item in inventory_raw:
@@ -54,11 +53,13 @@ class StateParser:
         current_region = view.get("currentRegion", {})
         region_id = current_region.get("id")
         
-        # Append unique hex ID suffix to prevent duplicate Library name confusion
         z_id_short = region_id[:8] if region_id else "unknown"
         location_now = f"{current_region.get('name', 'Unknown')} (Hex-{z_id_short})"
 
-        # Parse ground items and stack quantities correctly
+        # PARSE GROUND DATA (Items + Interactable Facilities)
+        ground_entries = []
+        
+        # A. Cek Barang (Items)
         ground_raw = current_region.get("items", [])
         ground_counts = {}
         for g_item in ground_raw:
@@ -69,11 +70,23 @@ class StateParser:
                 g_name = str(g_item)
                 g_qty = 1
             ground_counts[g_name] = ground_counts.get(g_name, 0) + g_qty
+        
+        for name, qty in ground_counts.items():
+            ground_entries.append(f"{name} x{qty}")
 
-        if not ground_counts:
+        # B. Cek Fasilitas (Interactables)
+        interactables = current_region.get("interactables", [])
+        for fac in interactables:
+            if isinstance(fac, dict):
+                f_name = fac.get("name", "Unknown Facility")
+                f_used = fac.get("isUsed", False)
+                if not f_used:
+                    ground_entries.append(f"[{f_name}]")
+
+        if not ground_entries:
             ground_str = "None"
         else:
-            ground_str = " / ".join(f"{g_name} x{qty}" for g_name, qty in ground_counts.items())
+            ground_str = " / ".join(ground_entries)
 
         location_planning = "None"
         if computed_action:
@@ -97,7 +110,7 @@ class StateParser:
                 location_planning = "EXPLORING RUIN"
 
         is_deathzone = current_region.get("isDeathZone", False)
-        pending_zones = context.pending_deathzones  # Membaca data tersinkronisasi dari memori taktis aliansi
+        pending_zones = context.pending_deathzones
         
         if is_deathzone:
             deadzone_status = "ACTIVE"
@@ -117,7 +130,6 @@ class StateParser:
 
         layer0, layer1, layer2 = ThreatEvaluator.scan_enemies(view, view_self.get("id", ""))
 
-        # Map index-based packs to human-readable names safely
         raw_pack = settings.BOT_ACTIVE_PACKS.get(bot_name, "None")
         pack_names = {
             "0": "Moltz Expert (CAT-00)", "CAT-00": "Moltz Expert (CAT-00)",
@@ -154,7 +166,6 @@ class StateParser:
                     target_hp_info = f" (Target HP: {o.get('hp', 0)})"
                     break
 
-        # Extract and format the real-time event feed messages
         recent_raw = view.get("recentMessages", [])
         recent_messages = []
         for msg in recent_raw:
@@ -189,5 +200,5 @@ class StateParser:
             "target_hp_info": target_hp_info,
             "alert_gauge": alert_gauge,
             "alert_active": alert_active,
-            "recent_messages": recent_messages[-5:]  # rolling view of the last 5 logs
+            "recent_messages": recent_messages[-5:]
         }

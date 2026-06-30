@@ -19,7 +19,6 @@ class SurvivalDecider(BaseDecider):
         current_turn = view.get("turn", 0)
 
         # PRIORITY 1: MELARIKAN DIRI DARI ACTIVE DEATHZONE
-        # Berada di dalam badai memberikan damage konstan 40 HP per turn, wajib kabur pertama kali.
         if is_active_deathzone:
             connections = current_region.get("connections", [])
             safe_options = [
@@ -63,8 +62,50 @@ class SurvivalDecider(BaseDecider):
         monsters_here = [m for m in context.opponents_data.get("monsters", []) if m.get("region_id") == region_id]
         threats_here = enemies_here + monsters_here
 
+        # PRIORITY 1.5: OUTNUMBERED ESCAPE (KABUR SAAT KALAH JUMLAH)
+        # Jika jumlah ancaman di ubin kita lebih banyak dari jumlah aliansi kita, langsung kabur untuk mencegah burst ganking!
+        allies_here = sum(1 for name, pos in settings.BOT_POSITIONS.items() if pos == region_id)
+        is_outnumbered = len(threats_here) > allies_here
+        if is_outnumbered and len(threats_here) >= 2:
+            connections = current_region.get("connections", [])
+            safe_options = [
+                r_id for r_id in connections 
+                if r_id not in context.pending_deathzones 
+                and r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
+            ]
+            
+            if current_turn > 15 and safe_options:
+                safe_non_corners = [
+                    r_id for r_id in safe_options
+                    if len(context.map_graph.get(r_id, [1, 2, 3, 4])) > 3
+                ]
+                if safe_non_corners:
+                    safe_options = safe_non_corners
+
+            pending_options = [
+                r_id for r_id in connections 
+                if r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
+            ]
+            
+            chosen_target = None
+            if safe_options:
+                chosen_target = random.choice(safe_options)
+            elif pending_options:
+                chosen_target = random.choice(pending_options)
+            elif connections:
+                chosen_target = random.choice(connections)
+
+            if chosen_target:
+                context.last_action_type = "move"
+                target_name = context.region_names.get(chosen_target, f"Hex-{chosen_target[:8]}")
+                return UtilityBehavior.build_move_action(
+                    region_id=chosen_target,
+                    thought=f"Tactical retreat: Outnumbered on this tile ({allies_here} vs {len(threats_here)}). Escaping immediately to: {target_name}"
+                )
+
         # PRIORITY 2: GUNAKAN OBAT DARURAT (HP < 50 ATAU END-GAME HP PUSH)
-        # Mengisi HP terlebih dahulu secara instan menggunakan obat di tas (0 EP) sebelum berlari.
         if hp < 50 or (current_turn >= 58 and hp < 100):
             for item in inventory:
                 if isinstance(item, dict):
@@ -81,7 +122,6 @@ class SurvivalDecider(BaseDecider):
                         )
 
         # PRIORITY 3: MELARIKAN DIRI DARI ANCAMAN JARAK DEKAT (HP < 60 DAN THREATS HERE)
-        # Dilakukan setelah HP dinaikkan oleh obat pada Priority 2 jika HP masih di bawah 60.
         if hp < 60 and threats_here:
             if region_id and region_id not in settings.SOS_TARGETS:
                 settings.SOS_TARGETS.append(region_id)

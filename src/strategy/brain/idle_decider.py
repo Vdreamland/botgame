@@ -150,6 +150,7 @@ class IdleDecider(BaseDecider):
             unvisited = [r_id for r_id in chosen_connections if r_id not in settings.SHARED_VISITED_HISTORY]
             final_options = unvisited if unvisited else chosen_connections
             
+            # Pengecekan ketersediaan obat pemulih di tas
             has_healing = False
             for item in view_self.get("inventory", []):
                 if isinstance(item, dict):
@@ -160,13 +161,22 @@ class IdleDecider(BaseDecider):
                     has_healing = True
                     break
             
-            if hp < 40 and not has_healing:
-                occupied_regions = set()
-                for p in context.opponents_data.get("players", []):
-                    occupied_regions.add(p.get("region_id"))
-                for m in context.opponents_data.get("monsters", []):
-                    occupied_regions.add(m.get("region_id"))
+            # Kumpulkan koordinat musuh/monster yang terlihat di sekitar
+            occupied_regions = set()
+            for p in context.opponents_data.get("players", []):
+                occupied_regions.add(p.get("region_id"))
+            for m in context.opponents_data.get("monsters", []):
+                occupied_regions.add(m.get("region_id"))
+
+            equipped_weapon = view_self.get("equippedWeapon")
+            eq_weapon_name = "None"
+            if equipped_weapon:
+                eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
                 
+            has_good_weapon = eq_weapon_name not in ["None", "Fist"]
+
+            # PRO-PLAYER SAFETY CHECK: Melarang melangkah ke ubin berpenghuni jika terluka, tidak membawa obat, atau tidak membawa senjata mumpuni
+            if (not has_good_weapon) or (hp < 70) or (hp < 40 and not has_healing):
                 safe_from_enemies = [r_id for r_id in final_options if r_id not in occupied_regions]
                 if safe_from_enemies:
                     final_options = safe_from_enemies

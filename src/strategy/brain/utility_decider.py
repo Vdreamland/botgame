@@ -33,18 +33,27 @@ class UtilityDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
-        ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
         current_region = view.get("currentRegion", {})
         region_id = current_region.get("id")
         
-        real_inv_count = 0
+        # 1. HITUNG JUMLAH BARANG DI TAS BACKPACK (Mengecualikan koin sMoltz)
+        backpack_count = 0
         for item in inventory:
             i_name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
             if i_name != "sMoltz":
-                real_inv_count += 1
+                backpack_count += 1
 
         equipped_weapon = view_self.get("equippedWeapon")
+        equipped_armor = view_self.get("equippedArmor")
+
+        # 2. HITUNG TOTAL SLOT RIIL (Tas unequipped + Senjata dipakai + Armor dipakai)
+        total_slots = backpack_count
+        if equipped_weapon:
+            total_slots += 1
+        if equipped_armor:
+            total_slots += 1
+
         current_atk_bonus = -1
         if equipped_weapon:
             w_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
@@ -64,8 +73,7 @@ class UtilityDecider(BaseDecider):
 
             if item_name in WEAPONS:
                 atk_bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
-                cost = WEAPONS.get(item_name, {}).get("ep_cost", 1)
-                if atk_bonus > best_weapon_bonus and ep >= cost:
+                if atk_bonus > best_weapon_bonus:
                     best_weapon_bonus = atk_bonus
                     best_weapon_id = item_id
                     best_weapon_name = item_name
@@ -77,7 +85,6 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better weapon: {best_weapon_name} (+{best_weapon_bonus} ATK)."
             )
 
-        equipped_armor = view_self.get("equippedArmor")
         current_armor_score = 0
         if equipped_armor:
             ar_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
@@ -190,7 +197,8 @@ class UtilityDecider(BaseDecider):
                         thought="Collecting free sMoltz currency."
                     )
 
-                if real_inv_count < 10:
+                # 3. KEPUTUSAN PENJARAHAN BERDASARKAN TOTAL SLOT RIIL
+                if total_slots < 10:
                     if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy drink", "Megaphone", "Map", "Binoculars", "Radio"]:
                         context.last_action_type = "pickup"
                         return UtilityBehavior.build_pickup_action(

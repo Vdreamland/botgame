@@ -4,30 +4,13 @@ from src.strategy.brain.base_decider import BaseDecider
 from src.strategy.behaviors.utility_behavior import UtilityBehavior
 from config.game_data import WEAPONS
 
-LOOT_PRIORITY = {
-    "sMoltz": 11,
-    "Medkit": 10,
-    "Katana": 9,
-    "Sniper rifle": 9,
-    "Plate Armor": 8,
-    "Sword": 7,
-    "Emergency Food": 6,
-    "Binoculars": 5,
-    "Energy drink": 5,
-    "Bandage": 4,
-    "Megaphone": 4,
-    "Map": 4,
-    "Radio": 4,
-    "Pistol": 3,
-    "Bow": 2,
-    "Dagger": 1
-}
-
-ARMORS = {
-    "Plate Armor": 3,
-    "Chainmail": 2,
-    "Leather Armor": 1
-}
+# Mengimpor helper taktis dan pembantu penyaring dari modul baru
+from src.strategy.brain.utility_helpers import (
+    count_backpack_and_slots,
+    get_best_carried_gear,
+    ARMORS
+)
+from src.strategy.brain.utility_tactics import evaluate_ground_loot
 
 class UtilityDecider(BaseDecider):
     
@@ -37,27 +20,40 @@ class UtilityDecider(BaseDecider):
         current_region = view.get("currentRegion", {})
         region_id = current_region.get("id")
         
-        # 1. HITUNG JUMLAH BARANG DI TAS BACKPACK (Mengecualikan koin sMoltz)
-        backpack_count = 0
-        for item in inventory:
-            i_name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
-            if i_name != "sMoltz":
-                backpack_count += 1
-
         equipped_weapon = view_self.get("equippedWeapon")
         equipped_armor = view_self.get("equippedArmor")
 
-        # 2. HITUNG TOTAL SLOT RIIL (Tas unequipped + Senjata dipakai + Armor dipakai)
-        total_slots = backpack_count
+        # 1. HITUNG TOTAL SLOT TAS RIIL (Menggunakan Helper)
+        backpack_count, total_slots = count_backpack_and_slots(
+            inventory=inventory, 
+            equipped_weapon=equipped_weapon, 
+            equipped_armor=equipped_armor
+        )
+
+        # 2. DETEKSI MELEE/RANGED TERBAIK & SINGKIRKAN REDUNDANT (Menggunakan Helper)
+        best_melee_item, best_ranged_item, redundant_weapon_id, redundant_weapon_name = get_best_carried_gear(
+            inventory=inventory,
+            equipped_weapon=equipped_weapon
+        )
+
+        # Eksekusi aksi drop instan jika tas membawa senjata tumpuk berlebih yang tidak dipakai
+        if redundant_weapon_id:
+            context.last_action_type = "drop"
+            return UtilityBehavior.build_drop_action(
+                item_id=redundant_weapon_id,
+                thought=f"Tactical inventory tidy-up: Dropping redundant/weaker weapon {redundant_weapon_name} to free slot."
+            )
+
+        # 3. EVALUASI EQUIP SENJATA LEBIH BAIK
+        eq_w_name = "None"
+        eq_w_id = None
         if equipped_weapon:
-            total_slots += 1
-        if equipped_armor:
-            total_slots += 1
+            eq_w_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
+            eq_w_id = equipped_weapon.get("id") if isinstance(equipped_weapon, dict) else None
 
         current_atk_bonus = -1
         if equipped_weapon:
-            w_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
-            current_atk_bonus = WEAPONS.get(w_name, {}).get("atk_bonus", 0)
+            current_atk_bonus = WEAPONS.get(eq_w_name, {}).get("atk_bonus", 0)
 
         best_weapon_id = None
         best_weapon_name = ""
@@ -85,9 +81,12 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better weapon: {best_weapon_name} (+{best_weapon_bonus} ATK)."
             )
 
+        # 4. EVALUASI EQUIP ARMOR LEBIH BAIK
         current_armor_score = 0
+        eq_a_id = None
         if equipped_armor:
             ar_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
+            eq_a_id = equipped_armor.get("id") if isinstance(equipped_armor, dict) else None
             current_armor_score = ARMORS.get(ar_name, 0)
 
         best_armor_id = None
@@ -116,6 +115,7 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better armor: {best_armor_name}."
             )
 
+        # 5. PENGGUNAAN ITEM PETA (MAP)
         for item in inventory:
             if isinstance(item, dict):
                 item_name = item.get("name") or item.get("displayName") or ""
@@ -130,6 +130,7 @@ class UtilityDecider(BaseDecider):
                     thought="Using Map utility to permanently reveal all enemy positions."
                 )
 
+        # 6. MEMBUKA SUPPLY CACHE
         interactables = current_region.get("interactables", [])
         for fac in interactables:
             if isinstance(fac, dict):
@@ -147,109 +148,21 @@ class UtilityDecider(BaseDecider):
                             thought="Opening Supply Cache to secure valuable equipment loot."
                         )
 
+        # 7. EVALUASI DAN EKSEKUSI PENJARAHAN DINAMIS (Menggunakan Taktik Baru)
         ground_items = current_region.get("items", [])
         if ground_items:
-            prioritized_items = []
-            for g_item in ground_items:
-                if isinstance(g_item, dict):
-                    g_name = g_item.get("name") or g_item.get("displayName") or ""
-                    g_id = g_item.get("id") or g_name
-                else:
-                    g_name = str(g_item)
-                    g_id = g_name
-
-                priority = LOOT_PRIORITY.get(g_name, 1)
-                prioritized_items.append((priority, g_name, g_id))
-
-            prioritized_items.sort(key=lambda x: x[0], reverse=True)
-
-            carried_weapons = []
-            carried_armors = []
-            
-            if equipped_weapon:
-                w_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
-                carried_weapons.append({"name": w_name, "atk_bonus": current_atk_bonus})
-                
-            if equipped_armor:
-                ar_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else str(equipped_armor)
-                carried_armors.append({"name": ar_name})
-
-            for item in inventory:
-                if isinstance(item, dict):
-                    item_name = item.get("name") or item.get("displayName") or ""
-                else:
-                    item_name = str(item)
-
-                if item_name in WEAPONS:
-                    bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
-                    carried_weapons.append({"name": item_name, "atk_bonus": bonus})
-                elif "Armor" in item_name or item_name == "Chainmail" or item_name in ARMORS:
-                    carried_armors.append({"name": item_name})
-
-            eq_w_id = equipped_weapon.get("id") if isinstance(equipped_weapon, dict) else None
-            eq_a_id = equipped_armor.get("id") if isinstance(equipped_armor, dict) else None
-
-            for priority, g_name, g_id in prioritized_items:
-                if g_name == "sMoltz":
-                    context.last_action_type = "pickup"
-                    return UtilityBehavior.build_pickup_action(
-                        item_id=g_id,
-                        thought="Collecting free sMoltz currency."
-                    )
-
-                # 3. KEPUTUSAN PENJARAHAN BERDASARKAN TOTAL SLOT RIIL
-                if total_slots < 10:
-                    if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy drink", "Megaphone", "Map", "Binoculars", "Radio"]:
-                        context.last_action_type = "pickup"
-                        return UtilityBehavior.build_pickup_action(
-                            item_id=g_id,
-                            thought=f"Looting vital recovery/utility: {g_name}."
-                        )
-
-                    elif g_name in WEAPONS:
-                        if len(carried_weapons) < 2:
-                            context.last_action_type = "pickup"
-                            return UtilityBehavior.build_pickup_action(
-                                item_id=g_id,
-                                thought=f"Looting weapon: {g_name}."
-                            )
-                        else:
-                            g_bonus = WEAPONS.get(g_name, {}).get("atk_bonus", 0)
-                            weakest_carried_weapon = min(carried_weapons, key=lambda x: x["atk_bonus"])
-                            if g_bonus > weakest_carried_weapon["atk_bonus"]:
-                                context.last_action_type = "pickup"
-                                return UtilityBehavior.build_pickup_action(
-                                    item_id=g_id,
-                                    thought=f"Looting stronger weapon: {g_name} to replace {weakest_carried_weapon['name']}."
-                                )
-
-                    elif "Armor" in g_name or g_name == "Chainmail" or g_name in ARMORS:
-                        if len(carried_armors) < 2:
-                            context.last_action_type = "pickup"
-                            return UtilityBehavior.build_pickup_action(
-                                item_id=g_id,
-                                thought=f"Looting armor: {g_name}."
-                            )
-                else:
-                    lowest_inv_item = None
-                    lowest_prio = 999
-                    for item in inventory:
-                        i_name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
-                        i_id = item.get("id") or i_name if isinstance(item, dict) else str(item)
-                        
-                        if i_name == "sMoltz" or i_id == eq_w_id or i_id == eq_a_id:
-                            continue
-                            
-                        p = LOOT_PRIORITY.get(i_name, 1)
-                        if p < lowest_prio:
-                            lowest_prio = p
-                            lowest_inv_item = {"id": i_id, "name": i_name}
-                            
-                    if lowest_inv_item and priority > lowest_prio:
-                        context.last_action_type = "drop"
-                        return UtilityBehavior.build_drop_action(
-                            item_id=lowest_inv_item["id"],
-                            thought=f"Inventory full. Dropping {lowest_inv_item['name']} to make room for {g_name}."
-                        )
+            looting_action = evaluate_ground_loot(
+                total_slots=total_slots,
+                inventory=inventory,
+                ground_items=ground_items,
+                best_melee_item=best_melee_item,
+                best_ranged_item=best_ranged_item,
+                equipped_armor=equipped_armor,
+                eq_w_id=eq_w_id,
+                eq_a_id=eq_a_id,
+                context=context
+            )
+            if looting_action:
+                return looting_action
 
         return None

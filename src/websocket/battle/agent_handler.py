@@ -9,9 +9,6 @@ from src.strategy.brain.decision_engine import DecisionEngine
 from src.ui.renderer import TerminalRenderer
 from src.websocket.battle.state_parser import StateParser
 
-# Mengimpor modul alat pemindai diagnostik dari file baru
-from src.websocket.battle.diagnostics import scan_keys_for_death_or_zone
-
 class AgentHandler:
     
     def __init__(self, socket: websockets.WebSocketClientProtocol, agent_name: str = None):
@@ -95,12 +92,6 @@ class AgentHandler:
                     if bot_name and region_id:
                         settings.BOT_POSITIONS[bot_name] = region_id
 
-                    # SILENT REAL-TIME KEY SCANNER FOR DEATHZONE DIAGNOSTICS
-                    found_keys = scan_keys_for_death_or_zone(data)
-                    if found_keys:
-                        for path, val in found_keys:
-                            logger.info(f"[Deadzone Key Scan] [{bot_name}] Discovered Path: {path} = {val}")
-
                     # Ekstraksi tangguh multi-sumber dari root data dan view (Mengamankan sinkronisasi deadzone)
                     pending_zones = (
                         self.last_view.get("pendingDeathzones") or 
@@ -124,6 +115,7 @@ class AgentHandler:
                     if server_is_alive and self.can_act and not self.action_sent_this_turn:
                         computed_action = self.brain.compute_action(self.last_view, self.context)
                         if computed_action:
+                            action_thought = computed_action.get("thought", "Executing strategic action.")
                             action_data = computed_action.get("data", {})
                             action_type = action_data.get("type")
                             

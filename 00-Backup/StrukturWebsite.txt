@@ -61,6 +61,8 @@ botgame/
 │   │   │   ├── survival_decider.py  # Decider Prioritas 1: Logika penyelamatan hidup (Emergency)
 │   │   │   ├── combat_decider.py    # Decider Prioritas 2: Logika penyerangan target
 │   │   │   ├── explore_decider.py   # Decider Prioritas 3: Logika pengerjaan ruins & alert gauge
+│   │   │   ├── utility_helpers.py
+│   │   │   ├── utility_tactics.py  
 │   │   │   ├── utility_decider.py   # Decider Prioritas 4: Logika pickup senjata & pakai item
 │   │   │   └── idle_decider.py      # Decider Prioritas 5: Logika cadangan jika aman (Rest EP / talk)
 │   │   │

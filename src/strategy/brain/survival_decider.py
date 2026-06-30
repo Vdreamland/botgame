@@ -73,7 +73,6 @@ class SurvivalDecider(BaseDecider):
         threats_here = enemies_here + monsters_here
         
         if hp < 60 and threats_here:
-            # Broadcast SOS signal for ally backup before escaping
             if region_id and region_id not in settings.SOS_TARGETS:
                 settings.SOS_TARGETS.append(region_id)
 
@@ -115,16 +114,20 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Under threat ({hp}/100) from close-range hostiles. Fleeing to safe region: {target_name}"
                 )
 
-        if hp < 50:
+        # END-GAME HP PUSH: Force heal to 100 HP in the last 3 turns for tie-breaker victory
+        if hp < 50 or (current_turn >= 58 and hp < 100):
             for item in inventory:
                 if isinstance(item, dict):
                     item_name = item.get("name") or item.get("displayName") or ""
                     item_id = item.get("id", "")
                     if item_name in ["Medkit", "Emergency Food", "Bandage"] and item_id:
                         context.last_action_type = "use_item"
+                        thought_msg = f"HP critical ({hp}/100) in safe zone. Consuming {item_name} to heal."
+                        if current_turn >= 58:
+                            thought_msg = f"End-game push (Turn {current_turn}). Maximizing HP ({hp}/100) with {item_name} for tie-breaker."
                         return UtilityBehavior.build_use_item_action(
                             item_id=item_id,
-                            thought=f"HP critical ({hp}/100) in safe zone. Consuming {item_name} to heal."
+                            thought=thought_msg
                         )
 
         if ep < 2:
@@ -159,7 +162,6 @@ class SurvivalDecider(BaseDecider):
 
         in_danger_zone = (region_id in context.pending_deathzones)
         if in_danger_zone or (hp < 40 and threats_here):
-            # Broadcast SOS signal on extreme panic threat
             if threats_here and region_id and region_id not in settings.SOS_TARGETS:
                 settings.SOS_TARGETS.append(region_id)
 

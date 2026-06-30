@@ -38,6 +38,13 @@ class UtilityDecider(BaseDecider):
         current_region = view.get("currentRegion", {})
         region_id = current_region.get("id")
         
+        # Calculate real inventory slots consumed (ignoring sMoltz)
+        real_inv_count = 0
+        for item in inventory:
+            i_name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
+            if i_name != "sMoltz":
+                real_inv_count += 1
+
         equipped_weapon = view_self.get("equippedWeapon")
         current_atk_bonus = -1
         if equipped_weapon:
@@ -103,6 +110,21 @@ class UtilityDecider(BaseDecider):
                 thought=f"Equipping better armor: {best_armor_name}."
             )
 
+        # 1.5 USE MAP UTILITY TO REMOVE FOG OF WAR
+        for item in inventory:
+            if isinstance(item, dict):
+                item_name = item.get("name") or item.get("displayName") or ""
+                item_id = item.get("id", "")
+            else:
+                item_name = str(item)
+                item_id = item_name
+            if item_name == "Map" and item_id:
+                context.last_action_type = "use_item"
+                return UtilityBehavior.build_use_item_action(
+                    item_id=item_id,
+                    thought="Using Map utility to permanently reveal all enemy positions."
+                )
+
         # 2. FITUR PEMBONGKARAN PETI PERSEDIAAN OTOMATIS
         interactables = current_region.get("interactables", [])
         for fac in interactables:
@@ -124,7 +146,6 @@ class UtilityDecider(BaseDecider):
         # 3. MEMUNGUT BARANG DI TANAH BERDASARKAN HIERARKI PRIORITAS
         ground_items = current_region.get("items", [])
         if ground_items:
-            
             prioritized_items = []
             for g_item in ground_items:
                 if isinstance(g_item, dict):
@@ -134,26 +155,7 @@ class UtilityDecider(BaseDecider):
                     g_name = str(g_item)
                     g_id = g_name
 
-                priority = 0
-                if g_name == "sMoltz":
-                    priority = 11
-                elif g_name == "Medkit":
-                    priority = 10
-                elif g_name in ["Katana", "Sniper rifle"]:
-                    priority = 9
-                elif "Armor" in g_name or g_name == "Chainmail" or g_name in ARMORS:
-                    priority = 8
-                elif g_name == "Sword":
-                    priority = 7
-                elif g_name == "Emergency Food":
-                    priority = 6
-                elif g_name in ["Energy drink", "Binoculars"]:
-                    priority = 5
-                elif g_name in ["Bandage", "Megaphone", "Map", "Radio"]:
-                    priority = 4
-                else:
-                    priority = 1
-                
+                priority = LOOT_PRIORITY.get(g_name, 1)
                 prioritized_items.append((priority, g_name, g_id))
 
             prioritized_items.sort(key=lambda x: x[0], reverse=True)
@@ -181,6 +183,10 @@ class UtilityDecider(BaseDecider):
                 elif "Armor" in item_name or item_name == "Chainmail" or item_name in ARMORS:
                     carried_armors.append({"name": item_name})
 
+            # Identify currently equipped items to protect them from dropping
+            eq_w_id = equipped_weapon.get("id") if isinstance(equipped_weapon, dict) else None
+            eq_a_id = equipped_armor.get("id") if isinstance(equipped_armor, dict) else None
+
             for priority, g_name, g_id in prioritized_items:
                 if g_name == "sMoltz":
                     context.last_action_type = "pickup"
@@ -189,7 +195,7 @@ class UtilityDecider(BaseDecider):
                         thought="Collecting free sMoltz currency."
                     )
 
-                if len(inventory) < 10:
+                if real_inv_count < 10:
                     if g_name in ["Medkit", "Emergency Food", "Bandage", "Energy drink", "Megaphone", "Map", "Binoculars", "Radio"]:
                         context.last_action_type = "pickup"
                         return UtilityBehavior.build_pickup_action(
@@ -221,5 +227,27 @@ class UtilityDecider(BaseDecider):
                                 item_id=g_id,
                                 thought=f"Looting armor: {g_name}."
                             )
+                else:
+                    # INVENTORY FULL LOGIC: Drop weak items to make room for high priority loot
+                    lowest_inv_item = None
+                    lowest_prio = 999
+                    for item in inventory:
+                        i_name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)
+                        i_id = item.get("id") or i_name if isinstance(item, dict) else str(item)
+                        
+                        if i_name == "sMoltz" or i_id == eq_w_id or i_id == eq_a_id:
+                            continue
+                            
+                        p = LOOT_PRIORITY.get(i_name, 1)
+                        if p < lowest_prio:
+                            lowest_prio = p
+                            lowest_inv_item = {"id": i_id, "name": i_name}
+                            
+                    if lowest_inv_item and priority > lowest_prio:
+                        context.last_action_type = "drop"
+                        return UtilityBehavior.build_drop_action(
+                            item_id=lowest_inv_item["id"],
+                            thought=f"Inventory full. Dropping {lowest_inv_item['name']} to make room for {g_name}."
+                        )
 
         return None

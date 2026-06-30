@@ -89,3 +89,16 @@ class UtilityBehavior:
         if thought:
             payload["thought"] = thought[:700]
         return payload
+
+    @staticmethod
+    def build_drop_action(item_id: str, thought: str = "") -> Dict[str, Any]:
+        payload = {
+            "type": "action",
+            "data": {
+                "type": "drop",
+                "itemId": item_id
+            }
+        }
+        if thought:
+            payload["thought"] = thought[:700]
+        return payload

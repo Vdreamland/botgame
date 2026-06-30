@@ -30,6 +30,7 @@ ALLY_NAMES = [bot["name"] for bot in BOTS]
 SHARED_LOOT_TARGETS = []
 SOS_TARGETS = []
 SHARED_VISITED_HISTORY = []
+SHARED_ACTIVE_DEATHZONES = []
 
 # Tracks active battle status for each bot to synchronize matchmaking
 ACTIVE_BOTS_IN_GAME = {bot["name"]: False for bot in BOTS}

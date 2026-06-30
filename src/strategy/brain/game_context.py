@@ -49,5 +49,9 @@ class GameContext:
                 if z_name:
                     self.region_names[z_id] = z_name
         
-        if current_region.get("isDeathZone") and region_id not in self.active_deathzones:
-            self.active_deathzones.append(region_id)
+        if current_region.get("isDeathZone"):
+            if region_id not in self.active_deathzones:
+                self.active_deathzones.append(region_id)
+            # Register to global shared active deathzones
+            if region_id not in settings.SHARED_ACTIVE_DEATHZONES:
+                settings.SHARED_ACTIVE_DEATHZONES.append(region_id)

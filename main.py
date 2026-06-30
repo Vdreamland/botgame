@@ -94,6 +94,7 @@ async def run_single_bot(bot_name: str, api_key: str):
         settings.SHARED_LOOT_TARGETS.clear()
         settings.SOS_TARGETS.clear()
         settings.SHARED_VISITED_HISTORY.clear()
+        settings.SHARED_ACTIVE_DEATHZONES.clear()
         
         # Run out-of-game loadout optimizer before entering queue
         try:

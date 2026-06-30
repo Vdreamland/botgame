@@ -22,7 +22,9 @@ class SurvivalDecider(BaseDecider):
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 
-                if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
+                if r_id not in context.pending_deathzones 
+                and r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
             ]
             
             if current_turn > 15 and safe_options:
@@ -36,6 +38,7 @@ class SurvivalDecider(BaseDecider):
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
             ]
             
             chosen_target = None
@@ -77,7 +80,9 @@ class SurvivalDecider(BaseDecider):
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 
-                if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
+                if r_id not in context.pending_deathzones 
+                and r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
             ]
             
             if current_turn > 15 and safe_options:
@@ -91,6 +96,7 @@ class SurvivalDecider(BaseDecider):
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
             ]
             
             chosen_target = None
@@ -160,7 +166,9 @@ class SurvivalDecider(BaseDecider):
             connections = current_region.get("connections", [])
             safe_options = [
                 r_id for r_id in connections 
-                if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
+                if r_id not in context.pending_deathzones 
+                and r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
             ]
             
             if current_turn > 15 and safe_options:
@@ -174,6 +182,7 @@ class SurvivalDecider(BaseDecider):
             pending_options = [
                 r_id for r_id in connections 
                 if r_id not in context.active_deathzones
+                and r_id not in settings.SHARED_ACTIVE_DEATHZONES
             ]
             
             chosen_target = None

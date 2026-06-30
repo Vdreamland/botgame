@@ -79,7 +79,9 @@ class IdleDecider(BaseDecider):
             
         safe_connections = [
             r_id for r_id in connections 
-            if r_id not in context.pending_deathzones and r_id not in context.active_deathzones
+            if r_id not in context.pending_deathzones 
+            and r_id not in context.active_deathzones
+            and r_id not in settings.SHARED_ACTIVE_DEATHZONES
         ]
         
         if current_turn > 15 and safe_connections:
@@ -98,6 +100,7 @@ class IdleDecider(BaseDecider):
         pending_connections = [
             r_id for r_id in connections 
             if r_id not in context.active_deathzones
+            and r_id not in settings.SHARED_ACTIVE_DEATHZONES
         ]
         
         if safe_non_corners and current_turn <= 15:
@@ -110,6 +113,28 @@ class IdleDecider(BaseDecider):
             unvisited = [r_id for r_id in chosen_connections if r_id not in settings.SHARED_VISITED_HISTORY]
             final_options = unvisited if unvisited else chosen_connections
             
+            # LOW HP SCOUT HEURISTIC: Prevent walking into occupied tiles if critically low and no meds
+            has_healing = False
+            for item in view_self.get("inventory", []):
+                if isinstance(item, dict):
+                    item_name = item.get("name") or item.get("displayName") or ""
+                else:
+                    item_name = str(item)
+                if item_name in ["Medkit", "Emergency Food", "Bandage"]:
+                    has_healing = True
+                    break
+            
+            if hp < 40 and not has_healing:
+                occupied_regions = set()
+                for p in context.opponents_data.get("players", []):
+                    occupied_regions.add(p.get("region_id"))
+                for m in context.opponents_data.get("monsters", []):
+                    occupied_regions.add(m.get("region_id"))
+                
+                safe_from_enemies = [r_id for r_id in final_options if r_id not in occupied_regions]
+                if safe_from_enemies:
+                    final_options = safe_from_enemies
+
             target_region_id = random.choice(final_options)
             context.last_action_type = "move"
             

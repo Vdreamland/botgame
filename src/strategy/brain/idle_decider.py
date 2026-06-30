@@ -16,12 +16,11 @@ class IdleDecider(BaseDecider):
         kills = view_self.get("kills", 0)
         current_turn = view.get("turn", 0)
         
-        # Update global position for squad tracking
         current_region = view.get("currentRegion", {})
         current_region_id = current_region.get("id")
         
-        if bot_name and current_region_id:
-            settings.BOT_POSITIONS[bot_name] = current_region_id
+        # Ekstraksi tipe cuaca real-time dari view
+        weather_type = view.get("weather") or current_region.get("weather") or "clear"
         
         # 1. PLAYER KILLS RECORDING
         if kills > context.last_kills_count:
@@ -40,23 +39,29 @@ class IdleDecider(BaseDecider):
                     settings.SHARED_LOOT_TARGETS.append(context.last_attack_region)
                 context.last_attack_region = ""
 
+                connections = current_region.get("connections", [])
+                
         connections = current_region.get("connections", [])
-        
         if not connections:
             return None
 
-        # Clean SOS signal if we arrived to support
-        if settings.SOS_TARGETS and current_region_id == settings.SOS_TARGETS[0]:
-            settings.SOS_TARGETS.pop(0)
+        # Clean all SOS signals at this region
+        while current_region_id in settings.SOS_TARGETS:
+            settings.SOS_TARGETS.remove(current_region_id)
 
-        # Clean Shared Loot target if we arrived to loot
-        if settings.SHARED_LOOT_TARGETS and current_region_id == settings.SHARED_LOOT_TARGETS[0]:
-            settings.SHARED_LOOT_TARGETS.pop(0)
+        # Clean all Shared Loot targets at this region
+        while current_region_id in settings.SHARED_LOOT_TARGETS:
+            settings.SHARED_LOOT_TARGETS.remove(current_region_id)
 
-        # PRIORITY 1: RESPOND TO ALLY SOS CALLS (Helper must be healthy to avoid double casualties)
+        # PRIORITY 1: RESPOND TO ALLY SOS CALLS
         if hp >= 60 and settings.SOS_TARGETS:
             target_region_id = settings.SOS_TARGETS[0]
-            path = Pathfinder.find_shortest_path(current_region_id, target_region_id, context)
+            path = Pathfinder.find_shortest_path(
+                start_id=current_region_id, 
+                target_id=target_region_id, 
+                context=context, 
+                weather_type=weather_type
+            )
             if path and len(path) >= 2:
                 next_step_id = path[1]
                 context.last_action_type = "move"
@@ -66,12 +71,18 @@ class IdleDecider(BaseDecider):
                     thought=f"Ally under threat! Navigating to backup site: {target_name}."
                 )
             else:
-                settings.SOS_TARGETS.pop(0)
+                if settings.SOS_TARGETS:
+                    settings.SOS_TARGETS.pop(0)
 
         # PRIORITY 2: COOPERATIVE LOOT HARVESTING
         if settings.SHARED_LOOT_TARGETS:
             target_region_id = settings.SHARED_LOOT_TARGETS[0]
-            path = Pathfinder.find_shortest_path(current_region_id, target_region_id, context)
+            path = Pathfinder.find_shortest_path(
+                start_id=current_region_id, 
+                target_id=target_region_id, 
+                context=context, 
+                weather_type=weather_type
+            )
             if path and len(path) >= 2:
                 next_step_id = path[1]
                 context.last_action_type = "move"
@@ -81,14 +92,20 @@ class IdleDecider(BaseDecider):
                     thought=f"Matchmaking loot target confirmed. Navigating to secured kill site: {target_name}."
                 )
             else:
-                settings.SHARED_LOOT_TARGETS.pop(0)
+                if settings.SHARED_LOOT_TARGETS:
+                    settings.SHARED_LOOT_TARGETS.pop(0)
 
         # PRIORITY 3: SQUAD FOLLOWER LOGIC (Regroup)
         leader_name = settings.ALLY_NAMES[0] if settings.ALLY_NAMES else ""
         if bot_name and leader_name and bot_name != leader_name:
             leader_pos = settings.BOT_POSITIONS.get(leader_name)
             if leader_pos and leader_pos != current_region_id:
-                path = Pathfinder.find_shortest_path(current_region_id, leader_pos, context)
+                path = Pathfinder.find_shortest_path(
+                    start_id=current_region_id, 
+                    target_id=leader_pos, 
+                    context=context, 
+                    weather_type=weather_type
+                )
                 if path and len(path) >= 2:
                     next_step_id = path[1]
                     context.last_action_type = "move"
@@ -130,11 +147,9 @@ class IdleDecider(BaseDecider):
             chosen_connections = safe_connections if safe_connections else (pending_connections if pending_connections else connections)
         
         if chosen_connections:
-            # Filter adjacent tiles using Shared Visited History for efficient split push
             unvisited = [r_id for r_id in chosen_connections if r_id not in settings.SHARED_VISITED_HISTORY]
             final_options = unvisited if unvisited else chosen_connections
             
-            # LOW HP SCOUT HEURISTIC: Prevent walking into occupied tiles if critically low and no meds
             has_healing = False
             for item in view_self.get("inventory", []):
                 if isinstance(item, dict):

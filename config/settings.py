@@ -32,6 +32,7 @@ SOS_TARGETS = []
 SHARED_VISITED_HISTORY = []
 SHARED_ACTIVE_DEATHZONES = []
 BOT_POSITIONS = {}
+BOT_ACTIVE_PACKS = {}  # Tracks active packs per bot to prevent combat invalid moves
 
 # Tracks active battle status for each bot to synchronize matchmaking
 ACTIVE_BOTS_IN_GAME = {bot["name"]: False for bot in BOTS}

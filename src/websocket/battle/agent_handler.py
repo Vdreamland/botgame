@@ -57,11 +57,14 @@ class AgentHandler:
 
                     current_region = self.last_view.get("currentRegion", {})
                     
-                    # Ekstraksi tangguh dengan pengaman casing Z besar / z kecil
+                    bot_name = view_self.get("name", "")
+                    region_id = current_region.get("id")
+                    if bot_name and region_id:
+                        settings.BOT_POSITIONS[bot_name] = region_id
+
                     pending_zones = self.last_view.get("pendingDeathzones") or self.last_view.get("pendingDeathZones") or []
                     self.context.update_map(current_region, pending_zones)
 
-                    # PEMINDAIAN DETAIL MUSUH: Data dimasukkan langsung ke context sebelum aksi dihitung
                     self.context.opponents_data = ThreatEvaluator.scan_detailed_opponents(
                         view=self.last_view,
                         self_id=view_self.get("id", "")
@@ -115,7 +118,6 @@ class AgentHandler:
                             is_new_turn=is_new_turn
                         )
 
-                        # Meneruskan parameter agent_name ke TerminalRenderer secara dinamis
                         TerminalRenderer.render_turn(
                             turn=self.current_turn,
                             server_is_alive=parsed_state["server_is_alive"],

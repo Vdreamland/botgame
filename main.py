@@ -30,6 +30,15 @@ async def auto_equip_lobby(api_key: str, bot_name: str):
             logger.info(f"[{bot_name}] Equipping stronger active pack...")
             await manager.equip_pack(best_pack_id)
 
+    # Record the active pack category to global settings to guide CombatDecider pack restrictions
+    loadout = await manager.get_loadout()
+    current_pack = loadout.get("activePack", {})
+    if isinstance(current_pack, dict):
+        pack_category = current_pack.get("category") or current_pack.get("displayName") or ""
+    else:
+        pack_category = str(current_pack)
+    settings.BOT_ACTIVE_PACKS[bot_name] = pack_category
+
     # 2. OPTIMIZE RELICS
     relics = await manager.get_relics_inventory()
     if isinstance(relics, list) and len(relics) > 0:

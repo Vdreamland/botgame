@@ -10,7 +10,6 @@ class SurvivalDecider(BaseDecider):
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
         self_id = view_self.get("id", "")
-        bot_name = view_self.get("name", "")
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
@@ -18,9 +17,6 @@ class SurvivalDecider(BaseDecider):
         region_id = current_region.get("id")
         is_active_deathzone = current_region.get("isDeathZone", False)
         current_turn = view.get("turn", 0)
-
-        if bot_name and region_id:
-            settings.BOT_POSITIONS[bot_name] = region_id
 
         if is_active_deathzone:
             connections = current_region.get("connections", [])
@@ -61,19 +57,8 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Standing in ACTIVE deathzone. Fleeing immediately to: {target_name}"
                 )
 
-        visible_agents = view.get("visibleAgents", [])
-        
-        enemies_here = [
-            a for a in visible_agents 
-            if a.get("id") != self_id 
-            and a.get("regionId") == region_id 
-            and a.get("isAlive", True)
-            and a.get("name") not in settings.ALLY_NAMES
-        ]
-        
-        visible_monsters = view.get("visibleMonsters", [])
-        monsters_here = [m for m in visible_monsters if m.get("regionId") == region_id]
-        
+        enemies_here = [p for p in context.opponents_data.get("players", []) if p.get("region_id") == region_id]
+        monsters_here = [m for m in context.opponents_data.get("monsters", []) if m.get("region_id") == region_id]
         threats_here = enemies_here + monsters_here
         
         if hp < 60 and threats_here:
@@ -118,7 +103,6 @@ class SurvivalDecider(BaseDecider):
                     thought=f"Under threat ({hp}/100) from close-range hostiles. Fleeing to safe region: {target_name}"
                 )
 
-        # END-GAME HP PUSH: Force heal to 100 HP in the last 3 turns for tie-breaker victory
         if hp < 50 or (current_turn >= 58 and hp < 100):
             for item in inventory:
                 if isinstance(item, dict):

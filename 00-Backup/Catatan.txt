@@ -36,3 +36,19 @@ Strategi Kemenangan yang Hilang: Di 2 giliran terakhir (Turn 58 dan 59), bot seh
 Fakta Dokumentasi: Item utilitas seperti Map (Peta) jika digunakan (use_item) akan membuka seluruh kabut perang di peta.
 Kondisi Bot Saat Ini: Di UtilityDecider, bot Anda memprioritaskan mengambil Map dan Megaphone. Namun, di otak bot, tidak ada logika untuk menggunakannya. Barang itu hanya akan menuh-menuhin tas dari awal sampai game berakhir.
 Strategi Kemenangan yang Hilang: Jika bot Anda memungut Map, ia harusnya langsung menggunakannya pada giliran berikutnya. Ini akan memberikan keuntungan informasi yang masif untuk seluruh tim aliansi Anda.
+
+# kasus 3 belum di cek
+Mengapa Bot Tidak Langsung Mengambil Jarahan Musuh yang Mati?
+Penyebab Logika Saat Ini:
+Sama seperti di atas, perintah "Berjalan Mengambil Jarahan" berada di IdleDecider.py (Prioritas 5).
+Apa yang Terjadi di Log:
+Di Turn 4, Extravaro1 berhasil membunuh target pertama (Kills: 1). Koordinat mayat tersebut sudah berhasil dicatat di memori (SHARED_LOOT_TARGETS).
+Namun, pada Turn 5 dan seterusnya, radar bot masih mendeteksi banyak musuh lain di sekitarnya (Silver_Striker651, SwiftStar288, dll). Karena masih ada musuh, CombatDecider terus menahan bot untuk diam di tempat dan menembaki musuh-musuh tersebut.
+Taktik Bertahan Hidup:
+Bot Anda secara cerdas berpikir: "Area ini belum aman. Bunuh dulu semua musuh yang terlihat, baru jalan keluar mengambil koin. Jika saya jalan mengambil koin sekarang, musuh lain akan menembaki saya."
+Potensi Risiko Jika Diubah:
+Jika kita menaikkan prioritas "Ambil Jarahan" di atas "Menembak", bot Anda akan langsung berlari ke mayat musuh meskipun sedang dihujani peluru oleh musuh lainnya. Ini adalah tindakan bunuh diri taktis di game Battle Royale.
+Bagaimana Keputusan Anda?
+Sesuai dengan keinginan Anda, kita memiliki dua pilihan penyesuaian:
+Opsi A (Mode Sangat Agresif & Rakus):
+Kita naikkan prioritas "Berkumpul" dan "Ambil Jarahan" ke tingkat tertinggi. Bot akan selalu berusaha menempel dengan temannya di awal game, dan langsung berlari mengambil koin begitu ada yang mati, meskipun ada musuh lain di sekitar. (Beresiko tinggi mati konyol ditembaki).

@@ -33,6 +33,7 @@ class UtilityDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
+        ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
         current_region = view.get("currentRegion", {})
         region_id = current_region.get("id")
@@ -63,7 +64,8 @@ class UtilityDecider(BaseDecider):
 
             if item_name in WEAPONS:
                 atk_bonus = WEAPONS.get(item_name, {}).get("atk_bonus", 0)
-                if atk_bonus > best_weapon_bonus:
+                cost = WEAPONS.get(item_name, {}).get("ep_cost", 1)
+                if atk_bonus > best_weapon_bonus and ep >= cost:
                     best_weapon_bonus = atk_bonus
                     best_weapon_id = item_id
                     best_weapon_name = item_name

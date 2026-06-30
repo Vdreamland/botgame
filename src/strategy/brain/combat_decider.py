@@ -12,21 +12,47 @@ class CombatDecider(BaseDecider):
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
         view_self = view.get("self", {})
         self_id = view_self.get("id", "")
+        bot_name = view_self.get("name", "")
         hp = view_self.get("hp", 100)
         ep = view_self.get("ep", 10)
         inventory = view_self.get("inventory", [])
         
-        if ep < 1:
-            return None
+        current_region = view.get("currentRegion", {})
+        ground_items = current_region.get("items", [])
+        
+        # 1. INSTANT FREE-PICKUP GRAB
+        real_inv_count = sum(1 for item in inventory if (item.get("name") if isinstance(item, dict) else str(item)) != "sMoltz")
+        
+        for g_item in ground_items:
+            if isinstance(g_item, dict):
+                g_name = g_item.get("name") or g_item.get("displayName") or ""
+                g_id = g_item.get("id") or g_name
+            else:
+                g_name = str(g_item)
+                g_id = g_name
+                
+            if g_name == "sMoltz":
+                context.last_action_type = "pickup"
+                return UtilityBehavior.build_pickup_action(
+                    item_id=g_id,
+                    thought="Snatched sMoltz from the ground instantly before proceeding with combat."
+                )
+                
+            if g_name in ["Medkit", "Emergency Food", "Bandage"] and real_inv_count < 10:
+                context.last_action_type = "pickup"
+                return UtilityBehavior.build_pickup_action(
+                    item_id=g_id,
+                    thought=f"Secured crucial {g_name} from the ground instantly before continuing combat."
+                )
 
         equipped_weapon = view_self.get("equippedWeapon")
         equipped_weapon_name = "None"
         if equipped_weapon:
             equipped_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
 
-        current_region = view.get("currentRegion", {})
-        ground_items = current_region.get("items", [])
-        
+        # Retrieve active pack name to apply pack-specific range constraints
+        active_pack = settings.BOT_ACTIVE_PACKS.get(bot_name, "")
+
         has_weapon_on_ground = False
         for g_item in ground_items:
             g_name = g_item.get("name") or g_item.get("displayName") or "" if isinstance(g_item, dict) else str(g_item)
@@ -69,6 +95,7 @@ class CombatDecider(BaseDecider):
         elif has_melee:
             max_available_range = 0
 
+        # Build list of opponents in the visible area
         opponents = []
         for p in context.opponents_data.get("players", []):
             if p["name"] in settings.ALLY_NAMES:
@@ -81,6 +108,7 @@ class CombatDecider(BaseDecider):
         current_region_id = current_region.get("id")
         connections = current_region.get("connections", [])
 
+        # 2. FILTER TARGETS ACCORDING TO PACK CONSTRAINTS (CAT-11 Ranged / CAT-12 Sword Master)
         valid_targets = []
         for opp in opponents:
             opp_region_id = opp["region_id"]
@@ -92,6 +120,14 @@ class CombatDecider(BaseDecider):
             else:
                 distance = 2
 
+            # CAT-11 / Ranged pack constraints: No same-region attack (no distance 0)
+            if active_pack in ["CAT-11", "Ranged"] and distance == 0:
+                continue
+
+            # CAT-12 / Sword Master pack constraints: No ranged attack (no distance 1 or 2)
+            if active_pack in ["CAT-12", "Sword Master"] and distance >= 1:
+                continue
+
             if distance <= max_available_range:
                 opp["distance"] = distance
                 valid_targets.append(opp)
@@ -99,7 +135,30 @@ class CombatDecider(BaseDecider):
         if not valid_targets:
             return None
 
-        valid_targets.sort(key=lambda x: (x["is_monster"], x["hp"]))
+        # 3. ADVANCED TARGET SORTING (Estimated Time-to-Kill / DEF Mitigation)
+        weapon_atk_bonus = WEAPONS.get(equipped_weapon_name, {}).get("atk_bonus", 0) if equipped_weapon_name in WEAPONS else 0
+        our_atk = 25 + weapon_atk_bonus
+
+        def estimate_hits_to_kill(target):
+            t_name = target["name"]
+            t_hp = target["hp"]
+            t_def = 5  # Default baseline DEF for players
+            
+            if target["is_monster"]:
+                if "Wolf" in t_name:
+                    t_def = 1
+                elif "Bear" in t_name:
+                    t_def = 3
+                elif "Bandit" in t_name:
+                    t_def = 5
+                elif "Guardian" in t_name:
+                    t_def = 34
+                    
+            damage = max(1, our_atk - t_def)
+            return t_hp / damage
+
+        # Prioritize monsters first, then sort by estimated hits required to kill (lowest first)
+        valid_targets.sort(key=lambda x: (x["is_monster"], estimate_hits_to_kill(x)))
         best_target = valid_targets[0]
         
         if "Guardian" in best_target["name"] and best_target["hp"] > 15:
@@ -120,6 +179,9 @@ class CombatDecider(BaseDecider):
 
         context.last_attack_region = best_target["region_id"]
 
+        # 4. EP LOCKOUT REST FALLBACK
+        # If we can't afford the equipped weapon's EP cost, swap to an affordable one.
+        # If we have no affordable swap option, Rest immediately instead of idling/leaving.
         if ep < eq_cost:
             affordable_in_inv = [w for w in weapons_we_have if w != equipped_weapon_name and w != "Fist" and w != "None"]
             if affordable_in_inv:
@@ -134,7 +196,11 @@ class CombatDecider(BaseDecider):
                             item_id=i_id,
                             thought=f"Current weapon {equipped_weapon_name} is too expensive ({eq_cost} EP). Swapping to affordable {swap_to}."
                         )
-            return None
+            else:
+                context.last_action_type = "rest"
+                return UtilityBehavior.build_rest_action(
+                    thought=f"EP is too low ({ep}/{eq_cost}) to attack with {equipped_weapon_name}. Resting to recover EP."
+                )
 
         if target_distance == 0:
             if "Katana" in weapons_we_have and equipped_weapon_name != "Katana":

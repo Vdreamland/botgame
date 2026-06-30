@@ -1,43 +1,42 @@
-# kasus 1 sudah beres tapi bisa cek lagi barangkali logika ini sudah terhapus secara tidak sengaja
+# kasus 1 
 Peningkatan 1: Pengintai Cedera Kritis (Low HP Scout Heuristic)
 Masalah pada Log (Turn 13-14):
-Extravaro1 kritis dengan 20 HP dan tanpa obat pemulih. Karena berada di zona aman, ia memutuskan berjalan acak melintasi ubin tetangga (adjacent tile) untuk mencari jarahan baru. Sialnya, ia memilih melangkah ke Beach yang ternyata sedang dihuni musuh bersenjata [1].
+Extravaro1 kritis dengan 20 HP dan tanpa obat pemulih. Karena berada di zona aman, ia memutuskan berjalan acak melintasi ubin tetangga (adjacent tile) untuk mencari jarahan baru. Sialnya, ia memilih melangkah ke Beach yang ternyata sedang dihuni musuh bersenjata.
 Upgrade Cerdas yang Bisa Diterapkan:
 Kita dapat menambahkan Logika Sensor Pengintai HP Kritis di dalam IdleDecider.py.
-Jika bot sedang dalam kondisi kritis (HP 
-<
-40
-<40
-) dan tidak memiliki item penyembuh di tas, saat ia terpaksa melangkah berjelajah ke ubin tetangga, bot akan menyisir koordinat musuh/monster yang terlihat di ubin sekitar terlebih dahulu.
-Bot akan menyaring koneksi ubin sekitar, mencoret ubin yang terdeteksi sedang dihuni oleh musuh/monster, dan hanya akan melangkah ke ubin tetangga yang terbukti benar-benar kosong dari musuh [1].
-Dampak: Bot yang kritis tidak akan pernah lagi nekat berjalan menyodorkan nyawanya secara gratis ke mulut musuh yang sedang berjaga di ubin sebelah [1].
+Jika bot sedang dalam kondisi kritis (HP < 40) dan tidak memiliki item penyembuh di tas, saat ia terpaksa melangkah berjelajah ke ubin tetangga, bot akan menyisir koordinat musuh/monster yang terlihat di ubin sekitar terlebih dahulu.
+Bot akan menyaring koneksi ubin sekitar, mencoret ubin yang terdeteksi sedang dihuni oleh musuh/monster, dan hanya akan melangkah ke ubin tetangga yang terbukti benar-benar kosong dari musuh.
+Dampak: Bot yang kritis tidak akan pernah lagi nekat berjalan menyodorkan nyawanya secara gratis ke mulut musuh yang sedang berjaga di ubin sebelah.
+
 Peningkatan 2: Radar Zona Kematian Aliansi (Shared Active Deathzone Memory)
 Masalah pada Log (Turn 28-29):
-Extravaro2 kritis melarikan diri dari kejaran monster di Warehouse dan melompat ke Grassland. Karena ia belum pernah menginjak Grassland sepanjang game, ubin tersebut berada di blind spot (titik buta) memorinya, padahal ubin tersebut sudah menyusut aktif menjadi zona kematian [1].
+Extravaro2 kritis melarikan diri dari kejaran monster di Warehouse dan melompat ke Grassland. Karena ia belum pernah menginjak Grassland sepanjang game, ubin tersebut berada di blind spot (titik buta) memorinya, padahal ubin tersebut sudah menyusut aktif menjadi zona kematian.
 Upgrade Cerdas yang Bisa Diterapkan:
-Kita bisa membuat Memori Zona Kematian Bersama secara global di settings.py (misalnya settings.SHARED_ACTIVE_DEATHZONES = []) [1].
-Jika salah satu bot (misalnya Bot 1) sedang menjelajah dan mendeteksi/menginjak suatu ubin yang berstatus Active Deathzone, koordinat ubin tersebut langsung didaftarkan ke dalam daftar hitam kelompok [1].
-Bot 2 (meskipun berada di ujung peta yang jauh dan belum pernah mendatangi ubin tersebut) akan langsung mendeteksi bahwa ubin tersebut beracun [1]. Saat ia terpaksa melarikan diri, ia tidak akan pernah memilih ubin beracun tersebut sebagai jalur pelariannya [1].
-Dampak: Bot Anda akan memiliki pemetaan zona bahaya yang sinkron dan jauh lebih akurat, menghindari kematian konyol akibat melarikan diri ke area beracun yang tidak terdeteksi [1].
+Kita bisa membuat Memori Zona Kematian Bersama secara global di settings.py (misalnya settings.SHARED_ACTIVE_DEATHZONES = []).
+Jika salah satu bot (misalnya Bot 1) sedang menjelajah dan mendeteksi/menginjak suatu ubin yang berstatus Active Deathzone, koordinat ubin tersebut langsung didaftarkan ke dalam daftar hitam kelompok.
+Bot 2 (meskipun berada di ujung peta yang jauh dan belum pernah mendatangi ubin tersebut) akan langsung mendeteksi bahwa ubin tersebut beracun. Saat ia terpaksa melarikan diri, ia tidak akan pernah memilih ubin beracun tersebut sebagai jalur pelariannya.
+Dampak: Bot Anda akan memiliki pemetaan zona bahaya yang sinkron dan jauh lebih akurat, menghindari kematian konyol akibat melarikan diri ke area beracun yang tidak terdeteksi.
 
-# kasus 2 belum di cek atau di perbaiki
-
+# kasus 2 
 Secara keseluruhan, bot Anda saat ini sudah berada di level "Sangat Elit". Logika bertahan hidup, menembak dari jauh, menghindari zona mati, dan kerja sama timnya sudah jauh di atas rata-rata bot standar.
 Namun, jika kita membedah kembali seluruh Dokumentasi Resmi (GameGuide.txt dan Docs.txt), memang masih ada 3 celah strategi lanjutan yang belum kita manfaatkan, yang bisa menjadi pembeda antara juara 1 dan juara 2:
+
 1. Celah Tas Penuh / Tidak Bisa Membuang Barang (Inventory Bottleneck)
 Fakta Dokumentasi: Kapasitas maksimal tas adalah 10 slot. Perintah pickup akan gagal jika tas penuh. Ada perintah bebas (EP 0) bernama drop untuk membuang item.
 Kondisi Bot Saat Ini: Bot Anda sangat rakus mengambil barang (obat, pedang, armor). Namun, jika tasnya sudah penuh (10/10) oleh barang-barang murah (seperti Bandage atau Dagger), dan bot melihat ada Sniper rifle atau Medkit di lantai, bot hanya akan diam/melewatinya karena tasnya penuh.
 Strategi Kemenangan yang Hilang: Bot seharusnya memiliki logika "Manajemen Inventaris". Jika tas penuh 10/10 dan ada barang dewa di lantai, bot harus melakukan aksi drop membuang Bandage atau Dagger, lalu memungut barang dewa tersebut.
+
 2. Celah Peringkat Sisa HP di Akhir Game (End-Game HP Push)
 Fakta Dokumentasi: "Ranking is determined by kills first, then remaining HP." (Peringkat pemenang ditentukan oleh jumlah Kills, lalu jika seri, dilihat dari sisa HP). Game berakhir pada Turn 60.
 Kondisi Bot Saat Ini: Sesuai SurvivalDecider, bot Anda HANYA akan memakan obat pemulih jika HP-nya di bawah 50 (atau 70 via fasilitas). Jika di Turn 59 HP bot Anda adalah 51/100 dan ia punya 4 Emergency Food di tasnya, bot Anda tidak akan memakannya.
 Strategi Kemenangan yang Hilang: Di 2 giliran terakhir (Turn 58 dan 59), bot seharusnya "Panik Sehat". Ia harus memakan semua sisa obat yang ada di tasnya meskipun HP-nya 90, untuk mendongkrak HP ke 100/100 agar memenangkan posisi tie-breaker saat game selesai di Turn 60.
+
 3. Celah Penggunaan Item Utilitas (Unused Utility Items)
 Fakta Dokumentasi: Item utilitas seperti Map (Peta) jika digunakan (use_item) akan membuka seluruh kabut perang di peta.
 Kondisi Bot Saat Ini: Di UtilityDecider, bot Anda memprioritaskan mengambil Map dan Megaphone. Namun, di otak bot, tidak ada logika untuk menggunakannya. Barang itu hanya akan menuh-menuhin tas dari awal sampai game berakhir.
 Strategi Kemenangan yang Hilang: Jika bot Anda memungut Map, ia harusnya langsung menggunakannya pada giliran berikutnya. Ini akan memberikan keuntungan informasi yang masif untuk seluruh tim aliansi Anda.
 
-# kasus 3 belum di cek
+# kasus 3 
 Mengapa Bot Tidak Langsung Mengambil Jarahan Musuh yang Mati?
 Penyebab Logika Saat Ini:
 Sama seperti di atas, perintah "Berjalan Mengambil Jarahan" berada di IdleDecider.py (Prioritas 5).
@@ -52,3 +51,60 @@ Bagaimana Keputusan Anda?
 Sesuai dengan keinginan Anda, kita memiliki dua pilihan penyesuaian:
 Opsi A (Mode Sangat Agresif & Rakus):
 Kita naikkan prioritas "Berkumpul" dan "Ambil Jarahan" ke tingkat tertinggi. Bot akan selalu berusaha menempel dengan temannya di awal game, dan langsung berlari mengambil koin begitu ada yang mati, meskipun ada musuh lain di sekitar. (Beresiko tinggi mati konyol ditembaki).
+
+# kasus 4 (Perbaikan Integrasi Taktis & Sinkronisasi Lobby)
+Peningkatan 1: Siklus Ganti Senjata Berulang (Equipment-Swapping Loop)
+Masalah Lapangan:
+Dalam pertempuran, `UtilityDecider` mendeteksi bot membawa senjata dengan ATK tertinggi (misal: Sniper rifle atau Katana) dan memaksa bot memakainya (`equip`). Namun, di giliran berikutnya bot ingin menyerang tapi sisa EP-nya tidak cukup untuk biaya EP senjata mahal tersebut. Akibatnya, `CombatDecider` terpaksa menukar kembali (*swap back*) senjata ke opsi yang lebih murah (seperti Fist atau Dagger). Bot terjebak dalam siklus lepas-pasang senjata tanpa pernah melakukan serangan, membuang giliran sia-sia.
+Upgrade Cerdas yang Diterapkan:
+Menambahkan validasi biaya EP di dalam `utility_decider.py`. Bot dilarang keras melengkapi senjata dari tas jika sisa EP bot saat itu tidak mencukupi untuk mengeksekusi minimal satu serangan dengan senjata tersebut (`ep >= cost`).
+Dampak: Siklus ganti senjata berulang terhenti secara permanen. Bot hanya akan memegang senjata berat jika ia benar-benar mampu menggunakannya untuk menembak.
+
+Peningkatan 2: Optimasi Pembersihan Target SOS & Loot Bersama
+Masalah Lapangan:
+Di dalam `idle_decider.py`, penghapusan koordinat target yang sudah dicapai hanya menggunakan `pop(0)` (indeks pertama). Jika ada bot aliansi lain mendaftarkan koordinat SOS/Loot baru secara bersamaan, urutan antrean menjadi kacau. Bot sering kali mengabaikan target yang sudah dikunjungi atau terjebak berjalan memutar karena target di indeks selain `[0]` tidak pernah terhapus.
+Upgrade Cerdas yang Diterapkan:
+Mengubah mekanisme pembersihan dengan penyisiran menyeluruh menggunakan perulangan `while... in` dan penghapusan langsung berdasarkan nilai ubin koordinat (`.remove(current_region_id)`).
+Dampak: Koordinasi pergerakan tim menjadi sangat bersih. Sinyal SOS atau koordinat mayat yang sudah dikunjungi langsung dihapus dari memori kelompok seketika tanpa terikat urutan antrean.
+
+# kasus 5 (Sistem Berbagi Peta Global - Cooperative Mapping)
+Masalah Lapangan:
+Di awal permainan, kedua bot sering kali terlihat berjalan terpisah dan "asik sendiri-sendiri" meskipun tidak ada ancaman. 
+Penyebab Logika:
+Kedua bot memulai di ubin yang berbeda jauh. Karena `map_graph` (peta ingatan jalan) disimpan di memori lokal masing-masing secara terisolasi, bot tidak mengetahui rute jalan penghubung di antara mereka. Alhasil, algoritma pencari rute terpendek (`Pathfinder`) mengembalikan nilai `None` (tidak terkoneksi), sehingga bot pengikut terpaksa membatalkan perintah berkumpul dan beralih ke eksplorasi acak mandiri.
+Upgrade Cerdas yang Diterapkan:
+Membuat sistem Berbagi Peta Global (`SHARED_MAP_GRAPH`) dan Berbagi Nama Ubin Global (`SHARED_REGION_NAMES`) di settings.py, lalu menghubungkan objek memori `self.map_graph` dan `self.region_names` di game_context.py ke memori global tersebut. Setiap ubin atau nama jalan yang baru dijelajahi oleh Bot 1 langsung terekam dan diketahui secara instan oleh Bot 2.
+Dampak: Peta terbuka 2x lebih cepat. Navigasi antarlangkah langsung terkoneksi sejak turn awal, sehingga bot pengikut dapat langsung menemukan jalur akurat untuk berkumpul membentuk kelompok pertahanan bersama leader sejak awal permainan.
+
+# kasus 6 (Sistem Cooldown-Safe Protocol Loop)
+Masalah Lapangan:
+Pada turn-turn pertempuran intensif, musuh sering kali tidak menerima damage dari tembakan bot kita.
+Penyebab Logika:
+Di dalam log tercetak status `Can Act : False (Cooldown: 30000ms)`. Namun, karena bot dipicu langsung setiap kali menerima frame state baru, bot tetap mengirimkan aksi pertempuran (`attack` atau `move`) saat cooldown internalnya masih aktif di tingkat server. Server langsung menolak keras aksi ilegal tersebut (`ACTION_COOLDOWN`), menyebabkan turn bot terbuang sia-sia tanpa menembak nyata.
+Upgrade Cerdas yang Diterapkan:
+Mengubah alur penanganan WebSocket di `agent_handler.py`. Bot dilarang keras memicu keputusan aksi kelompok dari otak jika `self.can_act` bernilai `False`. Bot akan diam menunggu hingga menerima frame khusus `can_act_changed` dari server, lalu di milidetik yang sama bot langsung memicu otak untuk menyerang seketika.
+Dampak: Nol giliran terbuang. Bot menembak dengan tingkat kecepatan (*fire rate*) paling maksimal yang diizinkan server tanpa pernah lagi terkena penolakan penalti cooldown.
+
+# kasus 7 (Penaikan Prioritas Regroup Aliansi)
+Masalah Lapangan:
+Bot pengikut sering kali mengabaikan instruksi untuk berkumpul karena sibuk mengeksplorasi Ruin di sekitarnya sendirian. Hal ini disebabkan karena prioritas `ExploreDecider` (Prioritas 3) lebih tinggi dibandingkan `IdleDecider` (Prioritas 5 - lokasi regroup).
+Upgrade Cerdas yang Diterapkan:
+Menyisipkan sensor jarak taktis di dalam `ExploreDecider.py`. Jika bot pengikut mendeteksi jaraknya dengan leader terlalu jauh (lebih dari 1 langkah navigasi), ia akan membatalkan aktivitas eksplorasi ruin dan mengembalikan nilai `None` agar kontrol keputusan jatuh ke `IdleDecider` untuk memaksa bot berjalan mendekati leader.
+Dampak: Bot selalu bergerak dalam formasi tim (*squad form*). Eksplorasi ruin hanya akan dilakukan bersama-sama saat bot sudah berada dalam jarak kawal ketat leader.
+
+# kasus 8 (Taktik Menjarah Bersebelahan saat Bertempur - Threat-Aware HP Detour)
+Masalah Lapangan:
+Bot sering kali terlalu fokus menembaki musuh jarak jauh (Layer 1 atau 2) menggunakan Sniper rifle, mengabaikan tumpukan koin sMoltz berharga melimpah yang tergeletak di ubin sebelahnya akibat mayat musuh yang tereliminasi. Sering kali koin-koin tersebut akhirnya dicuri oleh pemain lain.
+Upgrade Cerdas yang Diterapkan:
+Mengintegrasikan logika penjarahan taktis bersebelahan di dalam `CombatDecider.py` menggunakan formula dinamis *Threat-Aware HP*:
+- Jika bot sehat (HP >= 60 saat ada ancaman dekat, atau HP >= 40 jika hanya ada ancaman jauh) dan tidak ada musuh di ubinnya (Layer 0 kosong), bot akan menunda tembakan jarak jauh selama 1 giliran untuk melangkah 1 ubin menghampiri tumpukan koin (`SHARED_LOOT_TARGETS`) di sebelahnya. Begitu koin disapu bersih, bot melanjutkan menembak.
+Dampak: Bot bertarung dengan taktis sekaligus rakus mengamankan koin sMoltz hasil kill-nya sebelum sempat dijarah pemain lain.
+
+# kasus 9 (Perbaikan Urutan Penyelamatan Hidup - Tactical Survival Order)
+Masalah Lapangan:
+Saat bot terkepung musuh dalam kondisi sekarat (HP rendah), bot sering kali berlari kesana-kemari tanpa henti hingga kehabisan energi (0 EP) lalu tereliminasi konyol tanpa sempat memakan obat penyembuh yang melimpah di tasnya.
+Penyebab Logika:
+Di dalam `survival_decider.py` lama, logika melarikan diri dari ancaman ditaruh di atas logika penyembuhan. Akibatnya, saat sekarat dan ada musuh di dekatnya, bot selalu memicu aksi `move` untuk kabur, dan terus kabur di giliran berikutnya tanpa sempat mengeksekusi aksi `use_item` (Heal).
+Upgrade Cerdas yang Diterapkan:
+Menata ulang urutan pemeriksaan di dalam `survival_decider.py` dengan menaikkan logika penggunaan obat darurat (`HP < 50` / `Heal`) ke peringkat kedua (Priority 2), tepat di bawah pelarian badai aktif (Active Deathzone), dan menggeser pelarian ancaman musuh ke peringkat ketiga (Priority 3).
+Dampak: Bot akan mengamankan HP-nya terlebih dahulu menggunakan obat gratis (EP 0) sebelum merencanakan rute pelarian dari musuh. Bot tidak akan pernah lagi mati kehabisan EP akibat melarikan diri terus-menerus tanpa memulihkan kesehatannya.

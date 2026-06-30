@@ -18,6 +18,8 @@ class SurvivalDecider(BaseDecider):
         is_active_deathzone = current_region.get("isDeathZone", False)
         current_turn = view.get("turn", 0)
 
+        # PRIORITY 1: MELARIKAN DIRI DARI ACTIVE DEATHZONE
+        # Berada di dalam badai memberikan damage konstan 40 HP per turn, wajib kabur pertama kali.
         if is_active_deathzone:
             connections = current_region.get("connections", [])
             safe_options = [
@@ -60,7 +62,26 @@ class SurvivalDecider(BaseDecider):
         enemies_here = [p for p in context.opponents_data.get("players", []) if p.get("region_id") == region_id]
         monsters_here = [m for m in context.opponents_data.get("monsters", []) if m.get("region_id") == region_id]
         threats_here = enemies_here + monsters_here
-        
+
+        # PRIORITY 2: GUNAKAN OBAT DARURAT (HP < 50 ATAU END-GAME HP PUSH)
+        # Mengisi HP terlebih dahulu secara instan menggunakan obat di tas (0 EP) sebelum berlari.
+        if hp < 50 or (current_turn >= 58 and hp < 100):
+            for item in inventory:
+                if isinstance(item, dict):
+                    item_name = item.get("name") or item.get("displayName") or ""
+                    item_id = item.get("id", "")
+                    if item_name in ["Medkit", "Emergency Food", "Bandage"] and item_id:
+                        context.last_action_type = "use_item"
+                        thought_msg = f"Emergency Healing: HP is critical ({hp}/100). Consuming {item_name} before moving."
+                        if current_turn >= 58:
+                            thought_msg = f"End-game push (Turn {current_turn}). Maximizing HP ({hp}/100) with {item_name} for tie-breaker."
+                        return UtilityBehavior.build_use_item_action(
+                            item_id=item_id,
+                            thought=thought_msg
+                        )
+
+        # PRIORITY 3: MELARIKAN DIRI DARI ANCAMAN JARAK DEKAT (HP < 60 DAN THREATS HERE)
+        # Dilakukan setelah HP dinaikkan oleh obat pada Priority 2 jika HP masih di bawah 60.
         if hp < 60 and threats_here:
             if region_id and region_id not in settings.SOS_TARGETS:
                 settings.SOS_TARGETS.append(region_id)
@@ -100,24 +121,10 @@ class SurvivalDecider(BaseDecider):
                 target_name = context.region_names.get(chosen_target, f"Hex-{chosen_target[:8]}")
                 return UtilityBehavior.build_move_action(
                     region_id=chosen_target,
-                    thought=f"Under threat ({hp}/100) from close-range hostiles. Fleeing to safe region: {target_name}"
+                    thought=f"HP is compromised ({hp}/100). Escaping close-range threats to safe region: {target_name}"
                 )
 
-        if hp < 50 or (current_turn >= 58 and hp < 100):
-            for item in inventory:
-                if isinstance(item, dict):
-                    item_name = item.get("name") or item.get("displayName") or ""
-                    item_id = item.get("id", "")
-                    if item_name in ["Medkit", "Emergency Food", "Bandage"] and item_id:
-                        context.last_action_type = "use_item"
-                        thought_msg = f"HP critical ({hp}/100) in safe zone. Consuming {item_name} to heal."
-                        if current_turn >= 58:
-                            thought_msg = f"End-game push (Turn {current_turn}). Maximizing HP ({hp}/100) with {item_name} for tie-breaker."
-                        return UtilityBehavior.build_use_item_action(
-                            item_id=item_id,
-                            thought=thought_msg
-                        )
-
+        # PRIORITY 4: RECOVERY ENERGI DARURAT (EP < 2)
         if ep < 2:
             for item in inventory:
                 if isinstance(item, dict):
@@ -130,6 +137,7 @@ class SurvivalDecider(BaseDecider):
                             thought=f"Energy critical ({ep}/10) in safe zone. Consuming {item_name} to recover EP."
                         )
 
+        # PRIORITY 5: INTERAKSI DENGAN MEDICAL FACILITY (HP < 70)
         if hp < 70:
             already_interacted = any(
                 act.get("type") == "interact" and act.get("regionId") == region_id 
@@ -145,9 +153,10 @@ class SurvivalDecider(BaseDecider):
                             context.last_action_type = "interact"
                             context.history_actions.append({"type": "interact", "regionId": region_id})
                             return UtilityBehavior.build_interact_action(
-                                thought="HP is low. Interacting with Medical Facility to heal."
+                                thought="HP is moderately low. Interacting with Medical Facility to heal."
                             )
 
+        # PRIORITY 6: MELARIKAN DIRI DARI ZONA KEMATIAN TERTUNDA (PENDING ZONE)
         in_danger_zone = (region_id in context.pending_deathzones)
         if in_danger_zone or (hp < 40 and threats_here):
             if threats_here and region_id and region_id not in settings.SOS_TARGETS:

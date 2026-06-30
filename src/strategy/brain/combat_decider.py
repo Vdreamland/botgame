@@ -7,6 +7,10 @@ from src.strategy.behaviors.utility_behavior import UtilityBehavior
 from config.game_data import WEAPONS
 from config import settings
 
+# Mengimpor modul taktis dan kalkulator pembantu dari file baru
+from src.strategy.brain.combat_helpers import get_weapons_and_range, estimate_hits_to_kill
+from src.strategy.brain.combat_tactics import evaluate_adjacent_looting
+
 class CombatDecider(BaseDecider):
     
     def decide(self, view: Dict[str, Any], context: GameContext) -> Optional[Dict[str, Any]]:
@@ -45,10 +49,12 @@ class CombatDecider(BaseDecider):
                     thought=f"Secured crucial {g_name} from the ground instantly before continuing combat."
                 )
 
-        equipped_weapon = view_self.get("equippedWeapon")
-        equipped_weapon_name = "None"
-        if equipped_weapon:
-            equipped_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else str(equipped_weapon)
+        # 2. IDENTIFIKASI SENJATA DAN JARAK (Menggunakan Helper)
+        weapons_we_have, max_available_range, equipped_weapon_name = get_weapons_and_range(
+            view_self=view_self, 
+            ep=ep, 
+            inventory=inventory
+        )
 
         # Retrieve active pack name to apply pack-specific range constraints
         active_pack = settings.BOT_ACTIVE_PACKS.get(bot_name, "")
@@ -63,38 +69,6 @@ class CombatDecider(BaseDecider):
         if equipped_weapon_name in ["None", "Fist"] and has_weapon_on_ground:
             return None
 
-        weapons_we_have = []
-        
-        eq_cost = WEAPONS.get(equipped_weapon_name, {}).get("ep_cost", 1) if equipped_weapon_name in WEAPONS else 1
-        if ep >= eq_cost:
-            weapons_we_have.append(equipped_weapon_name)
-        else:
-            if ep >= 1:
-                weapons_we_have.append("Fist")
-
-        for item in inventory:
-            if isinstance(item, dict):
-                item_name = item.get("name") or item.get("displayName") or ""
-            else:
-                item_name = str(item)
-
-            if item_name in WEAPONS:
-                cost = WEAPONS[item_name].get("ep_cost", 1)
-                if ep >= cost:
-                    weapons_we_have.append(item_name)
-
-        max_available_range = 0
-        has_sniper = "Sniper rifle" in weapons_we_have
-        has_ranged = any(w in ["Bow", "Pistol"] for w in weapons_we_have)
-        has_melee = any(w in ["Katana", "Sword", "Dagger", "Fist"] for w in weapons_we_have)
-
-        if has_sniper:
-            max_available_range = 2
-        elif has_ranged:
-            max_available_range = 1
-        elif has_melee:
-            max_available_range = 0
-
         # Build list of opponents in the visible area
         opponents = []
         for p in context.opponents_data.get("players", []):
@@ -108,7 +82,7 @@ class CombatDecider(BaseDecider):
         current_region_id = current_region.get("id")
         connections = current_region.get("connections", [])
 
-        # 2. FILTER TARGETS ACCORDING TO PACK CONSTRAINTS (CAT-11 Ranged / CAT-12 Sword Master)
+        # 3. FILTER TARGET BERDASARKAN PEMBATASAN PACK
         valid_targets = []
         for opp in opponents:
             opp_region_id = opp["region_id"]
@@ -135,47 +109,20 @@ class CombatDecider(BaseDecider):
         if not valid_targets:
             return None
 
-        # 3. TACTICAL ADJACENT LOOTING IN COMBAT
-        # Jika bot sehat dan tidak ada ancaman jarak dekat (Layer 0 kosong),
-        # bot akan memotong pertempuran selama 1 giliran untuk melangkah ke ubin mayat terdekat untuk menjarah koin sMoltz!
-        no_enemies_here = not any(opp["distance"] == 0 for opp in valid_targets)
-        if hp >= 70 and no_enemies_here and settings.SHARED_LOOT_TARGETS:
-            adjacent_loot_region = None
-            for loot_r in settings.SHARED_LOOT_TARGETS:
-                if loot_r in connections:
-                    adjacent_loot_region = loot_r
-                    break
-            if adjacent_loot_region:
-                context.last_action_type = "move"
-                target_name = context.region_names.get(adjacent_loot_region, f"Hex-{adjacent_loot_region[:8]}")
-                return UtilityBehavior.build_move_action(
-                    region_id=adjacent_loot_region,
-                    thought=f"Tactical looting: Stepping 1-hex to adjacent secured kill site: {target_name} to harvest sMoltz."
-                )
+        # 4. TAKTIK MENJARAH TAKTIS BERSEBELAHAN (Menggunakan Taktik Baru)
+        looting_action = evaluate_adjacent_looting(
+            hp=hp, 
+            valid_targets=valid_targets, 
+            connections=connections, 
+            context=context
+        )
+        if looting_action:
+            return looting_action
 
-        # 4. ADVANCED TARGET SORTING (Estimated Time-to-Kill / DEF Mitigation)
+        # 5. PENGUNCI TARGET BERBASIS TTK & DEF (Menggunakan Helper)
         weapon_atk_bonus = WEAPONS.get(equipped_weapon_name, {}).get("atk_bonus", 0) if equipped_weapon_name in WEAPONS else 0
         our_atk = 25 + weapon_atk_bonus
 
-        def estimate_hits_to_kill(target):
-            t_name = target["name"]
-            t_hp = target["hp"]
-            t_def = 5  # Default baseline DEF for players
-            
-            if target["is_monster"]:
-                if "Wolf" in t_name:
-                    t_def = 1
-                elif "Bear" in t_name:
-                    t_def = 3
-                elif "Bandit" in t_name:
-                    t_def = 5
-                elif "Guardian" in t_name:
-                    t_def = 34
-                    
-            damage = max(1, our_atk - t_def)
-            return t_hp / damage
-
-        # TARGET LOCKING LOGIC
         best_target = None
         if context.last_target_id:
             # Check if our locked target is still alive and remains in range
@@ -186,7 +133,7 @@ class CombatDecider(BaseDecider):
                     
         if not best_target:
             # Prioritize monsters first, then sort by estimated hits required to kill (lowest first)
-            valid_targets.sort(key=lambda x: (x["is_monster"], estimate_hits_to_kill(x)))
+            valid_targets.sort(key=lambda x: (x["is_monster"], estimate_hits_to_kill(x, our_atk)))
             best_target = valid_targets[0]
             context.last_target_id = best_target["id"]
         
@@ -209,9 +156,10 @@ class CombatDecider(BaseDecider):
 
         context.last_attack_region = best_target["region_id"]
 
-        # 5. EP LOCKOUT REST FALLBACK
+        # 6. EP LOCKOUT REST FALLBACK
         # If we can't afford the equipped weapon's EP cost, swap to an affordable one.
         # If we have no affordable swap option, Rest immediately instead of idling/leaving.
+        eq_cost = WEAPONS.get(equipped_weapon_name, {}).get("ep_cost", 1) if equipped_weapon_name in WEAPONS else 1
         if ep < eq_cost:
             affordable_in_inv = [w for w in weapons_we_have if w != equipped_weapon_name and w != "Fist" and w != "None"]
             if affordable_in_inv:
@@ -232,6 +180,7 @@ class CombatDecider(BaseDecider):
                     thought=f"EP is too low ({ep}/{eq_cost}) to attack with {equipped_weapon_name}. Resting to recover EP."
                 )
 
+        # 7. RESOLUSI PENEMBAKAN / MELEE
         if target_distance == 0:
             if "Katana" in weapons_we_have and equipped_weapon_name != "Katana":
                 for item in inventory:
@@ -250,7 +199,8 @@ class CombatDecider(BaseDecider):
             )
 
         elif target_distance >= 1:
-            preferred_ranged = "Sniper rifle" if has_sniper else ("Pistol" if "Pistol" in weapons_we_have else "Bow")
+            has_sniper_now = "Sniper rifle" in weapons_we_have
+            preferred_ranged = "Sniper rifle" if has_sniper_now else ("Pistol" if "Pistol" in weapons_we_have else "Bow")
             if preferred_ranged in weapons_we_have and equipped_weapon_name != preferred_ranged:
                 for item in inventory:
                     name = item.get("name") or item.get("displayName") or "" if isinstance(item, dict) else str(item)

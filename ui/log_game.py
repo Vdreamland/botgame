@@ -159,7 +159,10 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         sub_actions.append(f"Loot {', '.join(picked_names)}")
         
     if sub_actions:
-        action_str += " | " + " | ".join(sub_actions)
+        if action_str == "Nothing":
+            action_str = " | ".join(sub_actions)
+        else:
+            action_str += " | " + " | ".join(sub_actions)
         
     if not is_alive:
         zone_history = "ELIMINATED - Bot has died in combat or DeadZone."
@@ -279,7 +282,6 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                 if "hostile_regions" not in log_state:
                     log_state["hostile_regions"] = {}
                 log_state["hostile_regions"][curr_r_id] = current_turn_int
-        log_state["last_hp"] = hp
 
         if is_alive and "bot_id" not in log_state:
             log_state["bot_id"] = self_data.get("id")
@@ -314,6 +316,7 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                 log_state=log_state
             )
             log_state["last_printed_turn"] = turn
+            log_state["last_hp"] = hp
             if not is_alive:
                 log_state["is_dead_logged"] = True
 

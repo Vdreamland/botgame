@@ -49,7 +49,6 @@
     ├── #combat_logs.py               # Memproses dan memformat log "Combat" (HP, EP, ATK, DEF, detail Equipped, & visual Layer BFS)
     ├── #zone_logs.py                 # Memproses dan memformat log "Wilayah" (Location, Terrain, Weather, Warning, & Active Death Zones)
     ├── #loot_logs.py                 # Memproses dan memformat log "Penjarahan" (Inventaris slot, daftar koin sMoltz, & item lantai)
-    ├── damage_logs.py                # Log deteksi terkena damage oleh musuh
     ├── log_connection.py             # Log detail koneksi (dipertahankan)
     ├── log_game.py                   # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi
     │
@@ -68,7 +67,7 @@ Docs.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/Docs.tx
 GameGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/GameGuide.txt
 PlayGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PlayGuide.txt
 PreaSeasonGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PreaSeasonGuide1.txt
-skill.md https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/skill-1.11.2.md
+skill.md https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/skill-1.12.0.md
 StrukturWebsite.txt : https://github.com/Vdreamland/botgame/blob/master/StrukturWeb.txt
 
 # game

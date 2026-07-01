@@ -24,10 +24,15 @@ def detect_bot_stats(self_data: dict) -> dict:
 
     equipped_armor = self_data.get("equippedArmor")
     armor_name = "None"
+    armor_desc = "None"
     if isinstance(equipped_armor, dict):
         armor_name = equipped_armor.get("displayName") or equipped_armor.get("name") or "None"
+        armor_grade = equipped_armor.get("grade") or "N/A"
+        armor_def = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
+        armor_desc = f"{armor_name} (Grade: {armor_grade}, +{armor_def} DEF)"
     elif isinstance(equipped_armor, str):
         armor_name = equipped_armor
+        armor_desc = equipped_armor
 
     return {
         "hp": hp,
@@ -39,7 +44,8 @@ def detect_bot_stats(self_data: dict) -> dict:
         "def": def_val,
         "is_alive": is_alive,
         "weapon_name": weapon_name,
-        "armor_name": armor_name
+        "armor_name": armor_name,
+        "armor_desc": armor_desc
     }
 
 def detect_agent_stats(agent_data: dict) -> dict:
@@ -66,10 +72,15 @@ def detect_agent_stats(agent_data: dict) -> dict:
 
     equipped_armor = agent_data.get("equippedArmor")
     armor_name = "None"
+    armor_desc = "None"
     if isinstance(equipped_armor, dict):
         armor_name = equipped_armor.get("displayName") or equipped_armor.get("name") or "None"
+        armor_grade = equipped_armor.get("grade") or "N/A"
+        armor_def = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
+        armor_desc = f"{armor_name} (Grade: {armor_grade}, +{armor_def} DEF)"
     elif isinstance(equipped_armor, str):
         armor_name = equipped_armor
+        armor_desc = equipped_armor
 
     return {
         "hp": hp,
@@ -80,5 +91,6 @@ def detect_agent_stats(agent_data: dict) -> dict:
         "def": def_val,
         "is_alive": is_alive,
         "weapon_name": weapon_name,
-        "armor_name": armor_name
+        "armor_name": armor_name,
+        "armor_desc": armor_desc
     }

@@ -60,7 +60,6 @@ def detect_bot_stats(self_data: dict) -> dict:
     }
 
 def detect_agent_stats(agent_data: dict) -> dict:
-    """Fungsi detektor umum terpusat untuk memindai statistik dinamis agen musuh, aliansi, atau monster"""
     hp = agent_data.get("hp", PLAYER_DEFAULT_STATS["hp"])
     max_hp = agent_data.get("maxHp") or agent_data.get("max_hp") or PLAYER_DEFAULT_STATS["hp"]
     ep = agent_data.get("ep", PLAYER_DEFAULT_STATS["max_ep"])
@@ -81,7 +80,7 @@ def detect_agent_stats(agent_data: dict) -> dict:
     elif isinstance(equipped_weapon, str):
         weapon_name = equipped_weapon
 
-    equipped_armor = self_data.get("equippedArmor")
+    equipped_armor = agent_data.get("equippedArmor")
     armor_name = "None"
     armor_desc = "None"
     if isinstance(equipped_armor, dict):

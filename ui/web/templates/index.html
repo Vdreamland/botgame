@@ -1,42 +1,46 @@
-<!-- ui/web/templates/index.html -->
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Claw Royale - AI Arena</title>
+    <title>Claw Arena - Live Monitor</title>
     <link rel="stylesheet" href="/style.css" />
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   </head>
   <body>
     <div class="dashboard-container">
+      <!-- Sidebar: Daftar Bot -->
       <div class="sidebar">
         <div class="sidebar-header">
           <h2>Claw Arena</h2>
           <p>Live Bots Monitor</p>
         </div>
+
+        <!-- Widget Total sMoltz Global -->
         <div
-          id="bots-list"
+          id="total-smoltz-container"
           hx-get="/api/bots"
-          hx-trigger="every 5s"
-          class="bots-list-container"
+          hx-trigger="load, every 5s"
+          hx-target="#bots-list"
+          hx-swap="innerHTML"
         >
-          <div class="no-bots">Waiting for bots...</div>
+          <!-- Total sMoltz akan disuntikkan secara dinamis -->
+        </div>
+
+        <div class="bots-list-container" id="bots-list">
+          <!-- Daftar bot akan dimuat di sini oleh HTMX -->
         </div>
       </div>
 
-      <div class="main-content">
-        <div id="dashboard-detail" class="detail-placeholder">
-          <div class="pulse-icon">🤖</div>
-          <h3>Claw Royale Bot Dashboard</h3>
-          <p>
-            Silakan pilih bot di sebelah kiri untuk memantau status secara
-            real-time.
-          </p>
+      <!-- Main Content: Terminal Log Real-time -->
+      <div class="main-content" id="dashboard-detail">
+        <div class="no-selection">
+          Silakan pilih bot di sebelah kiri untuk memantau status.
         </div>
       </div>
     </div>
 
+    <!-- Template Block HTMX -->
     <template id="BOT_ITEM">
       <button
         class="bot-item {active_class}"
@@ -48,73 +52,88 @@
         <div class="bot-header-info">
           <span class="bot-name-label">{name} ({status_text})</span>
         </div>
-        <div class="bot-summary" style="margin-bottom: 2px; color: #58a6ff">
-          Room: {room_name}
-        </div>
         <div class="bot-summary" style="margin-bottom: 2px; color: #ffbc40">
           sMoltz Balance: {balance}
         </div>
-        <div class="bot-summary" style="margin-bottom: 4px; color: #3fb950">
+        <div class="bot-summary">
           PreSeason 1: {season_points} Pts | Rank: {rank}
         </div>
-        <div class="bot-summary" style="margin-bottom: 2px; color: #c9d1d9">
-          HP: {hp}/{max_hp} | EP: {ep}/{max_ep}
-        </div>
+        <div class="bot-summary">HP: {hp}/{max_hp} | EP: {ep}/{max_ep}</div>
         <div class="bot-summary">Kills: {kills} | Turn: {turn}</div>
+        <div class="bot-room-badge">{room_name}</div>
       </button>
     </template>
 
     <template id="BOT_DETAIL">
-      <div id="dashboard-detail" class="detail-container">
+      <div
+        class="bot-detail-view"
+        hx-get="/api/bot/{name}?current_turn={turn}&log_count={log_count}"
+        hx-trigger="every 2s"
+        hx-target="#dashboard-detail"
+        hx-swap="outerHTML"
+      >
         <div class="detail-header">
-          <h2>{name} - Live Audit Terminal (Room: {room_name})</h2>
-          <div class="turn-counter">LATEST: TURN {turn}</div>
+          <div class="header-main">
+            <h1>Terminal Log: {name}</h1>
+            <span class="room-indicator">Active Room: {room_name}</span>
+          </div>
+          <div class="turn-badge">Turn {turn}</div>
         </div>
-        <textarea
-          class="logs-box"
-          readonly
-          onclick="
-            this.select();
-            document.execCommand('copy');
-          "
-        >
-{logs_str}</textarea
-        >
-        <div
-          id="active-polling"
-          hx-get="/api/bot/{name}?current_turn={turn}&log_count={log_count}"
-          hx-trigger="every 2s"
-          hx-target="#dashboard-detail"
-          hx-swap="outerHTML"
-        ></div>
+
+        <div class="terminal-container">
+          <textarea id="terminal-logs" readonly>{logs_str}</textarea>
+        </div>
       </div>
     </template>
 
     <script>
+      let userScrolled = false;
       let activeBot = "";
-      let initialLoad = true;
+      let savedScrollTop = 0;
 
       function setActiveBot(name) {
         activeBot = name;
-        initialLoad = true;
+        userScrolled = false;
+        savedScrollTop = 0;
+        const detail = document.getElementById("dashboard-detail");
+        if (detail) {
+          detail.innerHTML = '<div class="loading">Loading logs...</div>';
+        }
       }
 
-      document.body.addEventListener("htmx:configRequest", function (evt) {
-        if (evt.detail.path === "/api/bots") {
-          evt.detail.parameters["selected"] = activeBot;
+      document.addEventListener(
+        "scroll",
+        function (evt) {
+          if (evt.target.id === "terminal-logs") {
+            const t = evt.target;
+            if (t.scrollHeight - t.scrollTop > t.clientHeight + 10) {
+              userScrolled = true;
+            } else {
+              userScrolled = false;
+            }
+          }
+        },
+        true,
+      );
+
+      document.addEventListener("htmx:beforeSwap", function (evt) {
+        if (evt.detail.target.id === "dashboard-detail") {
+          const oldTerminal = document.getElementById("terminal-logs");
+          if (oldTerminal) {
+            savedScrollTop = oldTerminal.scrollTop;
+          }
         }
       });
 
-      // Logika Smart Auto-Scroll
-      document.body.addEventListener("htmx:afterSwap", function (evt) {
-        const logBox = document.querySelector(".logs-box");
-        if (logBox) {
-          const isNearBottom =
-            logBox.scrollHeight - logBox.clientHeight - logBox.scrollTop < 100;
-
-          if (isNearBottom || initialLoad) {
-            logBox.scrollTop = logBox.scrollHeight;
-            initialLoad = false;
+      document.addEventListener("htmx:afterRequest", function (evt) {
+        if (evt.detail.target.id === "dashboard-detail") {
+          const terminal = document.getElementById("terminal-logs");
+          if (terminal) {
+            if (!userScrolled) {
+              terminal.scrollTop = terminal.scrollHeight;
+            } else {
+              terminal.scrollTop = savedScrollTop;
+            }
           }
         }
       });

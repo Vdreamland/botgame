@@ -225,7 +225,7 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                         "thought": "Sapu bersih koin/barang gratis di lantai (EP 0)"
                     }
                     await ws.send_json(pickup_payload)
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(0.3)
                 except Exception:
                     pass
 
@@ -240,7 +240,7 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                         "thought": "Memakai perlengkapan terbaik secara otomatis (EP 0)"
                     }
                     await ws.send_json(equip_payload)
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(0.3)
                 except Exception:
                     pass
 

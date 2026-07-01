@@ -58,11 +58,11 @@
 
     <template id="BOT_DETAIL">
       <div
-        class="detail-container"
+        class="main-content"
+        id="dashboard-detail"
         hx-get="/api/bot/{name}?current_turn={turn}&log_count={log_count}"
         hx-trigger="every 2s"
-        hx-target="#dashboard-detail"
-        hx-swap="innerHTML"
+        hx-swap="outerHTML"
       >
         <div class="detail-header">
           <h2>Terminal Log: {name}</h2>

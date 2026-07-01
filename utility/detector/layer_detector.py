@@ -47,8 +47,16 @@ def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_dat
     visible_agents = view_data.get("visibleAgents") or []
     for agent in visible_agents:
         if isinstance(agent, dict):
-            a_name = agent.get("name", "")
+            # Abaikan jika agen sudah mati (HP <= 0 atau isAlive adalah False)
+            is_alive = agent.get("isAlive")
+            if is_alive is None:
+                is_alive = agent.get("is_alive", True)
             
+            hp = agent.get("hp")
+            if is_alive is False or (hp is not None and hp <= 0):
+                continue
+
+            a_name = agent.get("name", "")
             if a_name == bot_name:
                 continue
                 
@@ -72,6 +80,15 @@ def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_dat
     visible_monsters = view_data.get("visibleMonsters") or []
     for monster in visible_monsters:
         if isinstance(monster, dict):
+            # Abaikan jika monster sudah mati (HP <= 0 atau isAlive adalah False)
+            is_alive = monster.get("isAlive")
+            if is_alive is None:
+                is_alive = monster.get("is_alive", True)
+            
+            hp = monster.get("hp")
+            if is_alive is False or (hp is not None and hp <= 0):
+                continue
+
             r_id = (
                 monster.get("regionId") or 
                 monster.get("region_id") or 

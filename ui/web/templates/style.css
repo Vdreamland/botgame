@@ -55,6 +55,22 @@ body {
   font-size: 0.85rem;
 }
 
+.total-smoltz-card {
+  background-color: #21262d;
+  border: 1px dashed #30363d;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 12px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #8b949e;
+}
+
+.total-smoltz-card span {
+  color: #ffbc40;
+}
+
 .bot-item {
   width: 100%;
   background: #21262d;
@@ -162,4 +178,48 @@ body {
 
 #active-polling {
   display: none;
+}
+
+/* Aturan CSS Responsif untuk Layar Sempit (Tablet / HP di bawah 768px) */
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #30363d;
+    padding: 12px;
+  }
+
+  .bots-list-container {
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .main-content {
+    width: 100%;
+    height: auto;
+    padding: 15px;
+    flex: 1;
+  }
+
+  .detail-placeholder {
+    padding: 40px 10px;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .logs-box {
+    height: 400px;
+    flex: none;
+  }
 }

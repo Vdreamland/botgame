@@ -15,7 +15,6 @@
           <h2>Claw Arena</h2>
           <p>Live Bots Monitor</p>
         </div>
-        <!-- Mengurangi frekuensi polling sidebar ke 5 detik untuk menghilangkan tabrakan klik navigasi -->
         <div
           id="bots-list"
           hx-get="/api/bots"
@@ -50,6 +49,9 @@
         <div class="bot-summary" style="margin-bottom: 4px; color: #58a6ff">
           Room: {room_name}
         </div>
+        <div class="bot-summary" style="margin-bottom: 4px; color: #ffbc40">
+          sMoltz Balance: {balance}
+        </div>
         <div class="bot-summary">HP: {hp}/{max_hp} | Turn: {turn}</div>
       </button>
     </template>
@@ -70,10 +72,9 @@
         >
 {logs_str}</textarea
         >
-        <!-- Mengatur polling log per 2 detik agar performa CPU browser tetap ringan saat memantau banyak bot -->
         <div
           id="active-polling"
-          hx-get="/api/bot/{name}"
+          hx-get="/api/bot/{name}?current_turn={turn}&log_count={log_count}"
           hx-trigger="every 2s"
           hx-target="#dashboard-detail"
           hx-swap="outerHTML"

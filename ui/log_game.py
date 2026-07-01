@@ -21,7 +21,12 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             room_name = await http_client.get_room_name(game_id, api_key, version)
 
         loadout_data = {}
+        balance = 0
         try:
+            # Ambil data akun terbaru untuk sinkronisasi saldo sMoltz secara real-time
+            account_data = await http_client.get_account_me(api_key, version)
+            balance = account_data.get("balance", 0)
+            
             loadout_client = ClawRoyaleLoadoutClient(session)
             loadout_data = await loadout_client.get_loadout(api_key, version)
         except Exception:
@@ -64,7 +69,6 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
 
     status_display_plain = "ALIVE" if is_alive else "DEAD"
 
-    # Konstruksi string multiline log persis seperti log terminal powershell lama
     turn_log_text = (
         f"TURN {turn} [{bot_name}]\n"
         f"Status : {status_display_plain}\n"
@@ -77,7 +81,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         f"Inventory ({inv['slot_count']}/10 Slots) : {inventory_str}\n"
     )
 
-    # Kirim payload data lengkap beserta nama room ke server dashboard web
+    # Kirim payload data lengkap beserta saldo sMoltz terbaru ke server dashboard web
     async with aiohttp.ClientSession() as session:
         try:
             payload = {
@@ -87,6 +91,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
                 "turn": turn,
                 "is_alive": is_alive,
                 "room_name": room_name,
+                "balance": balance,
                 "log_msg": turn_log_text
             }
             await session.post("http://localhost:8080/api/update", json=payload)

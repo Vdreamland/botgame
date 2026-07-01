@@ -53,6 +53,7 @@ async def update_handler(request):
                 "turn": 1,
                 "is_alive": True,
                 "room_name": "Unknown",
+                "balance": 0,
                 "logs": []
             }
         
@@ -62,6 +63,7 @@ async def update_handler(request):
             "turn": data.get("turn", BOTS_DATA[bot_name]["turn"]),
             "is_alive": data.get("is_alive", BOTS_DATA[bot_name]["is_alive"]),
             "room_name": data.get("room_name", BOTS_DATA[bot_name]["room_name"]),
+            "balance": data.get("balance", BOTS_DATA[bot_name]["balance"]),
         })
 
         log_msg = data.get("log_msg")
@@ -76,7 +78,7 @@ async def update_handler(request):
 
 async def bots_list_handler(request):
     if not BOTS_DATA:
-        return web.Response(text='<div class="no-bots">Waiting for bots...</div>', content_type="text/html")
+        return web.Response(text='<div class="no-bots">Waiting for bots to join...</div>', content_type="text/html")
     
     selected_bot = request.query.get("selected")
     template = extract_template_block("BOT_ITEM")
@@ -95,11 +97,16 @@ async def bots_list_handler(request):
             hp=bot["hp"],
             max_hp=bot["max_hp"],
             turn=bot["turn"],
-            room_name=bot.get("room_name", "Unknown")
+            room_name=bot.get("room_name", "Unknown"),
+            balance=bot.get("balance", 0)
         )
         html_parts.append(btn_html)
-        
-    return web.Response(text="\n".join(html_parts), content_type="text/html")
+    
+    total_smoltz = sum(bot.get("balance", 0) for bot in BOTS_DATA.values())
+    total_widget_html = f'<div class="total-smoltz-card">Total sMoltz: <span>{total_smoltz}</span></div>'
+    
+    full_sidebar_html = total_widget_html + "\n" + "\n".join(html_parts)
+    return web.Response(text=full_sidebar_html, content_type="text/html")
 
 async def bot_detail_handler(request):
     bot_name = request.match_info.get("bot_name")
@@ -107,17 +114,31 @@ async def bot_detail_handler(request):
     if not bot:
         return web.Response(text='<div class="no-selection">Silakan pilih bot di sebelah kiri untuk memantau status.</div>', content_type="text/html")
     
+    # Ambil parameter query penanda pembanding polling (HTTP 204 Optimization)
+    current_turn_req = request.query.get("current_turn")
+    log_count_req = request.query.get("log_count")
+    
+    if current_turn_req is not None and log_count_req is not None:
+        try:
+            if int(current_turn_req) == bot["turn"] and int(log_count_req) == len(bot["logs"]):
+                # Kembalikan HTTP 204 No Content untuk menghentikan pembaruan DOM (posisi scroll terjaga sempurna)
+                return web.Response(status=204)
+        except ValueError:
+            pass
+
     template = extract_template_block("BOT_DETAIL")
     if not template:
         return web.Response(text="Template BOT_DETAIL not found.", status=500)
 
     logs_str = "\n".join(bot["logs"]) if bot["logs"] else "Waiting for turn actions..."
+    log_count = len(bot["logs"])
 
     detail_html = template.format(
         name=bot["name"],
         turn=bot["turn"],
         room_name=bot.get("room_name", "Unknown"),
-        logs_str=logs_str
+        logs_str=logs_str,
+        log_count=log_count
     )
     
     return web.Response(text=detail_html, content_type="text/html")

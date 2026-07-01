@@ -54,6 +54,8 @@ async def update_handler(request):
                 "is_alive": True,
                 "room_name": "Unknown",
                 "balance": 0,
+                "season_points": 0,
+                "rank": "UNRANKED",
                 "logs": []
             }
         
@@ -64,6 +66,8 @@ async def update_handler(request):
             "is_alive": data.get("is_alive", BOTS_DATA[bot_name]["is_alive"]),
             "room_name": data.get("room_name", BOTS_DATA[bot_name]["room_name"]),
             "balance": data.get("balance", BOTS_DATA[bot_name]["balance"]),
+            "season_points": data.get("season_points", BOTS_DATA[bot_name]["season_points"]),
+            "rank": data.get("rank", BOTS_DATA[bot_name]["rank"]),
         })
 
         log_msg = data.get("log_msg")
@@ -98,7 +102,9 @@ async def bots_list_handler(request):
             max_hp=bot["max_hp"],
             turn=bot["turn"],
             room_name=bot.get("room_name", "Unknown"),
-            balance=bot.get("balance", 0)
+            balance=bot.get("balance", 0),
+            season_points=bot.get("season_points", 0),
+            rank=bot.get("rank", "UNRANKED")
         )
         html_parts.append(btn_html)
     

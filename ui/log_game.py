@@ -6,7 +6,7 @@ import aiohttp
 from collections import Counter
 from connection.loadout import ClawRoyaleLoadoutClient
 from connection.http_client import ClawRoyaleHTTPClient
-from utility.detector.bot_stats_detector import detect_bot_stats
+from utility.detector.bot_stats_detector import detect_bot_stats, detect_agent_stats
 from utility.detector.inventory_detector import detect_inventory
 from utility.detector.zone_detector import detect_zone
 from utility.detector.layer_detector import detect_layers
@@ -16,6 +16,8 @@ from ui import log_system, GREEN, RED, RESET
 async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str, turn: int, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, resolved_room_name: str = None, log_state: dict = None) -> str:
     room_name = resolved_room_name
     balance = 0
+    season_points = 0
+    rank = "UNRANKED"
     
     async with aiohttp.ClientSession() as session:
         http_client = ClawRoyaleHTTPClient(session)
@@ -28,6 +30,11 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             account_data = await http_client.get_account_me(api_key, version)
             balance = account_data.get("balance", 0)
             
+            # Sinkronisasikan secara real-time data poin musim & rank preseason 1 pada lobi
+            preseason_data = await http_client.get_preseason_summary(api_key, version)
+            season_points = preseason_data.get("seasonPoints") or preseason_data.get("points") or 0
+            rank = preseason_data.get("rank") or "UNRANKED"
+
             loadout_client = ClawRoyaleLoadoutClient(session)
             loadout_data = await loadout_client.get_loadout(api_key, version)
         except Exception:
@@ -69,8 +76,21 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         layers_parts.append(f"Layer {l_data['layer']} : P {l_data['P']} / M {l_data['M']} / A {l_data['A']}")
     layers_block = " | ".join(layers_parts)
 
-    # Status tampilan ALIVE / DEAD murni tanpa diganggu
     status_display_plain = "ALIVE" if is_alive else "DEAD"
+
+    # Detail perlengkapan senjata & armor yang lebih mendalam sesuai versi 1.12.0
+    weapon_desc = "None"
+    if weapon_name != "None":
+        weapon_desc = weapon_name
+
+    armor_desc = "None"
+    equipped_armor = self_data.get("equippedArmor")
+    if isinstance(equipped_armor, dict):
+        armor_grade = equipped_armor.get("grade") or "N/A"
+        armor_def = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
+        armor_desc = f"{armor_name} (Grade: {armor_grade}, +{armor_def} DEF)"
+    elif isinstance(equipped_armor, str) and equipped_armor != "None":
+        armor_desc = equipped_armor
 
     # Kalkulasi audit riwayat damage/healing per turn ke dalam baris ZoneHistory
     zone_history = "No damage events recorded."
@@ -117,7 +137,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         f"ATK: {atk} / DEF: {def_val}\n"
         f"Visibility [{visibility_zones}]\n"
         f"Location : {region_name} / Terrain : {terrain} / Weather : {weather} / Vision {vision} / Links {links_count}\n"
-        f"Equipped : Weapon : {weapon_name} / Armor  : {armor_name}\n"
+        f"Equipped : Weapon : {weapon_desc} | Armor : {armor_desc}\n"
         f"Inventory ({inv['slot_count']}/10 Slots) : {inventory_str}\n"
         f"{layers_block}\n"
         f"ZoneHistory : {zone_history}\n"
@@ -125,7 +145,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         f"Active DeathZones : {active_dz}\n"
     )
 
-    # Kirim payload data lengkap ke server web lokal
+    # Kirim payload data lengkap beserta status preseason 1 ke server web lokal
     async with aiohttp.ClientSession() as session:
         try:
             payload = {
@@ -136,6 +156,8 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
                 "is_alive": is_alive,
                 "room_name": room_name,
                 "balance": balance,
+                "season_points": season_points,
+                "rank": rank,
                 "log_msg": turn_log_text
             }
             await session.post("http://localhost:8080/api/update", json=payload)

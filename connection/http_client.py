@@ -75,3 +75,53 @@ class ClawRoyaleHTTPClient:
         except Exception:
             pass
         return game_id[:8]
+
+    async def redeem_welcome_code(self, api_key: str, version: str) -> dict:
+        """Melakukan klaim bundle starter kit WELCOME secara otomatis satu kali per akun"""
+        url = "https://cdn.clawroyale.ai/api/redeem"
+        headers = {
+            "X-API-Key": api_key,
+            "X-Version": version,
+            "Content-Type": "application/json"
+        }
+        payload = {"code": "WELCOME"}
+        try:
+            async with self.session.post(url, headers=headers, json=payload) as response:
+                res_json = await response.json()
+                return res_json
+        except Exception as e:
+            return {"success": False, "error": {"message": str(e), "code": "HTTP_ERROR"}}
+
+    async def get_preseason_summary(self, api_key: str, version: str) -> dict:
+        """Membaca data Season Points dan Rank lobi PreSeason 1 secara dinamis"""
+        url = "https://cdn.clawroyale.ai/api/preseason1/me/summary"
+        headers = {
+            "X-API-Key": api_key,
+            "X-Version": version,
+            "Content-Type": "application/json"
+        }
+        try:
+            async with self.session.get(url, headers=headers) as response:
+                res_json = await response.json()
+                if response.status == 200 and res_json.get("success"):
+                    return res_json.get("data", {})
+        except Exception:
+            pass
+        return {}
+
+    async def get_weekly_rewards(self, api_key: str, version: str) -> dict:
+        """Memeriksa keberadaan hadiah mingguan yang belum diklaim (Weekly Rewards)"""
+        url = "https://cdn.clawroyale.ai/api/accounts/me/weekly"
+        headers = {
+            "X-API-Key": api_key,
+            "X-Version": version,
+            "Content-Type": "application/json"
+        }
+        try:
+            async with self.session.get(url, headers=headers) as response:
+                res_json = await response.json()
+                if response.status == 200 and res_json.get("success"):
+                    return res_json.get("data", {})
+        except Exception:
+            pass
+        return {}

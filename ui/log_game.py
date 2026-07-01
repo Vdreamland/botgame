@@ -134,15 +134,15 @@ async def handle_message(client, bot_name: str, data: dict, ws):
     if msg_type in ("assigned", "waiting"):
         if bot_name not in client.joined_bots:
             client.joined_bots.append(bot_name)
-        print(f"[{bot_name}] successfully joined room!")
-        sys.stdout.flush()
-
-        if len(client.joined_bots) == client.total_bots:
-            print()
-            print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-            print()
+            print(f"[{bot_name}] successfully joined room!")
             sys.stdout.flush()
-            return
+
+            if len(client.joined_bots) == client.total_bots:
+                print()
+                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+                print()
+                sys.stdout.flush()
+        return
 
     elif msg_type in ("agent_view", "turn_advanced", "action_result"):
         view = data.get("view") or data.get("data", {}).get("view")
@@ -152,8 +152,9 @@ async def handle_message(client, bot_name: str, data: dict, ws):
 
         if not log_state.get("is_active_logged"):
             log_state["is_active_logged"] = True
-            if bot_name not in client.joined_bots:
-                client.joined_bots.append(bot_name)
+
+        if bot_name not in client.joined_bots:
+            client.joined_bots.append(bot_name)
             print(f"[{bot_name}] successfully joined room!")
             sys.stdout.flush()
 
@@ -175,7 +176,9 @@ async def handle_message(client, bot_name: str, data: dict, ws):
 
         log_state["last_view"] = view
 
-        if turn != log_state.get("last_printed_turn", -1):
+        should_log = (turn != log_state.get("last_printed_turn", -1)) or (not is_alive and not log_state.get("is_dead_logged", False))
+
+        if should_log:
             game_id = data.get("gameId") or view.get("gameId") or ""
             resolved_name = log_state.get("resolved_room_name")
             if not resolved_name:
@@ -201,6 +204,8 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                 log_state=log_state
             )
             log_state["last_printed_turn"] = turn
+            if not is_alive:
+                log_state["is_dead_logged"] = True
 
         if is_alive:
             decision = make_decision(bot_name, self_data, current_region, view, client.joined_bots, log_state)

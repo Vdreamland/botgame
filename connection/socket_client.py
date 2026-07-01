@@ -82,7 +82,7 @@ class ClawRoyaleSocketClient:
                                             await ws.send_json(hello_frame)
                                     elif decision == "BLOCKED":
                                         log_system.error(f"[{bot_name}] Lobby entry blocked (check readiness conditions)")
-                                        await asyncio.sleep(5)
+                                        self.log_state["blocked_exit"] = True
                                         break
                                         
                                 elif msg_type in ("assigned", "waiting", "agent_view", "turn_advanced", "action_result"):
@@ -93,19 +93,33 @@ class ClawRoyaleSocketClient:
                                 elif msg_type == "error":
                                     err_msg = data.get("message") or "Unknown server error"
                                     log_system.error(f"[{bot_name}] Lobby error: {err_msg}")
-                                    await asyncio.sleep(5)
                                     break
-                                    
-                            elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
-                                log_system.warning(f"[{bot_name}] Disconnected from game room.")
-                                if bot_name in self.joined_bots:
-                                    self.joined_bots.remove(bot_name)
-                                    
-                                while len(self.joined_bots) > 0:
-                                    await asyncio.sleep(1)
-                                    
-                                await asyncio.sleep(5)
-                                break
+
+                        # --- Penanganan Setelah Perulangan Pesan Selesai / Putus ---
+                        
+                        # Jika bot mati, keluar sepenuhnya dari perulangan utama (tidak re-antre)
+                        if self.log_state.get("is_dead_break"):
+                            break
+                            
+                        # Jika lobi di-block, tunggu sejenak lalu keluar sepenuhnya
+                        if self.log_state.get("blocked_exit"):
+                            await asyncio.sleep(5)
+                            break
+                            
+                        # Log warning jika koneksi terputus dan lakukan proses pembersihan sebelum mencoba kembali
+                        log_system.warning(f"[{bot_name}] Disconnected from game room.")
+                        if bot_name in self.joined_bots:
+                            self.joined_bots.remove(bot_name)
+                            
+                        while len(self.joined_bots) > 0:
+                            await asyncio.sleep(1)
+                            
+                        await asyncio.sleep(5)
+
+                # Cek kembali jika loop luar perlu dihentikan karena bot mati atau diblokir
+                if self.log_state.get("is_dead_break") or self.log_state.get("blocked_exit"):
+                    break
+
             except Exception as e:
                 log_system.error(f"[{bot_name}] Connection failed: {str(e)}")
                 if bot_name in self.joined_bots:

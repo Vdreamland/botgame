@@ -44,6 +44,7 @@
 └── ui/                               # Modul Antarmuka / Logging Visual
     ├── init.py                       # Penanda paket Python untuk folder ui
     ├── log_system.py                 # Log status sistem global
+    ├── damage_logs.py                # Log deteksi terkena damage oleh musuh
     ├── log_connection.py             # Log detail koneksi (dipertahankan)
     ├── log_game.py                   # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi
     │

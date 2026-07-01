@@ -63,7 +63,8 @@ class ClawRoyaleSocketClient:
                                         self.log_state["blocked_exit"] = True
                                         break
                                         
-                                elif msg_type in ("assigned", "waiting", "agent_view", "turn_advanced", "action_result"):
+                                # Tambahkan tipe pesan "event" ke dalam daftar pelacakan agar real-time combat log ditangkap
+                                elif msg_type in ("assigned", "waiting", "agent_view", "turn_advanced", "action_result", "event"):
                                     await log_game.handle_message(self, bot_name, data, ws)
                                     if self.log_state.get("is_dead_break"):
                                         break

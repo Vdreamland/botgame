@@ -94,9 +94,14 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
         if f_used:
             continue
             
+        f_id = f.get("id") or f.get("type") or "facility"
+        attempts = log_state.get("attempted_facilities", {}).get(f_id, 0) if log_state else 0
+        
         fac_ev = -999.0
         if is_dz:
             fac_ev = -50.0
+        elif attempts >= 2:
+            fac_ev = -100.0
         else:
             if "medical" in f_type:
                 missing_hp = our_max_hp - our_hp
@@ -116,10 +121,13 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
             elif "broadcast" in f_type:
                 fac_ev = 10.0 if our_stats.get("ep", 0) > 5 else 0.0
                 
+            if attempts == 1:
+                fac_ev *= 0.5
+                
         if fac_ev > max_facility_ev:
             max_facility_ev = fac_ev
             best_facility = {
-                "id": f.get("id") or f.get("type") or "facility",
+                "id": f_id,
                 "type": f_type,
                 "ev": fac_ev
             }

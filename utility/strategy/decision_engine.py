@@ -5,8 +5,6 @@ from utility.strategy.loot_solver import evaluate_loot_desire
 from utility.strategy.movement_solver import evaluate_movement_routes
 
 def make_decision(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, log_state: dict) -> dict:
-    """Otak Utama (Desire Scorer) yang menimbang hasrat taktis dan merangkai urutan eksekusi tindakan turn terbaik"""
-    
     combat_res = evaluate_combat_targets(bot_name, self_data, current_region, view_data, joined_bots)
     loot_res = evaluate_loot_desire(bot_name, self_data, current_region, view_data, joined_bots, log_state)
     move_res = evaluate_movement_routes(bot_name, self_data, current_region, view_data, joined_bots, log_state)
@@ -151,9 +149,17 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
         thought_string = "Fokus menyapu bersih koin sMoltz dan barang berharga di lobi lantai."
         
     elif chosen_strategy == "interact" and best_facility:
+        f_id = best_facility.get("id")
         action_data = {
-            "type": "interact"
+            "type": "interact",
+            "facilityId": f_id,
+            "id": f_id
         }
+        
+        if "attempted_facilities" not in log_state:
+            log_state["attempted_facilities"] = {}
+        log_state["attempted_facilities"][f_id] = log_state["attempted_facilities"].get(f_id, 0) + 1
+        
         thought_string = f"Menggunakan fasilitas '{best_facility.get('type').replace('_', ' ').title()}' di wilayah ini untuk keuntungan taktis."
         
     elif chosen_strategy == "move" and move_res["best_region_id"]:

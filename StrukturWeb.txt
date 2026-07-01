@@ -13,7 +13,7 @@
 │
 ├── tools/                            # Folder peralatan utility pembantu di luar game loop
 │   ├── setup_loadout.py              # Skrip otomatisasi loadout aman untuk semua bot (menyaring & melepas relic berbahaya)
-│   └── reforge_relic.py              # Skrip perencanaan untuk memproses reforge afiks relic di lobi menggunakan reforge stones
+│   └── #reforge_relic.py             # ini hanya rencana belum ada isinya
 │
 ├── utility/                          # Modul pembantu umum dan logika pemrosesan kalkulasi bot
 │   ├── init.py                       # Penanda paket Python untuk folder utility
@@ -24,11 +24,11 @@
 │   │   ├── zone_detector.py          # Menganalisis kondisi terrain, cuaca, serta visibilitas wilayah bot saat ini
 │   │   └── layer_detector.py         # Mengalkulasi lapisan jarak (BFS) posisi unit lain (P/M/A) di sekitar wilayah bot
 │   │
-│   └── strategy/                     # Folder rancangan modul taktik pergerakan dan pertempuran (AI Engine)
-│       ├── init.py                   # Penanda paket Python untuk folder strategy
-│       ├── movement_solver.py        # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman)
-│       ├── combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan
-│       └── decision_engine.py        # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn
+│   └── strategy/                     # Folder rancangan modul taktik pergerakan dan pertempuran (AI Engine) # ini hanya rencana belum ada isinya 
+│       ├── #init.py                   # Penanda paket Python untuk folder strategy # ini hanya rencana belum ada isinya
+│       ├── #movement_solver.py        # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman) # ini hanya rencana belum ada isinya
+│       ├── #combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan # ini hanya rencana belum ada isinya
+│       └── #decision_engine.py        # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn # ini hanya rencana belum ada isinya
 │
 ├── game_data/                        # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
 │   ├── init.py                       # Penanda paket Python untuk folder game_data
@@ -47,9 +47,9 @@
     ├── log_connection.py             # Log detail koneksi (dipertahankan)
     ├── log_game.py                   # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi
     │
-    └── web/                          # Modul antarmuka web dashboard berbasis browser (Tambahan Baru)
-        ├── __init__.py               # Penanda paket Python untuk sub-modul web
+    └── web/                          # Modul antarmuka web dashboard berbasis browser (Tambahan Baru)  # ini hanya rencana belum ada isinya
+        ├── __init__.py               # Penanda paket Python untuk sub-modul web  # ini hanya rencana belum ada isinya
         ├── server.py                 # Logika web server lokal (aiohttp.web) & pengirim data log ke browser via WS
-        └── templates/                # Folder penyimpanan berkas template frontend
-            ├── index.html            # Halaman dashboard utama (HTML) yang dibuka oleh pengguna di browser
-            └── style.css             # Berkas gaya tampilan (CSS) untuk merapikan dashboard agar modern
+        └── templates/                # Folder penyimpanan berkas template frontend  # ini hanya rencana belum ada isinya
+            ├── index.html            # Halaman dashboard utama (HTML) yang dibuka oleh pengguna di browser  # ini hanya rencana belum ada isinya 
+            └── style.css             # Berkas gaya tampilan (CSS) untuk merapikan dashboard agar modern  # ini hanya rencana belum ada isinya

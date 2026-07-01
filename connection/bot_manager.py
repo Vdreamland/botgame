@@ -7,7 +7,7 @@ import aiohttp
 from connection.http_client import ClawRoyaleHTTPClient
 from connection.socket_client import ClawRoyaleSocketClient
 from connection.loadout import ClawRoyaleLoadoutClient
-from ui import log_system
+from ui import log_system, GREEN, RED, RESET
 
 async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, version: str) -> dict:
     main_name = "None"
@@ -95,10 +95,6 @@ async def start_multi_bots():
     print(headers)
     print(separator)
     sys.stdout.flush()
-
-    GREEN = "\033[92m"
-    RED = "\033[91m"
-    RESET = "\033[0m"
 
     for idx, res in enumerate(results, start=1):
         bot_name = res["bot_name"]

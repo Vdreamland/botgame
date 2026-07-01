@@ -1,19 +1,7 @@
 # ui/log_system.py
 
 import sys
-import os
-
-GREEN = "\033[92m"
-RED = "\033[91m"
-RESET = "\033[0m"
-
-if os.name == 'nt':
-    import ctypes
-    try:
-        kernel32 = ctypes.windll.kernel32
-        kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-    except Exception:
-        pass
+from ui import GREEN, RED, RESET
 
 def info(message: str):
     pass

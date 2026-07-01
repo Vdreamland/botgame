@@ -5,6 +5,7 @@ import aiohttp
 import json
 import sys
 from connection.api_endpoints import WS_JOIN_URL
+from connection.http_client import ClawRoyaleHTTPClient
 from ui import log_system, log_game
 
 class ClawRoyaleSocketClient:
@@ -15,26 +16,6 @@ class ClawRoyaleSocketClient:
         self.joined_bots = joined_bots if joined_bots is not None else []
         self.total_bots = total_bots
         self.log_state = {}
-
-    async def _fetch_room_name(self, game_id: str) -> str:
-        url = f"https://cdn.clawroyale.ai/api/games/{game_id}"
-        headers = {
-            "X-API-Key": self.api_key,
-            "X-Version": self.version
-        }
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as r:
-                    if r.status == 200:
-                        res = await r.json()
-                        if isinstance(res, dict) and res.get("success"):
-                            data = res.get("data", {})
-                            name = data.get("name") or data.get("title")
-                            if name:
-                                return name
-        except Exception:
-            pass
-        return game_id[:8]
 
     async def connect_and_listen(self, bot_name: str, silent: bool = False):
         headers = {

@@ -55,3 +55,23 @@ class ClawRoyaleHTTPClient:
                     raise Exception(f"{error_msg} (HTTP {response.status})")
         except Exception as e:
             raise Exception(f"Account check failed: {str(e)}")
+
+    async def get_room_name(self, game_id: str, api_key: str, version: str) -> str:
+        """Pusat logika HTTP request untuk mengambil nama game/room secara dinamis"""
+        url = f"https://cdn.clawroyale.ai/api/games/{game_id}"
+        headers = {
+            "X-API-Key": api_key,
+            "X-Version": version
+        }
+        try:
+            async with self.session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    res = await response.json()
+                    if isinstance(res, dict) and res.get("success"):
+                        data = res.get("data", {})
+                        name = data.get("name") or data.get("title")
+                        if name:
+                            return name
+        except Exception:
+            pass
+        return game_id[:8]

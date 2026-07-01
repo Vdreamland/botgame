@@ -5,48 +5,28 @@ import asyncio
 import aiohttp
 from collections import Counter
 from connection.loadout import ClawRoyaleLoadoutClient
+from connection.http_client import ClawRoyaleHTTPClient
 from utility.detector.bot_stats_detector import detect_bot_stats
 from utility.detector.inventory_detector import detect_inventory
 from utility.detector.zone_detector import detect_zone
 from utility.detector.layer_detector import detect_layers
-from ui import log_system
-
-GREEN = "\033[92m"
-RED = "\033[91m"
-RESET = "\033[0m"
-
-async def fetch_room_name(game_id: str, api_key: str, version: str) -> str:
-    url = f"https://cdn.clawroyale.ai/api/games/{game_id}"
-    headers = {
-        "X-API-Key": api_key,
-        "X-Version": version
-    }
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as r:
-                if r.status == 200:
-                    res = await r.json()
-                    if isinstance(res, dict) and res.get("success"):
-                        data = res.get("data", {})
-                        name = data.get("name") or data.get("title")
-                        if name:
-                            return name
-    except Exception:
-        pass
-    return game_id[:8]
+from ui import log_system, GREEN, RED, RESET
 
 async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str, turn: int, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, resolved_room_name: str = None) -> str:
     room_name = resolved_room_name
-    if not room_name:
-        room_name = await fetch_room_name(game_id, api_key, version)
+    
+    async with aiohttp.ClientSession() as session:
+        http_client = ClawRoyaleHTTPClient(session)
+        
+        if not room_name:
+            room_name = await http_client.get_room_name(game_id, api_key, version)
 
-    loadout_data = {}
-    try:
-        async with aiohttp.ClientSession() as session:
+        loadout_data = {}
+        try:
             loadout_client = ClawRoyaleLoadoutClient(session)
             loadout_data = await loadout_client.get_loadout(api_key, version)
-    except Exception:
-        pass
+        except Exception:
+            pass
 
     stats = detect_bot_stats(self_data)
     inv = detect_inventory(self_data)
@@ -141,7 +121,9 @@ async def handle_message(client, bot_name: str, data: dict, ws):
             game_id = data.get("gameId") or view.get("gameId") or ""
             resolved_name = log_state.get("resolved_room_name")
             if not resolved_name:
-                resolved_name = await fetch_room_name(game_id, client.api_key, client.version)
+                async with aiohttp.ClientSession() as session:
+                    http_client = ClawRoyaleHTTPClient(session)
+                    resolved_name = await http_client.get_room_name(game_id, client.api_key, client.version)
                 log_state["resolved_room_name"] = resolved_name
 
             if log_state.get("current_status") != "IN PROGRESS":

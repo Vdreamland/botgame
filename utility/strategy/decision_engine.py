@@ -5,6 +5,8 @@ from utility.strategy.loot_solver import evaluate_loot_desire
 from utility.strategy.movement_solver import evaluate_movement_routes
 
 def make_decision(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, log_state: dict) -> dict:
+    """Otak Utama (Desire Scorer) yang menimbang hasrat taktis dan merangkai urutan eksekusi tindakan turn terbaik"""
+    
     combat_res = evaluate_combat_targets(bot_name, self_data, current_region, view_data, joined_bots)
     loot_res = evaluate_loot_desire(bot_name, self_data, current_region, view_data, joined_bots, log_state)
     move_res = evaluate_movement_routes(bot_name, self_data, current_region, view_data, joined_bots, log_state)
@@ -41,9 +43,14 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
         heal_desire = min(100.0, heal_desire)
         
     rest_desire = 0.0
+    is_in_danger = current_region.get("isDeathZone") or current_region.get("is_death_zone") or (current_region.get("id") in [pz.get("id") for pz in view_data.get("pendingDeathzones", []) if isinstance(pz, dict)])
+    
     if our_ep < 3:
-        threat_penalty = 50 if combat_res["can_attack"] else 0
-        rest_desire = max(0.0, (10 - our_ep) * 10 - threat_penalty)
+        if not is_in_danger:
+            rest_desire = 110.0
+        else:
+            threat_penalty = 50 if combat_res["can_attack"] else 0
+            rest_desire = max(0.0, (10 - our_ep) * 10 - threat_penalty)
         
     attack_score = combat_res["best_target"]["priority_score"] / 15 if combat_res["can_attack"] and combat_res["best_target"] else 0.0
     attack_score = min(100.0, max(0.0, attack_score))
@@ -71,34 +78,80 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
     free_equips = []
     
     equipped_weapon = self_data.get("equippedWeapon")
-    has_weapon = False
+    current_weapon_atk = -1
     if isinstance(equipped_weapon, dict):
         w_name = (equipped_weapon.get("name") or "").lower()
         if w_name and w_name != "fist":
-            has_weapon = True
+            if "sniper" in w_name or "rifle" in w_name:
+                current_weapon_atk = 35
+            elif "katana" in w_name:
+                current_weapon_atk = 25
+            elif "sword" in w_name or "bow" in w_name:
+                current_weapon_atk = 15
+            elif "pistol" in w_name or "gun" in w_name:
+                current_weapon_atk = 10
+            elif "dagger" in w_name:
+                current_weapon_atk = 5
+            else:
+                current_weapon_atk = 0
     elif isinstance(equipped_weapon, str):
-        if equipped_weapon.lower() not in ("none", "fist"):
-            has_weapon = True
-            
+        w_name = equipped_weapon.lower()
+        if w_name not in ("none", "fist"):
+            if "sniper" in w_name or "rifle" in w_name:
+                current_weapon_atk = 35
+            elif "katana" in w_name:
+                current_weapon_atk = 25
+            elif "sword" in w_name or "bow" in w_name:
+                current_weapon_atk = 15
+            elif "pistol" in w_name or "gun" in w_name:
+                current_weapon_atk = 10
+            elif "dagger" in w_name:
+                current_weapon_atk = 5
+            else:
+                current_weapon_atk = 0
+
     equipped_armor = self_data.get("equippedArmor")
-    has_armor = False
+    current_armor_def = -1
     if isinstance(equipped_armor, dict):
         a_name = (equipped_armor.get("name") or "").lower()
         if a_name and a_name != "none":
-            has_armor = True
+            current_armor_def = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
+            if current_armor_def == 0:
+                if "plate" in a_name:
+                    current_armor_def = 4
+                elif "chainmail" in a_name:
+                    current_armor_def = 2
+                elif "leather" in a_name:
+                    current_armor_def = 1
     elif isinstance(equipped_armor, str):
-        if equipped_armor.lower() != "none":
-            has_armor = True
+        a_name = equipped_armor.lower()
+        if a_name != "none":
+            if "plate" in a_name:
+                current_armor_def = 4
+            elif "chainmail" in a_name:
+                current_armor_def = 2
+            elif "leather" in a_name:
+                current_armor_def = 1
+            else:
+                current_armor_def = 0
+
+    best_inv_weapon_id = None
+    best_inv_weapon_atk = current_weapon_atk
+
+    best_inv_armor_id = None
+    best_inv_armor_def = current_armor_def
             
     for item in inventory:
         item_id = None
         item_name = ""
         def_bonus_val = None
+        item_type = None
         
         if isinstance(item, dict):
             item_id = item.get("id") or item.get("instanceId") or item.get("instance_id")
             item_name = (item.get("displayName") or item.get("name") or "").lower()
             def_bonus_val = item.get("defBonus") or item.get("def_bonus")
+            item_type = item.get("type") or item.get("category")
         elif isinstance(item, str):
             item_id = item
             item_name = item.lower()
@@ -106,17 +159,46 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
         if not item_id:
             continue
             
-        is_weapon = "sword" in item_name or "dagger" in item_name or "katana" in item_name or "bow" in item_name or "pistol" in item_name or "sniper" in item_name or "fist" in item_name or "gun" in item_name or "rifle" in item_name
-        is_armor = "armor" in item_name or "leather" in item_name or "chainmail" in item_name or def_bonus_val is not None
+        is_weapon = "sword" in item_name or "dagger" in item_name or "katana" in item_name or "bow" in item_name or "pistol" in item_name or "sniper" in item_name or "fist" in item_name or "gun" in item_name or "rifle" in item_name or item_type == "weapon"
+        is_armor = "armor" in item_name or "leather" in item_name or "chainmail" in item_name or "plate" in item_name or "vest" in item_name or "robe" in item_name or item_type == "armor" or def_bonus_val is not None
         
         if is_weapon:
-            if not has_weapon:
-                free_equips.append(item_id)
-                has_weapon = True
+            atk_val = 0
+            if "sniper" in item_name or "rifle" in item_name:
+                atk_val = 35
+            elif "katana" in item_name:
+                atk_val = 25
+            elif "sword" in item_name or "bow" in item_name:
+                atk_val = 15
+            elif "pistol" in item_name or "gun" in item_name:
+                atk_val = 10
+            elif "dagger" in item_name:
+                atk_val = 5
+                
+            if atk_val > best_inv_weapon_atk:
+                best_inv_weapon_atk = atk_val
+                best_inv_weapon_id = item_id
+                
         elif is_armor:
-            if not has_armor:
-                free_equips.append(item_id)
-                has_armor = True
+            def_val = 0
+            if def_bonus_val is not None:
+                def_val = def_bonus_val
+            else:
+                if "plate" in item_name:
+                    def_val = 4
+                elif "chainmail" in item_name:
+                    def_val = 2
+                elif "leather" in item_name:
+                    def_val = 1
+                    
+            if def_val > best_inv_armor_def:
+                best_inv_armor_def = def_val
+                best_inv_armor_id = item_id
+
+    if best_inv_weapon_id:
+        free_equips.append(best_inv_weapon_id)
+    if best_inv_armor_id:
+        free_equips.append(best_inv_armor_id)
                 
     action_data = None
     thought_string = f"Taktis: Memilih strategi '{chosen_strategy}' dengan bobot evaluasi tertinggi."

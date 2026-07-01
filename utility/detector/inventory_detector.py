@@ -1,51 +1,75 @@
 # utility/detector/inventory_detector.py
 
-from collections import Counter
-
 def detect_inventory(self_data: dict) -> dict:
-    inventory = self_data.get("inventory", [])
+    inventory = self_data.get("inventory") or []
     item_names = []
+    has_smoltz = False
+    non_smoltz_count = 0
+    
     for item in inventory:
+        item_name = ""
         if isinstance(item, dict):
-            name = item.get("displayName") or item.get("name") or "Unknown"
-        else:
-            name = str(item)
-        item_names.append(name)
-
-    counter = Counter(item_names)
-    inv_parts = []
-    for name, count in counter.items():
-        inv_parts.append(f"{name} [{count}]")
+            item_name = (item.get("displayName") or item.get("name") or "").lower()
+        elif isinstance(item, str):
+            item_name = item.lower()
+            
+        if item_name:
+            if "smoltz" in item_name or "moltz" in item_name:
+                has_smoltz = True
+            else:
+                non_smoltz_count += 1
+                
+            display = item.get("displayName") or item.get("name") if isinstance(item, dict) else item
+            item_names.append(display)
+            
+    slot_count = non_smoltz_count + (1 if has_smoltz else 0)
     
-    inventory_str = ", ".join(inv_parts) if inv_parts else "No items in inventory"
-    
-    slot_count = sum(1 for name in item_names if name.lower() not in ("smoltz", "moltz"))
+    from collections import Counter
+    counts = Counter(item_names)
+    formatted_parts = []
+    for item, count in counts.items():
+        formatted_parts.append(f"{item} [{count}]")
+    items_str = ", ".join(formatted_parts) if formatted_parts else "Empty"
     
     return {
-        "items_str": inventory_str,
-        "slot_count": slot_count
+        "items_str": items_str,
+        "slot_count": slot_count,
+        "items": item_names
     }
 
 def detect_agent_inventory(agent_data: dict) -> dict:
-    """Fungsi detektor umum terpusat untuk memetakan nama barang dan jumlah slot inventaris agen lain"""
-    inventory = agent_data.get("inventory", [])
+    inventory = agent_data.get("inventory") or []
     item_names = []
-    for item in inventory:
-        if isinstance(item, dict):
-            name = item.get("displayName") or item.get("name") or "Unknown"
-        else:
-            name = str(item)
-        item_names.append(name)
-
-    counter = Counter(item_names)
-    inv_parts = []
-    for name, count in counter.items():
-        inv_parts.append(f"{name} [{count}]")
+    has_smoltz = False
+    non_smoltz_count = 0
     
-    inventory_str = ", ".join(inv_parts) if inv_parts else "No items in inventory"
-    slot_count = sum(1 for name in item_names if name.lower() not in ("smoltz", "moltz"))
+    for item in inventory:
+        item_name = ""
+        if isinstance(item, dict):
+            item_name = (item.get("displayName") or item.get("name") or "").lower()
+        elif isinstance(item, str):
+            item_name = item.lower()
+            
+        if item_name:
+            if "smoltz" in item_name or "moltz" in item_name:
+                has_smoltz = True
+            else:
+                non_smoltz_count += 1
+                
+            display = item.get("displayName") or item.get("name") if isinstance(item, dict) else item
+            item_names.append(display)
+            
+    slot_count = non_smoltz_count + (1 if has_smoltz else 0)
+    
+    from collections import Counter
+    counts = Counter(item_names)
+    formatted_parts = []
+    for item, count in counts.items():
+        formatted_parts.append(f"{item} [{count}]")
+    items_str = ", ".join(formatted_parts) if formatted_parts else "Empty"
     
     return {
-        "items_str": inventory_str,
-        "slot_count": slot_count
+        "items_str": items_str,
+        "slot_count": slot_count,
+        "items": item_names
     }

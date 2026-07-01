@@ -36,6 +36,7 @@
 │   ├── player_info.py                # Menyimpan data statistik dasar bawaan bot (HP, EP, ATK, DEF, Vision)
 │   ├── monster_info.py               # Ensiklopedia statistik musuh (Wolf, Bear, Bandit, Guardian)
 │   ├── weapon_info.py                # Ensiklopedia statistik senjata tipe Melee dan Ranged
+│   ├── armour_info.py                # Ensiklopedia statistik armour [baru]
 │   ├── item_info.py                  # Ensiklopedia data item pemulihan (Recovery) dan utilitas (Utility)
 │   ├── action_info.py                # Konfigurasi aksi game beserta konsumsi EP, cooldown, dan aturan Alert Gauge
 │   ├── relic_info.py                 # Panduan warna slot relic serta seluruh rentang nilai afiks positif/negatif

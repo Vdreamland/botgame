@@ -25,10 +25,10 @@
 │   │   └── layer_detector.py         # Mengalkulasi lapisan jarak (BFS) posisi unit lain (P/M/A) di sekitar wilayah bot
 │   │
 │   └── strategy/                     # Folder rancangan modul taktik pergerakan dan pertempuran (AI Engine) # ini hanya rencana belum ada isinya 
-│       ├── #init.py                   # Penanda paket Python untuk folder strategy # ini hanya rencana belum ada isinya
-│       ├── #movement_solver.py        # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman) # ini hanya rencana belum ada isinya
-│       ├── #combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan # ini hanya rencana belum ada isinya
-│       └── #decision_engine.py        # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn # ini hanya rencana belum ada isinya
+│       ├── init.py                   # Penanda paket Python untuk folder strategy # ini hanya rencana belum ada isinya
+│       ├── #movement_solver.py       # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman) # ini hanya rencana belum ada isinya
+│       ├── combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan
+│       └── #decision_engine.py       # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn # ini hanya rencana belum ada isinya
 │
 ├── game_data/                        # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
 │   ├── init.py                       # Penanda paket Python untuk folder game_data

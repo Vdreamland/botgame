@@ -1,5 +1,7 @@
 # ui/damage_logs.py
 
+from game_data.weapon_info import WEAPONS
+
 def track_damage_event(bot_name: str, event_data: dict, log_state: dict):
     """Merekam event pertempuran/damage yang masuk ke bot ini ke dalam state"""
     event_type = event_data.get("type")
@@ -17,7 +19,7 @@ def track_damage_event(bot_name: str, event_data: dict, log_state: dict):
             })
 
 def get_turn_damage_reason(bot_name: str, hp: int, max_hp: int, current_region: dict, view_data: dict, joined_bots: list, log_state: dict) -> str:
-    """Kalkulasi selisih HP dan simpan riwayat penyebab damage/healing per turn"""
+    """Kalkulasi selisih HP dan simpan riwayat penyebab damage/healing per turn secara dinamis"""
     last_hp = log_state.get("last_hp")
     log_state["last_hp"] = hp  # Update untuk pembandingan turn berikutnya
     
@@ -32,6 +34,25 @@ def get_turn_damage_reason(bot_name: str, hp: int, max_hp: int, current_region: 
     # Kasus A: HP Berkurang (Kena Damage)
     if hp < last_hp:
         lost_hp = last_hp - hp
+        
+        # Pindai pesan riwayat pesan lobi (recentMessages) untuk menangkap log serangan terstruktur jika ada
+        recent_messages = view_data.get("recentMessages") or []
+        for msg in recent_messages:
+            if isinstance(msg, str) and bot_name.lower() in msg.lower():
+                if "attacked" in msg.lower() or "damaged" in msg.lower():
+                    # Ekstrak nama penyerang dari pola "Attacker attacked Defender..."
+                    parts = msg.split(" attacked ")
+                    if len(parts) > 1:
+                        attacker_candidate = parts[0].strip()
+                        if "turn_damage_events" not in log_state:
+                            log_state["turn_damage_events"] = []
+                        # Tambahkan ke daftar kejadian jika belum tercatat
+                        if not any(e["attacker"] == attacker_candidate for e in log_state["turn_damage_events"]):
+                            log_state["turn_damage_events"].append({
+                                "attacker": attacker_candidate,
+                                "region_id": None
+                            })
+
         events = log_state.get("turn_damage_events") or []
         log_state["turn_damage_events"] = []  # Reset untuk turn berikutnya
         
@@ -68,7 +89,7 @@ def get_turn_damage_reason(bot_name: str, hp: int, max_hp: int, current_region: 
                     layer_dist = distances[attacker_r_id]
                     attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
                 else:
-                    # Cari di visibleAgents
+                    # Cari di visibleAgents secara dinamis
                     for agent in (view_data.get("visibleAgents") or []):
                         if isinstance(agent, dict) and agent.get("name") == attacker:
                             r_id = agent.get("regionId") or agent.get("region_id")
@@ -76,7 +97,7 @@ def get_turn_damage_reason(bot_name: str, hp: int, max_hp: int, current_region: 
                                 layer_dist = distances[r_id]
                                 attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
                                 break
-                    # Cari di visibleMonsters
+                    # Cari di visibleMonsters secara dinamis
                     if "Unknown" in attacker_layer_str:
                         for monster in (view_data.get("visibleMonsters") or []):
                             if isinstance(monster, dict):

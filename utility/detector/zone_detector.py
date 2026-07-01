@@ -10,10 +10,17 @@ def detect_zone(current_region: dict, view_data: dict) -> dict:
     weather = weather_raw.capitalize()
     links_count = len(current_region.get("connections", []))
     
-    vision_val = current_region.get("vision") or current_region.get("visionModifier") or current_region.get("vision_modifier")
+    # Deteksi eksplisit menggunakan 'is not None' untuk menghargai angka 0 sebagai nilai valid (mencegah python falsy bug)
+    vision_val = current_region.get("vision")
     if vision_val is None:
-        terrain_key = terrain_raw.lower()
-        weather_key = weather_raw.lower()
+        vision_val = current_region.get("visionModifier")
+    if vision_val is None:
+        vision_val = current_region.get("vision_modifier")
+        
+    # Jika server benar-benar tidak mengirimkan data vision (None), baru gunakan fallback kalkulasi prediksi statis
+    if vision_val is None:
+        terrain_key = terrain_raw.lower().strip()
+        weather_key = weather_raw.lower().strip()
         
         t_mod = TERRAINS.get(terrain_key, {}).get("vision_modifier", 0)
         w_mod = WEATHER.get(weather_key, {}).get("vision_modifier", 0)

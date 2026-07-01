@@ -28,6 +28,7 @@
 │       ├── init.py                   # Penanda paket Python untuk folder strategy # ini hanya rencana belum ada isinya
 │       ├── #movement_solver.py       # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman) # ini hanya rencana belum ada isinya
 │       ├── combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan
+│       ├── loot_solver.py          # Pemecah taktis jarahan (Need, Risk, EV, & Inventory Priority)
 │       └── #decision_engine.py       # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn # ini hanya rencana belum ada isinya
 │
 ├── game_data/                        # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)

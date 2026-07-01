@@ -30,7 +30,6 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             account_data = await http_client.get_account_me(api_key, version)
             balance = account_data.get("balance", 0)
             
-            # Sinkronisasikan secara real-time data poin musim & rank preseason 1 pada lobi
             preseason_data = await http_client.get_preseason_summary(api_key, version)
             season_points = preseason_data.get("seasonPoints") or preseason_data.get("points") or 0
             rank = preseason_data.get("rank") or "UNRANKED"
@@ -70,7 +69,6 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
     else:
         visibility_zones = links_count + 1
 
-    # Format representasi visual lapisan BFS menjadi satu baris horizontal terpisah pipa ( | )
     layers_parts = []
     for l_data in layers:
         layers_parts.append(f"Layer {l_data['layer']} : P {l_data['P']} / M {l_data['M']} / A {l_data['A']}")
@@ -145,7 +143,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         f"Active DeathZones : {active_dz}\n"
     )
 
-    # Kirim payload data lengkap beserta status preseason 1 ke server web lokal
+    # Kirim payload data lengkap ke server web lokal
     async with aiohttp.ClientSession() as session:
         try:
             payload = {
@@ -156,8 +154,6 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
                 "is_alive": is_alive,
                 "room_name": room_name,
                 "balance": balance,
-                "season_points": season_points,
-                "rank": rank,
                 "log_msg": turn_log_text
             }
             await session.post("http://localhost:8080/api/update", json=payload)
@@ -188,10 +184,14 @@ async def handle_message(client, bot_name: str, data: dict, ws):
         if bot_name not in client.joined_bots:
             client.joined_bots.append(bot_name)
             print(f"[{bot_name}] successfully joined room!")
-            # Tampilkan informasi "Game is ready!" tepat di bagian paling bawah hanya jika bot sukses terhubung
-            print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-            print()
             sys.stdout.flush()
+
+            # Cetak informasi "Game is ready!" tepat setelah seluruh bot dikonfirmasi sukses bergabung ke lobi
+            if len(client.joined_bots) == client.total_bots:
+                print()  # Margin kosong
+                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+                print()
+                sys.stdout.flush()
 
     elif msg_type in ("agent_view", "turn_advanced", "action_result"):
         if not log_state.get("is_active_logged"):
@@ -199,9 +199,13 @@ async def handle_message(client, bot_name: str, data: dict, ws):
             if bot_name not in client.joined_bots:
                 client.joined_bots.append(bot_name)
                 print(f"[{bot_name}] successfully joined room!")
-                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-                print()
                 sys.stdout.flush()
+
+                if len(client.joined_bots) == client.total_bots:
+                    print()  # Margin kosong
+                    print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+                    print()
+                    sys.stdout.flush()
 
         view = data.get("view") or data.get("data", {}).get("view") or {}
         self_data = view.get("self", {})

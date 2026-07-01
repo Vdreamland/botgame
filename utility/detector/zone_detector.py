@@ -2,20 +2,21 @@
 
 from game_data.world_info import TERRAINS, WEATHER
 
-def detect_zone(current_region: dict, view_data: dict) -> dict:
-    region_name = current_region.get("name", "Unknown")
-    terrain_raw = current_region.get("terrain", "plains")
+def detect_zone(region_data: dict, view_data: dict) -> dict:
+    """Fungsi detektor umum terpusat untuk memindai data wilayah mana saja di peta (reusable)"""
+    region_name = region_data.get("name", "Unknown")
+    terrain_raw = region_data.get("terrain", "plains")
     terrain = terrain_raw.capitalize()
     weather_raw = view_data.get("weather") or "clear"
     weather = weather_raw.capitalize()
-    links_count = len(current_region.get("connections", []))
+    links_count = len(region_data.get("connections", []))
     
     # Deteksi eksplisit menggunakan 'is not None' untuk menghargai angka 0 sebagai nilai valid (mencegah python falsy bug)
-    vision_val = current_region.get("vision")
+    vision_val = region_data.get("vision")
     if vision_val is None:
-        vision_val = current_region.get("visionModifier")
+        vision_val = region_data.get("visionModifier")
     if vision_val is None:
-        vision_val = current_region.get("vision_modifier")
+        vision_val = region_data.get("vision_modifier")
         
     # Jika server benar-benar tidak mengirimkan data vision (None), baru gunakan fallback kalkulasi prediksi statis
     if vision_val is None:

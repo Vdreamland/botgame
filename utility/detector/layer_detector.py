@@ -1,40 +1,36 @@
 # utility/detector/layer_detector.py
 
-def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list) -> list:
+def calculate_distances(current_region: dict, view_data: dict) -> dict:
+    """Fungsi terpusat pencarian jarak spasial BFS dari wilayah bot saat ini ke seluruh wilayah terlihat"""
     curr_id = current_region.get("id")
-    
+    distances = {}
+    if not curr_id:
+        return distances
+        
     graph = {}
     regions = view_data.get("visibleRegions") or view_data.get("regions") or []
-    all_regions = list(regions)
-    
-    found_curr = False
-    for r in all_regions:
-        if isinstance(r, dict) and r.get("id") == curr_id:
-            found_curr = True
-            break
-    if not found_curr and current_region:
-        all_regions.append(current_region)
-
-    for r in all_regions:
+    for r in regions:
         if isinstance(r, dict):
-            r_id = r.get("id")
-            connections = r.get("connections", [])
-            if r_id:
-                graph[r_id] = connections
+            graph[r.get("id")] = r.get("connections", [])
+    if current_region:
+        graph[curr_id] = current_region.get("connections", [])
+        
+    distances[curr_id] = 0
+    queue = [curr_id]
+    head = 0
+    while head < len(queue):
+        node = queue[head]
+        head += 1
+        curr_dist = distances[node]
+        for neighbor in graph.get(node, []):
+            if neighbor not in distances:
+                distances[neighbor] = curr_dist + 1
+                queue.append(neighbor)
+    return distances
 
-    distances = {}
-    if curr_id:
-        distances[curr_id] = 0
-        queue = [curr_id]
-        head = 0
-        while head < len(queue):
-            node = queue[head]
-            head += 1
-            curr_dist = distances[node]
-            for neighbor in graph.get(node, []):
-                if neighbor not in distances:
-                    distances[neighbor] = curr_dist + 1
-                    queue.append(neighbor)
+def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list) -> list:
+    # Menggunakan fungsi hitung jarak spasial BFS terpusat (Code Reuse)
+    distances = calculate_distances(current_region, view_data)
 
     layer_counts = {}
     for r_id, dist in distances.items():
@@ -47,7 +43,6 @@ def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_dat
     visible_agents = view_data.get("visibleAgents") or []
     for agent in visible_agents:
         if isinstance(agent, dict):
-            # Abaikan jika agen sudah mati (HP <= 0 atau isAlive adalah False)
             is_alive = agent.get("isAlive")
             if is_alive is None:
                 is_alive = agent.get("is_alive", True)
@@ -80,7 +75,6 @@ def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_dat
     visible_monsters = view_data.get("visibleMonsters") or []
     for monster in visible_monsters:
         if isinstance(monster, dict):
-            # Abaikan jika monster sudah mati (HP <= 0 atau isAlive adalah False)
             is_alive = monster.get("isAlive")
             if is_alive is None:
                 is_alive = monster.get("is_alive", True)

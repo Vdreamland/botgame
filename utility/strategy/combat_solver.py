@@ -2,48 +2,23 @@
 
 from game_data.monster_info import MONSTERS
 from game_data.weapon_info import WEAPONS
-
-def _calculate_distances(current_region: dict, view_data: dict) -> dict:
-    """Menghitung peta jarak BFS dari wilayah saat ini ke seluruh wilayah terlihat"""
-    curr_id = current_region.get("id")
-    distances = {}
-    if not curr_id:
-        return distances
-        
-    graph = {}
-    regions = view_data.get("visibleRegions") or view_data.get("regions") or []
-    for r in regions:
-        if isinstance(r, dict):
-            graph[r.get("id")] = r.get("connections", [])
-    if current_region:
-        graph[curr_id] = current_region.get("connections", [])
-        
-    distances[curr_id] = 0
-    queue = [curr_id]
-    head = 0
-    while head < len(queue):
-        node = queue[head]
-        head += 1
-        curr_dist = distances[node]
-        for neighbor in graph.get(node, []):
-            if neighbor not in distances:
-                distances[neighbor] = curr_dist + 1
-                queue.append(neighbor)
-    return distances
+from utility.detector.layer_detector import calculate_distances
+from utility.detector.bot_stats_detector import detect_agent_stats
+from utility.detector.zone_detector import detect_zone
 
 def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list) -> dict:
-    """Mensimulasikan kalkulasi damage dan menganalisis prioritas target pertempuran di sekitar bot secara dinamis"""
+    """Mensimulasikan kalkulasi damage dan menganalisis prioritas target pertempuran menggunakan detektor umum terpusat"""
     
-    # 1. Ambil Kapabilitas Tempur Bot Kita (Dinamis dari Server, mencakup buff Pack & Relic)
-    our_hp = self_data.get("hp", 100)
-    our_max_hp = self_data.get("maxHp") or self_data.get("max_hp") or 100
-    our_ep = self_data.get("ep", 10)
-    our_max_ep = self_data.get("maxEp") or self_data.get("max_ep") or 10
+    # 1. Ambil Kapabilitas Tempur Bot Kita menggunakan detektor umum terpusat (Code Reuse)
+    our_stats = detect_agent_stats(self_data)
+    our_hp = our_stats["hp"]
+    our_max_hp = our_stats["max_hp"]
+    our_ep = our_stats["ep"]
+    our_max_ep = our_stats["max_ep"]
+    our_atk_stat = our_stats["atk"]
+    our_def_stat = our_stats["def"]
     
-    our_atk_stat = self_data.get("atk") or 25
-    our_def_stat = self_data.get("def") or 5
-    
-    # Deteksi armor kita secara dinamis
+    # Deteksi armor kita secara dinamis (menggunakan data detektor terpusat)
     our_def_bonus = 0
     equipped_armor = self_data.get("equippedArmor")
     if isinstance(equipped_armor, dict):
@@ -71,12 +46,12 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
     
     our_total_atk = our_atk_stat + our_atk_bonus
     
-    # 2. Hitung Peta Jarak BFS
-    distances = _calculate_distances(current_region, view_data)
+    # 2. Hitung Peta Jarak BFS Terpusat (Code Reuse)
+    distances = calculate_distances(current_region, view_data)
     
     analyzed_targets = []
     
-    # 3. Analisis Semua Agen/Player Terlihat secara Dinamis
+    # 3. Analisis Semua Agen/Player Terlihat secara Dinamis menggunakan Detektor Agen Terpusat (Code Reuse)
     visible_agents = view_data.get("visibleAgents") or []
     for agent in visible_agents:
         if not isinstance(agent, dict):
@@ -86,12 +61,9 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         if a_name == bot_name:
             continue
             
-        # Lewati agen mati
-        is_alive = agent.get("isAlive")
-        if is_alive is None:
-            is_alive = agent.get("is_alive", True)
-        hp = agent.get("hp")
-        if is_alive is False or (hp is not None and hp <= 0):
+        # Gunakan fungsi detektor umum terpusat (Code Reuse)
+        t_stats = detect_agent_stats(agent)
+        if not t_stats["is_alive"]:
             continue
             
         r_id = (
@@ -105,16 +77,14 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         if dist is None:
             continue  # Berada di luar jangkauan radar BFS
             
-        # Hitung DEF target secara dinamis dari data server
-        t_base_def = agent.get("def") or 5
+        # Hitung DEF target secara dinamis dari detektor umum terpusat
         t_def_bonus = 0
         t_armor = agent.get("equippedArmor")
         if isinstance(t_armor, dict):
             t_def_bonus = t_armor.get("defBonus") or t_armor.get("def_bonus") or 0
-        target_def = t_base_def + t_def_bonus
+        target_def = t_stats["def"] + t_def_bonus
         
-        # Hitung ATK target secara dinamis dari data server
-        t_base_atk = agent.get("atk") or 25
+        # Hitung ATK target secara dinamis dari detektor umum terpusat
         t_atk_bonus = 0
         t_weapon = agent.get("equippedWeapon")
         if isinstance(t_weapon, dict):
@@ -123,9 +93,9 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
                 if w_stats.get("display_name", "").lower() in t_w_display or w_id in t_w_display:
                     t_atk_bonus = w_stats.get("atk_bonus", 0)
                     break
-        target_atk = t_base_atk + t_atk_bonus
+        target_atk = t_stats["atk"] + t_atk_bonus
         
-        target_hp = agent.get("hp", 100)
+        target_hp = t_stats["hp"]
         
         # Simulasi Pertempuran (Damage Dealt & Received)
         damage_dealt = max(1, our_total_atk - target_def)

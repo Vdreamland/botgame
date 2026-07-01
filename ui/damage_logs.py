@@ -1,6 +1,8 @@
 # ui/damage_logs.py
 
 from game_data.weapon_info import WEAPONS
+from utility.detector.layer_detector import calculate_distances
+from utility.detector.bot_stats_detector import detect_agent_stats
 
 def track_damage_event(bot_name: str, event_data: dict, log_state: dict):
     """Merekam event pertempuran/damage yang masuk ke bot ini ke dalam state"""
@@ -62,52 +64,34 @@ def get_turn_damage_reason(bot_name: str, hp: int, max_hp: int, current_region: 
             attacker = last_event["attacker"]
             attacker_r_id = last_event.get("region_id")
             
-            # Hitung jarak lapisan (BFS) penyerang
+            # Hitung jarak lapisan (BFS) penyerang terpusat (Code Reuse)
             attacker_layer_str = "Unknown Layer"
-            curr_id = current_region.get("id")
-            if curr_id:
-                graph = {}
-                for r in (view_data.get("visibleRegions") or view_data.get("regions") or []):
-                    if isinstance(r, dict):
-                        graph[r.get("id")] = r.get("connections", [])
-                if current_region:
-                    graph[curr_id] = current_region.get("connections", [])
-                
-                distances = {curr_id: 0}
-                queue = [curr_id]
-                head = 0
-                while head < len(queue):
-                    node = queue[head]
-                    head += 1
-                    curr_dist = distances[node]
-                    for neighbor in graph.get(node, []):
-                        if neighbor not in distances:
-                            distances[neighbor] = curr_dist + 1
-                            queue.append(neighbor)
-                            
-                if attacker_r_id and attacker_r_id in distances:
-                    layer_dist = distances[attacker_r_id]
-                    attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
-                else:
-                    # Cari di visibleAgents secara dinamis
-                    for agent in (view_data.get("visibleAgents") or []):
-                        if isinstance(agent, dict) and agent.get("name") == attacker:
-                            r_id = agent.get("regionId") or agent.get("region_id")
-                            if r_id in distances:
-                                layer_dist = distances[r_id]
-                                attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
-                                break
-                    # Cari di visibleMonsters secara dinamis
-                    if "Unknown" in attacker_layer_str:
-                        for monster in (view_data.get("visibleMonsters") or []):
-                            if isinstance(monster, dict):
-                                m_name = monster.get("name") or monster.get("displayName") or ""
-                                if attacker.lower() in m_name.lower() or m_name.lower() in attacker.lower():
-                                    r_id = monster.get("regionId") or monster.get("region_id")
-                                    if r_id in distances:
-                                        layer_dist = distances[r_id]
-                                        attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
-                                        break
+            distances = calculate_distances(current_region, view_data)
+            
+            if attacker_r_id and attacker_r_id in distances:
+                layer_dist = distances[attacker_r_id]
+                attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
+            else:
+                # Cari di visibleAgents secara dinamis menggunakan detektor umum terpusat (Code Reuse)
+                for agent in (view_data.get("visibleAgents") or []):
+                    if isinstance(agent, dict) and agent.get("name") == attacker:
+                        t_stats = detect_agent_stats(agent)
+                        r_id = agent.get("regionId") or agent.get("region_id")
+                        if r_id in distances:
+                            layer_dist = distances[r_id]
+                            attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
+                            break
+                # Cari di visibleMonsters secara dinamis
+                if "Unknown" in attacker_layer_str:
+                    for monster in (view_data.get("visibleMonsters") or []):
+                        if isinstance(monster, dict):
+                            m_name = monster.get("name") or monster.get("displayName") or ""
+                            if attacker.lower() in m_name.lower() or m_name.lower() in attacker.lower():
+                                r_id = monster.get("regionId") or monster.get("region_id")
+                                if r_id in distances:
+                                    layer_dist = distances[r_id]
+                                    attacker_layer_str = f"Layer {layer_dist} (Same Region)" if layer_dist == 0 else f"Layer {layer_dist} (Ranged)"
+                                    break
 
             # Klasifikasikan jenis penyerang
             is_player = False

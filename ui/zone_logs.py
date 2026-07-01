@@ -3,7 +3,7 @@
 from utility.detector.zone_detector import detect_zone
 
 def detect_zone_log_string(current_region: dict, view_data: dict) -> str:
-    """Mengurai kondisi medan, cuaca, jangkauan penglihatan (visi), serta zona bahaya secara terperinci"""
+    """Mengurai kondisi medan, cuaca, jangkauan penglihatan (visi), serta nama zona bahaya secara terperinci"""
     zone = detect_zone(current_region, view_data)
     region_name = zone["region_name"]
     terrain = zone["terrain"]
@@ -26,19 +26,20 @@ def detect_zone_log_string(current_region: dict, view_data: dict) -> str:
     else:
         dz_warning = "None"
 
-    # Deteksi daftar koordinat wilayah yang sudah berubah aktif menjadi zona mati
+    # Deteksi daftar nama wilayah (bukan UUID) yang sudah berubah aktif menjadi zona mati
     active_dz_names = []
+    curr_id = current_region.get("id")
     if current_region.get("isDeathZone") or current_region.get("is_death_zone"):
         curr_name = current_region.get("name") or "Current Region"
-        active_dz_names.append(current_region.get("id"))
+        active_dz_names.append(curr_name)
 
     regions_to_check = view_data.get("visibleRegions") or view_data.get("regions") or []
     for rz in regions_to_check:
         if isinstance(rz, dict):
             if rz.get("isDeathZone") or rz.get("is_death_zone"):
-                name = rz.get("name") or rz.get("id")
-                if name and rz.get("id") not in active_dz_names:
-                    active_dz_names.append(rz.get("id"))
+                name = rz.get("name") or rz.get("id") or "Unknown Zone"
+                if rz.get("id") != curr_id and name not in active_dz_names:
+                    active_dz_names.append(name)
 
     active_dz = ", ".join(active_dz_names) if active_dz_names else "None"
 

@@ -2,21 +2,46 @@
 
 from game_data.weapon_info import WEAPONS
 from utility.detector.layer_detector import calculate_distances
-from utility.detector.bot_stats_detector import detect_agent_stats
 
 def track_damage_event(bot_name: str, event_data: dict, log_state: dict):
-    """Merekam event pertempuran/damage yang masuk ke bot ini ke dalam state"""
+    """Merekam event pertempuran/damage yang masuk ke bot ini ke dalam state (mendukung pencocokan ID & Nama)"""
     event_type = event_data.get("type")
     if event_type in ("combat", "attack", "damage"):
         target = event_data.get("target") or event_data.get("targetName") or event_data.get("defender")
+        target_id = event_data.get("targetId") or event_data.get("target_id")
+        
         attacker = event_data.get("attacker") or event_data.get("attackerName") or event_data.get("source")
+        attacker_id = event_data.get("attackerId") or event_data.get("attacker_id")
+        
         r_id = event_data.get("regionId") or event_data.get("region_id")
         
-        if target == bot_name and attacker:
+        bot_id = log_state.get("bot_id")
+        is_we_are_target = False
+        
+        # Cocokkan target menggunakan ID unik bot (prioritas) atau Nama bot
+        if bot_id and target_id == bot_id:
+            is_we_are_target = True
+        elif target == bot_name:
+            is_we_are_target = True
+            
+        if is_we_are_target and (attacker or attacker_id):
+            resolved_attacker_name = attacker
+            
+            # Jika penyerang dikirim dalam bentuk ID, cari namanya di dalam radar agen terlihat terakhir
+            if not resolved_attacker_name and attacker_id:
+                last_view = log_state.get("last_view") or {}
+                for agent in last_view.get("visibleAgents", []):
+                    if isinstance(agent, dict) and agent.get("id") == attacker_id:
+                        resolved_attacker_name = agent.get("name")
+                        break
+            
+            if not resolved_attacker_name:
+                resolved_attacker_name = attacker_id or "Unknown Attacker"
+                
             if "turn_damage_events" not in log_state:
                 log_state["turn_damage_events"] = []
             log_state["turn_damage_events"].append({
-                "attacker": attacker,
+                "attacker": resolved_attacker_name,
                 "region_id": r_id
             })
 
@@ -75,7 +100,6 @@ def get_turn_damage_reason(bot_name: str, hp: int, max_hp: int, current_region: 
                 # Cari di visibleAgents secara dinamis menggunakan detektor umum terpusat (Code Reuse)
                 for agent in (view_data.get("visibleAgents") or []):
                     if isinstance(agent, dict) and agent.get("name") == attacker:
-                        t_stats = detect_agent_stats(agent)
                         r_id = agent.get("regionId") or agent.get("region_id")
                         if r_id in distances:
                             layer_dist = distances[r_id]

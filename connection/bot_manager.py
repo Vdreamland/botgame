@@ -25,27 +25,53 @@ async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, ve
         balance = 0
         season_points = 0
         rank = "UNRANKED"
+        hp = 100
+        max_hp = 100
+        ep = 10
+        max_ep = 10
+        kills = 0
 
         try:
             account_info = await http_client.get_account_me(api_key, version)
             balance = account_info.get("balance", 0)
+
+            # Otomasi: Lakukan klaim Starter Kit kode WELCOME secara pasif di latar belakang
+            redeem_res = await http_client.redeem_welcome_code(api_key, version)
+            if isinstance(redeem_res, dict) and redeem_res.get("success"):
+                log_system.success(f"[{bot_name}] Onboarding WELCOME bundle claimed successfully! (2 packs, 3 relics, 13 reforge stones)")
+
+            # Pengecekan: Periksa ketersediaan hadiah mingguan yang belum diklaim
+            weekly_data = await http_client.get_weekly_rewards(api_key, version)
+            if weekly_data and (weekly_data.get("claimableTracks") or weekly_data.get("claimable_tracks")):
+                log_system.warning(f"[{bot_name}] Unclaimed Weekly Rewards found! Please claim them within this week via browser dashboard.")
+
+            # Integrasi: Ambil statistik PreSeason 1 Season Points dan Rank
+            preseason_data = await http_client.get_preseason_summary(api_key, version)
+            season_points = preseason_data.get("seasonPoints") or preseason_data.get("points") or 0
+            rank = preseason_data.get("rank") or "UNRANKED"
 
             current_games = account_info.get("currentGames", [])
             if current_games:
                 game_data = current_games[0]
                 is_alive = game_data.get("isAlive", True)
                 game_id = game_data.get("gameId")
+                if not is_alive:
+                    hp = 0
                 if game_id:
                     try:
                         room_name = await http_client.get_room_name(game_id, api_key, version)
                     except Exception:
                         room_name = game_id[:8]
 
+            # Lakukan registrasi status awal bot ke server web lokal secara instan beserta data klasemen preseason 1 & statistik dinamis HP/EP
             try:
                 payload = {
                     "bot_name": bot_name,
-                    "hp": 0 if not is_alive else 100,
-                    "max_hp": 100,
+                    "hp": hp,
+                    "max_hp": max_hp,
+                    "ep": ep,
+                    "max_ep": max_ep,
+                    "kills": kills,
                     "turn": 1,
                     "is_alive": is_alive,
                     "room_name": room_name,
@@ -106,6 +132,7 @@ async def start_multi_bots():
 
     log_system.success("Game database loaded successfully.")
 
+    # Jalankan server web dashboard lokal di latar belakang sesegera mungkin di awal
     try:
         await start_dashboard_server(host="localhost", port=8080)
         print()

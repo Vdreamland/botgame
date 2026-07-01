@@ -41,6 +41,9 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
     stats = detect_bot_stats(self_data)
     hp = stats["hp"]
     max_hp = stats["max_hp"]
+    ep = stats["ep"]
+    max_ep = stats["max_ep"]
+    kills = stats["kills"]
     is_alive = stats["is_alive"]
 
     # 1. Hitung Lapisan BFS Terlebih Dahulu
@@ -85,17 +88,22 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         f"{damage_text}"
     )
 
-    # Kirim payload data lengkap ke server web lokal
+    # Kirim payload data lengkap (termasuk EP, max_ep, dan Kills) ke server web lokal untuk sinkronisasi total
     async with aiohttp.ClientSession() as session:
         try:
             payload = {
                 "bot_name": bot_name,
                 "hp": hp,
                 "max_hp": max_hp,
+                "ep": ep,
+                "max_ep": max_ep,
+                "kills": kills,
                 "turn": turn,
                 "is_alive": is_alive,
                 "room_name": room_name,
                 "balance": balance,
+                "season_points": season_points,
+                "rank": rank,
                 "log_msg": turn_log_text
             }
             await session.post("http://localhost:8080/api/update", json=payload)
@@ -145,8 +153,15 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                 print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
                 print()
                 sys.stdout.flush()
+        return  # Hentikan aliran eksekusi asinkronus ke pengecekan turn (mencegah double join print)
 
     elif msg_type in ("agent_view", "turn_advanced", "action_result"):
+        view = data.get("view") or data.get("data", {}).get("view")
+        
+        # Saringan Proteksi Utama: Abaikan pemrosesan lobi jika objek 'view' kosong (seperti pada action_result kosong)
+        if not view:
+            return
+
         if not log_state.get("is_active_logged"):
             log_state["is_active_logged"] = True
             if bot_name not in client.joined_bots:
@@ -160,7 +175,6 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                     print()
                     sys.stdout.flush()
 
-        view = data.get("view") or data.get("data", {}).get("view") or {}
         self_data = view.get("self", {})
         current_region = view.get("currentRegion", {})
         turn = data.get("turn") or view.get("turn") or 1
@@ -168,6 +182,13 @@ async def handle_message(client, bot_name: str, data: dict, ws):
         is_alive = self_data.get("isAlive", True)
         if self_data.get("hp", 100) <= 0:
             is_alive = False
+
+        # Catat ID unik bot di awal permainan untuk keperluan pencocokan ID taktis pada event damage/combat
+        if is_alive and "bot_id" not in log_state:
+            log_state["bot_id"] = self_data.get("id")
+
+        # Catat snapshot view game terakhir untuk membantu pencarian/resolusi nama ID penyerang di damage_logs
+        log_state["last_view"] = view
 
         if turn != log_state.get("last_printed_turn", -1):
             game_id = data.get("gameId") or view.get("gameId") or ""
@@ -217,7 +238,23 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                     except Exception:
                         pass
 
-                # 2. Kirim keputusan aksi utama turn yang memakan turn/EP secara akurat (memperbaiki bug key "data")
+                # 2. Kirim semua aksi pemakaian senjata/armor gratis (EP 0 Auto-Equip) terlebih dahulu [3]
+                for item_id in decision.get("free_equips", []):
+                    try:
+                        equip_payload = {
+                            "type": "action",
+                            "data": {
+                                "type": "equip",
+                                "itemId": item_id
+                            },
+                            "thought": "Memakai perlengkapan terbaik secara otomatis (EP 0)"
+                        }
+                        await ws.send_json(equip_payload)
+                        await asyncio.sleep(0.1)  # Jeda mikro agar jaringan stabil
+                    except Exception:
+                        pass
+
+                # 3. Kirim keputusan aksi utama turn yang memakan turn/EP secara akurat (memperbaiki bug key "data") [3]
                 main_action = decision.get("action")
                 if main_action:
                     try:

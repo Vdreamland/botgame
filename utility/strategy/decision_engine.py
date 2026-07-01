@@ -13,35 +13,41 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
     move_res = evaluate_movement_routes(bot_name, self_data, current_region, view_data, joined_bots, log_state)
 
     our_hp = self_data.get("hp", 100)
+    our_max_hp = self_data.get("maxHp") or self_data.get("max_hp") or 100
     our_ep = self_data.get("ep", 10)
+    our_max_ep = self_data.get("maxEp") or self_data.get("max_ep") or 10
     
     # 2. Hitung Hasrat Pemulihan Darah (Heal Desire)
     heal_desire = 0.0
     best_heal_item_id = None
     
-    # Periksa ketersediaan item pemulihan di dalam inventaris secara dinamis
     inventory = self_data.get("inventory") or []
     heal_items = []
+    
+    # Saring inventaris dengan aman (mendukung format tipe data Dictionary maupun String)
     for item in inventory:
+        item_id = None
+        item_name = ""
+        
         if isinstance(item, dict):
-            i_id = item.get("id") or item.get("instanceId")
-            i_name = (item.get("displayName") or item.get("name") or "").lower()
-            if "medkit" in i_name or "bandage" in i_name or "food" in i_name:
-                heal_items.append((i_id, i_name))
+            item_id = item.get("id") or item.get("instanceId") or item.get("instance_id")
+            item_name = (item.get("displayName") or item.get("name") or "").lower()
+        elif isinstance(item, str):
+            item_id = item
+            item_name = item.lower()
+            
+        if item_id and ("medkit" in item_name or "bandage" in item_name or "food" in item_name):
+            heal_items.append((item_id, item_name))
                 
     if heal_items and our_hp < 75:
-        # Urutkan: Prioritaskan item penyembuh terbaik jika HP sangat kritis
         heal_items.sort(key=lambda x: "medkit" in x[1], reverse=True)
         best_heal_item_id = heal_items[0][0]
-        
-        # Skor keinginan memulihkan darah berbanding lurus dengan ketipisan HP
         heal_desire = (75 - our_hp) * 1.3
         heal_desire = min(100.0, heal_desire)
 
     # 3. Hitung Hasrat Istirahat (Rest Desire)
     rest_desire = 0.0
     if our_ep < 3:
-        # Jika tidak ada ancaman musuh instan, hasrat istirahat bertambah besar
         threat_penalty = 50 if combat_res["can_attack"] else 0
         rest_desire = max(0.0, (10 - our_ep) * 10 - threat_penalty)
 
@@ -64,14 +70,47 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
     desires.sort(key=lambda x: x[1], reverse=True)
     chosen_strategy = desires[0][0]
     
-    # 5. Rangkai Aksi Payload Final & Integrasikan Otomasi "Loot & Run" (Pickup Gratis)
+    # 5. Otomasi Pemakaian Senjata / Armor Gratis (EP 0 Auto-Equip) [3]
+    free_equips = []
+    
+    equipped_weapon = self_data.get("equippedWeapon")
+    has_weapon = isinstance(equipped_weapon, dict) or (isinstance(equipped_weapon, str) and equipped_weapon != "None")
+    
+    equipped_armor = self_data.get("equippedArmor")
+    has_armor = isinstance(equipped_armor, dict) or (isinstance(equipped_armor, str) and equipped_armor != "None")
+
+    # Pindai seluruh isi inventaris secara cerdas untuk dipasang instan (mendukung format Dictionary & String)
+    for item in inventory:
+        item_id = None
+        item_name = ""
+        
+        if isinstance(item, dict):
+            item_id = item.get("id") or item.get("instanceId") or item.get("instance_id")
+            item_name = (item.get("displayName") or item.get("name") or "").lower()
+        elif isinstance(item, str):
+            item_id = item
+            item_name = item.lower()
+            
+        if not item_id:
+            continue
+            
+        # Jika tas mendeteksi ada senjata yang belum terpasang, masukkan ke daftar pasang otomatis
+        if "sword" in item_name or "dagger" in item_name or "katana" in item_name or "bow" in item_name or "pistol" in item_name or "sniper" in item_name:
+            if not has_weapon:
+                free_equips.append(item_id)
+                has_weapon = True  # Tandai agar tidak melakukan double equip dalam 1 turn
+        # Jika tas mendeteksi ada armor yang belum terpasang, masukkan ke daftar pasang otomatis
+        elif "armor" in item_name or "leather" in item_name or "chainmail" in item_name:
+            if not has_armor:
+                free_equips.append(item_id)
+                has_armor = True
+
+    # 6. Rangkai Aksi Payload Final & Integrasikan Otomasi "Loot & Run"
     action_data = None
     thought_string = f"Taktis: Memilih strategi '{chosen_strategy}' dengan bobot evaluasi tertinggi."
 
-    # Otomasi Penjarahan Gratis: Jika ada koin sMoltz/item layak ambil di lantai kaki kita, sapu bersih dahulu
     free_pickups = []
     if loot_res["items_to_pickup"]:
-        # Ambil maksimal 3 item gratis per turn agar tidak menyepam jaringan
         free_pickups = loot_res["items_to_pickup"][:3]
 
     if chosen_strategy == "attack" and combat_res["best_target"]:
@@ -90,12 +129,11 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
         thought_string = f"Melakukan pemulihan menggunakan item penyembuh karena HP kritis ({our_hp})."
         
     elif chosen_strategy == "loot" and free_pickups:
-        # Jika strategi utama adalah menjarah koin, ambil item pertama sebagai aksi utama (jika free_pickups gagal disisipkan)
         action_data = {
             "type": "pickup",
             "itemId": free_pickups[0]
         }
-        thought_string = "Fokus menyapu bersih koin sMoltz dan barang berharga di lantai."
+        thought_string = "Fokus menyapu bersih koin sMoltz dan barang berharga di lobi lantai."
         
     elif chosen_strategy == "move" and move_res["best_region_id"]:
         dest_id = move_res["best_region_id"]
@@ -106,7 +144,6 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
         }
         thought_string = f"Mengatur navigasi rute bergerak menuju '{dest_name}' demi keamanan taktis."
         
-        # Catat memori wilayah jangka pendek untuk mencegah gerakan ping-pong berulang
         if "visited_regions" not in log_state:
             log_state["visited_regions"] = []
         log_state["visited_regions"].append(dest_id)
@@ -120,7 +157,6 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
         thought_string = f"Melakukan istirahat sejenak untuk memulihkan energi EP (EP: {our_ep})."
         
     else:
-        # Fallback jika tidak ada opsi yang aman: Cari rute gerak terbaik yang tersedia
         if move_res["best_region_id"]:
             action_data = {
                 "type": "move",
@@ -136,5 +172,6 @@ def make_decision(bot_name: str, self_data: dict, current_region: dict, view_dat
     return {
         "action": action_data,
         "free_pickups": free_pickups,
+        "free_equips": free_equips,
         "thought": thought_string
     }

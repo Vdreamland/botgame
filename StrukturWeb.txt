@@ -1,47 +1,55 @@
 /botgame
-├── .env                          # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
-├── requirements.txt              # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)
-├── rungame.py                    # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
+├── .env                              # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
+├── requirements.txt                  # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)
+├── rungame.py                        # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
 │
-├── connection/                   # Modul komunikasi jaringan (REST API dan WebSockets)
-│   ├── __init__.py               # Penanda paket Python untuk folder connection
-│   ├── api_endpoints.py          # Menyimpan konfigurasi URL REST API dan alamat WebSocket server game
-│   ├── http_client.py            # Mengelola permintaan HTTP dasar (pengecekan versi game dan verifikasi akun)
-│   ├── socket_client.py          # Mengelola jabat tangan (handshake) WebSocket awal dan memverifikasi koneksi
-│   ├── loadout.py                # Mengelola REST API pemakaian pack, sub pack, serta relic ke slot akun
-│   └── bot_manager.py            # Mengorkestrasi seluruh siklus inisiasi bot secara asinkronus dan menyajikan tabel status
+├── connection/                       # Modul komunikasi jaringan (REST API dan WebSockets)
+│   ├── init.py                       # Penanda paket Python untuk folder connection
+│   ├── api_endpoints.py              # Menyimpan konfigurasi URL REST API dan alamat WebSocket server game
+│   ├── http_client.py                # Mengelola permintaan HTTP dasar (pengecekan versi game dan verifikasi akun)
+│   ├── socket_client.py              # Mengelola jabat tangan (handshake) WebSocket awal dan memverifikasi koneksi
+│   ├── loadout.py                    # Mengelola REST API pemakaian pack, sub pack, serta relic ke slot akun
+│   └── bot_manager.py                # Mengorkestrasi seluruh siklus inisiasi bot secara asinkronus dan menyajikan tabel status
 │
-├── tools/                        # Folder peralatan utility pembantu di luar game loop
-│   ├── setup_loadout.py          # Skrip otomatisasi loadout aman untuk semua bot (menyaring & melepas relic berbahaya)
-│   # ── reforge_relic.py         # Skrip perencanaan untuk memproses reforge afiks relic di lobi menggunakan reforge stones
+├── tools/                            # Folder peralatan utility pembantu di luar game loop
+│   ├── setup_loadout.py              # Skrip otomatisasi loadout aman untuk semua bot (menyaring & melepas relic berbahaya)
+│   └── reforge_relic.py              # Skrip perencanaan untuk memproses reforge afiks relic di lobi menggunakan reforge stones
 │
-├── utility/
-│   ├── __init__.py
-│   ├── detector/
-│   │   ├── __init__.py
-│   │   ├── bot_stats_detector.py 
-│   │   ├── inventory_detector.py 
-│   │   ├── zone_detector.py
-│   │   └── none
+├── utility/                          # Modul pembantu umum dan logika pemrosesan kalkulasi bot
+│   ├── init.py                       # Penanda paket Python untuk folder utility
+│   ├── detector/                     # Sub-modul detektor untuk mengekstrak kondisi status game dari server
+│   │   ├── init.py                   # Penanda paket Python untuk folder detector
+│   │   ├── bot_stats_detector.py     # Mengidentifikasi status HP, EP, ATK, DEF, serta perlengkapan senjata/armor bot
+│   │   ├── inventory_detector.py     # Menghitung jumlah slot terpakai dan memetakan barang dalam inventaris bot
+│   │   ├── zone_detector.py          # Menganalisis kondisi terrain, cuaca, serta visibilitas wilayah bot saat ini
+│   │   └── layer_detector.py         # Mengalkulasi lapisan jarak (BFS) posisi unit lain (P/M/A) di sekitar wilayah bot
 │   │
-│   └── none/
-│       ├── none
-│       ├── none
-│       └── none
+│   └── strategy/                     # Folder rancangan modul taktik pergerakan dan pertempuran (AI Engine)
+│       ├── init.py                   # Penanda paket Python untuk folder strategy
+│       ├── movement_solver.py        # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman)
+│       ├── combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan
+│       └── decision_engine.py        # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn
 │
-├── game_data/                    # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
-│   ├── __init__.py               # Penanda paket Python untuk folder game_data
-│   ├── player_info.py            # Menyimpan data statistik dasar bawaan bot (HP, EP, ATK, DEF, Vision)
-│   ├── monster_info.py           # Ensiklopedia statistik musuh (Wolf, Bear, Bandit, Guardian)
-│   ├── weapon_info.py            # Ensiklopedia statistik senjata tipe Melee dan Ranged
-│   ├── item_info.py              # Ensiklopedia data item pemulihan (Recovery) dan utilitas (Utility)
-│   ├── action_info.py            # Konfigurasi aksi game beserta konsumsi EP, cooldown, dan aturan Alert Gauge
-│   ├── relic_info.py             # Panduan warna slot relic serta seluruh rentang nilai afiks positif/negatif
-│   ├── pack_info.py              # Ensiklopedia 20 kategori pack dari T1 sampai T3 beserta persentase attenuasi Sub-slot
-│   └── world_info.py             # Aturan modifikasi medan (Terrain), cuaca (Weather), sistem waktu, dan fasilitas peta
+├── game_data/                        # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
+│   ├── init.py                       # Penanda paket Python untuk folder game_data
+│   ├── player_info.py                # Menyimpan data statistik dasar bawaan bot (HP, EP, ATK, DEF, Vision)
+│   ├── monster_info.py               # Ensiklopedia statistik musuh (Wolf, Bear, Bandit, Guardian)
+│   ├── weapon_info.py                # Ensiklopedia statistik senjata tipe Melee dan Ranged
+│   ├── item_info.py                  # Ensiklopedia data item pemulihan (Recovery) dan utilitas (Utility)
+│   ├── action_info.py                # Konfigurasi aksi game beserta konsumsi EP, cooldown, dan aturan Alert Gauge
+│   ├── relic_info.py                 # Panduan warna slot relic serta seluruh rentang nilai afiks positif/negatif
+│   ├── pack_info.py                  # Ensiklopedia 20 kategori pack dari T1 sampai T3 beserta persentase attenuasi Sub-slot
+│   └── world_info.py                 # Aturan modifikasi medan (Terrain), cuaca (Weather), sistem waktu, dan fasilitas peta
 │
-└── ui/                           # Modul Antarmuka / Logging Visual
-    ├── __init__.py               
-    ├── log_system.py             # Log status sistem global
-    ├── log_connection.py         # Log detail koneksi (dipertahankan)
-    └── log_game.py               # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi
+└── ui/                               # Modul Antarmuka / Logging Visual
+    ├── init.py                       # Penanda paket Python untuk folder ui
+    ├── log_system.py                 # Log status sistem global
+    ├── log_connection.py             # Log detail koneksi (dipertahankan)
+    ├── log_game.py                   # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi
+    │
+    └── web/                          # Modul antarmuka web dashboard berbasis browser (Tambahan Baru)
+        ├── __init__.py               # Penanda paket Python untuk sub-modul web
+        ├── server.py                 # Logika web server lokal (aiohttp.web) & pengirim data log ke browser via WS
+        └── templates/                # Folder penyimpanan berkas template frontend
+            ├── index.html            # Halaman dashboard utama (HTML) yang dibuka oleh pengguna di browser
+            └── style.css             # Berkas gaya tampilan (CSS) untuk merapikan dashboard agar modern

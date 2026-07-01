@@ -7,7 +7,7 @@ import aiohttp
 from connection.http_client import ClawRoyaleHTTPClient
 from connection.socket_client import ClawRoyaleSocketClient
 from connection.loadout import ClawRoyaleLoadoutClient
-from ui import log_system, log_connection
+from ui import log_system
 
 async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, version: str) -> dict:
     main_name = "None"

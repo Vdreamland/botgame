@@ -14,6 +14,7 @@ class ClawRoyaleSocketClient:
         self.room_preference = room_preference
         self.joined_bots = joined_bots if joined_bots is not None else []
         self.total_bots = total_bots
+        self.log_state = {}
 
     async def _fetch_room_name(self, game_id: str) -> str:
         url = f"https://cdn.clawroyale.ai/api/games/{game_id}"
@@ -58,11 +59,11 @@ class ClawRoyaleSocketClient:
                 return False
 
         while True:
-            current_status = None
-            resolved_room_name = None
-            is_active_logged = False
-            last_printed_turn = -1
-            
+            self.log_state.clear()
+            if len(self.joined_bots) == 0:
+                print("All bots queued. Waiting for match...")
+                sys.stdout.flush()
+
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.ws_connect(WS_JOIN_URL, headers=headers) as ws:
@@ -84,66 +85,9 @@ class ClawRoyaleSocketClient:
                                         await asyncio.sleep(5)
                                         break
                                         
-                                elif msg_type in ("assigned", "waiting"):
-                                    if not is_active_logged:
-                                        is_active_logged = True
-                                        if bot_name not in self.joined_bots:
-                                            self.joined_bots.append(bot_name)
-                                            if len(self.joined_bots) == self.total_bots:
-                                                print("All bots successfully joined room!")
-                                                print()
-                                                sys.stdout.flush()
-                                                
-                                elif msg_type in ("agent_view", "turn_advanced", "action_result"):
-                                    if not is_active_logged:
-                                        is_active_logged = True
-                                        if bot_name not in self.joined_bots:
-                                            self.joined_bots.append(bot_name)
-                                            if len(self.joined_bots) == self.total_bots:
-                                                print("All bots successfully joined room!")
-                                                print()
-                                                sys.stdout.flush()
-                                    
-                                    view = data.get("view") or data.get("data", {}).get("view") or {}
-                                    self_data = view.get("self", {})
-                                    current_region = view.get("currentRegion", {})
-                                    turn = data.get("turn") or view.get("turn") or 1
-                                    
-                                    is_alive = self_data.get("isAlive", True)
-                                    if self_data.get("hp", 100) <= 0:
-                                        is_alive = False
-                                    
-                                    if turn != last_printed_turn:
-                                        while len(self.joined_bots) < self.total_bots:
-                                            await asyncio.sleep(0.5)
-
-                                        game_id = data.get("gameId") or view.get("gameId") or ""
-                                        if not resolved_room_name:
-                                            resolved_room_name = await self._fetch_room_name(game_id)
-                                            
-                                        await log_game.print_turn_log(
-                                            bot_name=bot_name,
-                                            api_key=self.api_key,
-                                            version=self.version,
-                                            game_id=game_id,
-                                            turn=turn,
-                                            self_data=self_data,
-                                            current_region=current_region,
-                                            view_data=view,
-                                            resolved_room_name=resolved_room_name
-                                        )
-                                        last_printed_turn = turn
-                                        
-                                    if not is_alive:
-                                        if bot_name in self.joined_bots:
-                                            self.joined_bots.remove(bot_name)
-                                        log_system.warning(f"[{bot_name}] Dead. Waiting for other bots to finish...")
-                                        await ws.close()
-                                        
-                                        while len(self.joined_bots) > 0:
-                                            await asyncio.sleep(1)
-                                            
-                                        await asyncio.sleep(5)
+                                elif msg_type in ("assigned", "waiting", "agent_view", "turn_advanced", "action_result"):
+                                    await log_game.handle_message(self, bot_name, data, ws)
+                                    if self.log_state.get("is_dead_break"):
                                         break
                                         
                                 elif msg_type == "error":

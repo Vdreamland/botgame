@@ -15,13 +15,13 @@ def detect_inventory(self_data: dict) -> dict:
     counter = Counter(item_names)
     inv_parts = []
     for name, count in counter.items():
-        if count > 1:
-            inv_parts.append(f"{name} [{count}]")
-        else:
-            inv_parts.append(name)
+        inv_parts.append(f"{name} [{count}]")
     
     inventory_str = ", ".join(inv_parts) if inv_parts else "No items in inventory"
+    
+    slot_count = sum(1 for name in item_names if name.lower() not in ("smoltz", "moltz"))
+    
     return {
         "items_str": inventory_str,
-        "slot_count": len(inventory)
+        "slot_count": slot_count
     }

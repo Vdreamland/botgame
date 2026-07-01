@@ -8,15 +8,8 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
     """Mengevaluasi nilai kelayakan penjarahan koin sMoltz atau item di tanah berdasarkan Need, Risk, dan Expected Value"""
     
     ground_items = current_region.get("items") or current_region.get("groundItems") or []
-    if not ground_items:
-        return {
-            "loot_desire": 0.0,
-            "items_to_pickup": [],
-            "action_recommendation": "ignore",
-            "estimated_ev": 0.0
-        }
-
-    # 1. Analisis Kapabilitas & Kebutuhan (Need Score) Bot Kita
+    facilities = current_region.get("interactables") or current_region.get("facilities") or []
+    
     our_stats = detect_agent_stats(self_data)
     our_hp = our_stats["hp"]
     our_max_hp = our_stats["max_hp"]
@@ -24,8 +17,7 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
     our_inv = detect_agent_inventory(self_data)
     slot_count = our_inv["slot_count"]
     is_inventory_full = slot_count >= 10
-
-    # 2. Hitung Nilai Ancaman di Area Saat Ini (Risk Score)
+    
     distances = calculate_distances(current_region, view_data)
     risk_score = 0
     
@@ -50,7 +42,7 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
                         risk_score += 30
                     elif dist == 2:
                         risk_score += 10
-
+                        
     visible_monsters = view_data.get("visibleMonsters") or []
     for monster in visible_monsters:
         if isinstance(monster, dict):
@@ -63,18 +55,79 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
                         risk_score += 40
                     elif dist == 1:
                         risk_score += 20
-
+                        
     is_dz = current_region.get("isDeathZone") or current_region.get("is_death_zone")
     if is_dz:
         risk_score += 30
-
+        
     risk_score = min(100, risk_score)
+    
+    has_weapon = False
+    equipped_weapon = self_data.get("equippedWeapon")
+    if isinstance(equipped_weapon, dict):
+        w_name = (equipped_weapon.get("name") or "").lower()
+        if w_name and w_name != "fist":
+            has_weapon = True
+    elif isinstance(equipped_weapon, str):
+        if equipped_weapon.lower() not in ("none", "fist"):
+            has_weapon = True
 
+    has_armor = False
+    equipped_armor = self_data.get("equippedArmor")
+    if isinstance(equipped_armor, dict):
+        a_name = (equipped_armor.get("name") or "").lower()
+        if a_name and a_name != "none":
+            has_armor = True
+    elif isinstance(equipped_armor, str):
+        if equipped_armor.lower() != "none":
+            has_armor = True
+            
+    best_facility = None
+    max_facility_ev = -999.0
+    for f in facilities:
+        if not isinstance(f, dict):
+            continue
+            
+        f_type = (f.get("type") or f.get("id") or "").lower()
+        f_used = f.get("isUsed") or f.get("is_used") or False
+        
+        if f_used:
+            continue
+            
+        fac_ev = -999.0
+        if is_dz:
+            fac_ev = -50.0
+        else:
+            if "medical" in f_type:
+                missing_hp = our_max_hp - our_hp
+                if missing_hp > 10:
+                    fac_ev = min(98.0, missing_hp * 2.5)
+                else:
+                    fac_ev = 0.0
+            elif "supply" in f_type:
+                if not has_weapon:
+                    fac_ev = 95.0
+                elif not has_armor:
+                    fac_ev = 90.0
+                elif not is_inventory_full:
+                    fac_ev = 45.0
+                else:
+                    fac_ev = 5.0
+            elif "broadcast" in f_type:
+                fac_ev = 10.0 if our_stats.get("ep", 0) > 5 else 0.0
+                
+        if fac_ev > max_facility_ev:
+            max_facility_ev = fac_ev
+            best_facility = {
+                "id": f.get("id") or f.get("type") or "facility",
+                "type": f_type,
+                "ev": fac_ev
+            }
+            
     items_to_pickup = []
     total_desire_score = 0.0
     items_count = 0
-
-    # 3. Hitung Skor Keinginan (Loot Score) untuk Setiap Item di Lantai
+    
     for item in ground_items:
         if not isinstance(item, dict):
             continue
@@ -91,11 +144,10 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
             item_type = "weapon"
         elif "armor" in item_name or "leather" in item_name or "chainmail" in item_name:
             item_type = "armor"
-
-        # Tentukan nilai dasar (Item Value) & Kebutuhan Bot (Need)
+            
         item_value = 50
         need_score = 50
-
+        
         if item_type == "currency":
             item_value = 100
             need_score = 100
@@ -104,21 +156,16 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
             need_score = 0
         else:
             if item_type == "weapon":
-                has_weapon = self_data.get("equippedWeapon") is not None
-                # PROTEKSI: Jika tidak memegang senjata, paksa hasrat mengambil senjata menjadi maksimal (100)
                 need_score = 100 if not has_weapon else 15
                 item_value = 80 if "katana" in item_name or "sniper" in item_name else 40
             elif item_type == "armor":
-                has_armor = self_data.get("equippedArmor") is not None
-                # PROTEKSI: Jika tidak memakai armor, paksa hasrat mengambil armor menjadi sangat tinggi (90)
                 need_score = 90 if not has_armor else 20
                 item_value = 70
             elif item_type == "recovery":
                 hp_ratio = our_hp / our_max_hp
                 need_score = int((1.0 - hp_ratio) * 100)
                 item_value = 60 if "medkit" in item_name else 30
-
-        # Formula Expected Value (EV)
+                
         success_chance = (100 - risk_score) / 100.0
         failure_chance = risk_score / 100.0
         
@@ -127,22 +174,20 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
         
         expected_value = (reward * success_chance) - (penalty * failure_chance)
         
-        # Jika bot belum bersenjata/berarmor, abaikan risiko rendah untuk mengambil perlengkapan vital
-        is_defenseless = (item_type == "weapon" and self_data.get("equippedWeapon") is None) or \
-                         (item_type == "armor" and self_data.get("equippedArmor") is None)
-                         
+        is_defenseless = (item_type == "weapon" and not has_weapon) or (item_type == "armor" and not has_armor)
+        
         if expected_value > 20 or is_defenseless:
             items_to_pickup.append(item_id)
             total_desire_score += max(30.0, expected_value) if is_defenseless else expected_value
             items_count += 1
-
-    # Normalisasikan skor hasrat penjarahan total di skala 0-100
+            
     loot_desire = min(100.0, max(0.0, total_desire_score / items_count)) if items_count > 0 else 0.0
     action_recommendation = "pickup" if items_to_pickup and loot_desire > 40 else "ignore"
-
+    
     return {
         "loot_desire": loot_desire,
         "items_to_pickup": items_to_pickup,
         "action_recommendation": action_recommendation,
-        "estimated_ev": total_desire_score
+        "estimated_ev": total_desire_score,
+        "best_facility": best_facility
     }

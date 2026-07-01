@@ -9,7 +9,6 @@ from utility.detector.zone_detector import detect_zone
 def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list) -> dict:
     """Mensimulasikan kalkulasi damage dan menganalisis prioritas target pertempuran menggunakan detektor umum terpusat"""
     
-    # 1. Ambil Kapabilitas Tempur Bot Kita menggunakan detektor umum terpusat (Code Reuse)
     our_stats = detect_agent_stats(self_data)
     our_hp = our_stats["hp"]
     our_max_hp = our_stats["max_hp"]
@@ -18,14 +17,12 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
     our_atk_stat = our_stats["atk"]
     our_def_stat = our_stats["def"]
     
-    # Deteksi armor kita secara dinamis (menggunakan data detektor terpusat)
     our_def_bonus = 0
     equipped_armor = self_data.get("equippedArmor")
     if isinstance(equipped_armor, dict):
         our_def_bonus = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
     our_total_def = our_def_stat + our_def_bonus
     
-    # Deteksi senjata kita secara dinamis
     our_atk_bonus = 0
     our_weapon_range = 0
     our_weapon_ep_cost = 1
@@ -46,12 +43,9 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
     
     our_total_atk = our_atk_stat + our_atk_bonus
     
-    # 2. Hitung Peta Jarak BFS Terpusat (Code Reuse)
     distances = calculate_distances(current_region, view_data)
-    
     analyzed_targets = []
     
-    # 3. Analisis Semua Agen/Player Terlihat secara Dinamis menggunakan Detektor Agen Terpusat (Code Reuse)
     visible_agents = view_data.get("visibleAgents") or []
     for agent in visible_agents:
         if not isinstance(agent, dict):
@@ -61,7 +55,6 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         if a_name == bot_name:
             continue
             
-        # Gunakan fungsi detektor umum terpusat (Code Reuse)
         t_stats = detect_agent_stats(agent)
         if not t_stats["is_alive"]:
             continue
@@ -75,16 +68,14 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         
         dist = distances.get(r_id)
         if dist is None:
-            continue  # Berada di luar jangkauan radar BFS
+            continue
             
-        # Hitung DEF target secara dinamis dari detektor umum terpusat
         t_def_bonus = 0
         t_armor = agent.get("equippedArmor")
         if isinstance(t_armor, dict):
             t_def_bonus = t_armor.get("defBonus") or t_armor.get("def_bonus") or 0
         target_def = t_stats["def"] + t_def_bonus
         
-        # Hitung ATK target secara dinamis dari detektor umum terpusat
         t_atk_bonus = 0
         t_weapon = agent.get("equippedWeapon")
         if isinstance(t_weapon, dict):
@@ -97,7 +88,6 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         
         target_hp = t_stats["hp"]
         
-        # Simulasi Pertempuran (Damage Dealt & Received)
         damage_dealt = max(1, our_total_atk - target_def)
         damage_received = max(1, target_atk - our_total_def)
         
@@ -113,6 +103,7 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         target_type = "Ally" if is_player else "Player"
         
         analyzed_targets.append({
+            "id": agent.get("id"),
             "name": a_name,
             "type": target_type,
             "hp": target_hp,
@@ -125,7 +116,6 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
             "priority_score": 0
         })
         
-    # 4. Analisis Semua Monster Terlihat (Termasuk Guardian)
     visible_monsters = view_data.get("visibleMonsters") or []
     for monster in visible_monsters:
         if not isinstance(monster, dict):
@@ -133,7 +123,6 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
             
         m_name = monster.get("name") or monster.get("displayName") or ""
         
-        # Lewati monster mati
         is_alive = monster.get("isAlive")
         if is_alive is None:
             is_alive = monster.get("is_alive", True)
@@ -174,7 +163,10 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         is_in_range = dist <= our_weapon_range
         can_one_shot = target_hp <= damage_dealt
         
+        m_id = monster.get("id") or monster.get("instanceId") or monster.get("instance_id") or m_name
+        
         analyzed_targets.append({
+            "id": m_id,
             "name": m_name,
             "type": "Guardian" if m_type == "guardian" else "Monster",
             "hp": target_hp,
@@ -187,13 +179,10 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
             "priority_score": 0
         })
 
-    # 5. Hitung Skor Prioritas Taktis
     for target in analyzed_targets:
         score = 0
-        
         if target["can_one_shot"]:
             score += 1000
-            
         if target["is_in_range"]:
             score += 500
         else:
@@ -210,29 +199,22 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
             
         target["priority_score"] = score
 
-    # Urutkan berdasarkan skor prioritas tertinggi ke terendah
     analyzed_targets.sort(key=lambda x: x["priority_score"], reverse=True)
     
-    # 6. Tentukan Rekomendasi Aksi Tempur Terbaik
     best_target = None
     action_recommendation = "none"
     can_attack = False
     
     if analyzed_targets:
         top_target = analyzed_targets[0]
-        
         if top_target["is_in_range"] and our_ep >= our_weapon_ep_cost:
             can_attack = True
             best_target = top_target
-            
-            if our_hp < 30 and top_target["damage_received"] >= top_target["damage_dealt"]:
-                action_recommendation = "retreat"
-            else:
-                action_recommendation = "attack"
+            action_recommendation = "attack"
         else:
             best_target = top_target
             action_recommendation = "move_closer" if our_hp >= 40 else "retreat"
-
+            
     return {
         "can_attack": can_attack,
         "best_target": best_target,

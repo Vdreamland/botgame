@@ -28,10 +28,14 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             room_name = await http_client.get_room_name(game_id, api_key, version)
 
     loadout_data = {}
+    
     try:
         account_data = await http_client.get_account_me(api_key, version)
         balance = account_data.get("balance", 0)
+    except Exception:
+        pass
 
+    try:
         preseason_data = await http_client.get_preseason_summary(api_key, version)
         season_points = preseason_data.get("seasonPoints") or preseason_data.get("points") or 0
         rank = preseason_data.get("rank") or "UNRANKED"

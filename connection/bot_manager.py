@@ -37,15 +37,15 @@ async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, ve
         except Exception:
             full_set_status = "[No]"
 
-    try:
-        socket_client = ClawRoyaleSocketClient(api_key, version, room_preference)
-        ws_success = await socket_client.connect_and_listen(bot_name, silent=True)
-        if ws_success:
-            ws_status = "[OK]"
-        else:
+        try:
+            socket_client = ClawRoyaleSocketClient(api_key, version, room_preference)
+            ws_success = await socket_client.connect_and_listen(bot_name, silent=True)
+            if ws_success:
+                ws_status = "[OK]"
+            else:
+                ws_status = "[FAILED]"
+        except Exception:
             ws_status = "[FAILED]"
-    except Exception:
-        ws_status = "[FAILED]"
 
     return {
         "bot_name": bot_name,
@@ -118,3 +118,18 @@ async def start_multi_bots():
 
         print(f"{bot_idx_padded}{loadout_padded}{full_set_colored}{ws_test_colored}")
         sys.stdout.flush()
+
+    joined_bots = []
+    join_tasks = []
+    for i in range(1, num_bots + 1):
+        name = os.getenv(f"BOT{i}_NAME")
+        key = os.getenv(f"BOT{i}_API_KEY")
+        if name and key:
+            client = ClawRoyaleSocketClient(key, version, room_pref, joined_bots, len(bot_tasks))
+            join_tasks.append(client.connect_and_listen(name, silent=False))
+
+    if join_tasks:
+        print()
+        print("All bots queued. Waiting for match...")
+        sys.stdout.flush()
+        await asyncio.gather(*join_tasks)

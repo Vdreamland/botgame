@@ -15,6 +15,20 @@
 │   ├── setup_loadout.py          # Skrip otomatisasi loadout aman untuk semua bot (menyaring & melepas relic berbahaya)
 │   # ── reforge_relic.py         # Skrip perencanaan untuk memproses reforge afiks relic di lobi menggunakan reforge stones
 │
+├── utility/
+│   ├── __init__.py
+│   ├── detector/
+│   │   ├── __init__.py
+│   │   ├── bot_stats_detector.py 
+│   │   ├── inventory_detector.py 
+│   │   ├── zone_detector.py
+│   │   └── none
+│   │
+│   └── none/
+│       ├── none
+│       ├── none
+│       └── none
+│
 ├── game_data/                    # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
 │   ├── __init__.py               # Penanda paket Python untuk folder game_data
 │   ├── player_info.py            # Menyimpan data statistik dasar bawaan bot (HP, EP, ATK, DEF, Vision)
@@ -26,7 +40,8 @@
 │   ├── pack_info.py              # Ensiklopedia 20 kategori pack dari T1 sampai T3 beserta persentase attenuasi Sub-slot
 │   └── world_info.py             # Aturan modifikasi medan (Terrain), cuaca (Weather), sistem waktu, dan fasilitas peta
 │
-└── ui/                           # Modul antarmuka pengguna berbasis terminal
-    ├── __init__.py               # Penanda paket Python untuk folder ui
-    ├── log_system.py             # Log sistem global menggunakan penanda kode warna ANSI (di awal baris)
-    └── log_connection.py         # Log aktivitas koneksi instansi bot individual (dipertahankan untuk kompatibilitas)
+└── ui/                           # Modul Antarmuka / Logging Visual
+    ├── __init__.py               
+    ├── log_system.py             # Log status sistem global
+    ├── log_connection.py         # Log detail koneksi (dipertahankan)
+    └── log_game.py               # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi

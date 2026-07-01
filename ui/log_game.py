@@ -108,21 +108,12 @@ async def handle_message(client, bot_name: str, data: dict, ws):
     log_state = client.log_state
 
     if msg_type in ("assigned", "waiting"):
-        if log_state.get("current_status") != "WAITING":
-            game_id = data.get("gameId", "")
-            resolved_name = log_state.get("resolved_room_name")
-            if not resolved_name:
-                resolved_name = await fetch_room_name(game_id, client.api_key, client.version)
-                log_state["resolved_room_name"] = resolved_name
-            
-            log_state["current_status"] = "WAITING"
-            
-            if bot_name not in client.joined_bots:
-                client.joined_bots.append(bot_name)
-                if len(client.joined_bots) == client.total_bots:
-                    print("All bots successfully joined room!")
-                    print()
-                    sys.stdout.flush()
+        if bot_name not in client.joined_bots:
+            client.joined_bots.append(bot_name)
+            if len(client.joined_bots) == client.total_bots:
+                print("All bots successfully joined room!")
+                print()
+                sys.stdout.flush()
 
     elif msg_type in ("agent_view", "turn_advanced", "action_result"):
         if not log_state.get("is_active_logged"):
@@ -179,5 +170,5 @@ async def handle_message(client, bot_name: str, data: dict, ws):
             while len(client.joined_bots) > 0:
                 await asyncio.sleep(1)
                 
-            await asyncio.sleep(5)
+            await asyncio.sleep(30)
             log_state["is_dead_break"] = True

@@ -37,17 +37,28 @@ def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_dat
                     queue.append(neighbor)
 
     layer_counts = {}
-    layer_counts[0] = {"P": 0, "M": 0, "A": 1}
+    for r_id, dist in distances.items():
+        if dist not in layer_counts:
+            layer_counts[dist] = {"P": 0, "M": 0, "A": 0}
+
+    if 0 not in layer_counts:
+        layer_counts[0] = {"P": 0, "M": 0, "A": 0}
 
     visible_agents = view_data.get("visibleAgents") or []
     for agent in visible_agents:
         if isinstance(agent, dict):
-            r_id = agent.get("currentRegion", {}).get("id")
             a_name = agent.get("name", "")
             
             if a_name == bot_name:
                 continue
                 
+            r_id = (
+                agent.get("regionId") or 
+                agent.get("region_id") or 
+                agent.get("currentRegionId") or 
+                agent.get("currentRegion", {}).get("id")
+            )
+            
             layer = distances.get(r_id)
             if layer is not None:
                 if layer not in layer_counts:
@@ -61,7 +72,13 @@ def detect_layers(bot_name: str, self_data: dict, current_region: dict, view_dat
     visible_monsters = view_data.get("visibleMonsters") or []
     for monster in visible_monsters:
         if isinstance(monster, dict):
-            r_id = monster.get("currentRegion", {}).get("id")
+            r_id = (
+                monster.get("regionId") or 
+                monster.get("region_id") or 
+                monster.get("currentRegionId") or 
+                monster.get("currentRegion", {}).get("id")
+            )
+            
             layer = distances.get(r_id)
             if layer is not None:
                 if layer not in layer_counts:

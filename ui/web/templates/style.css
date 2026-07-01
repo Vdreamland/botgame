@@ -1,0 +1,165 @@
+/* ui/web/templates/style.css */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: monospace;
+}
+
+body {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  height: 100vh;
+}
+
+.dashboard-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 280px;
+  background-color: #161b22;
+  border-right: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+}
+
+.sidebar-header {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 10px;
+}
+
+.sidebar-header h2 {
+  color: #58a6ff;
+  font-size: 1.2rem;
+}
+
+.sidebar-header p {
+  color: #8b949e;
+  font-size: 0.8rem;
+}
+
+.bots-list-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.no-bots {
+  text-align: center;
+  color: #8b949e;
+  padding: 20px;
+  font-size: 0.85rem;
+}
+
+.bot-item {
+  width: 100%;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-align: left;
+  color: #c9d1d9;
+}
+
+.bot-item:hover {
+  background: #30363d;
+}
+
+.active-bot {
+  background: #1f6feb !important;
+  border-color: #58a6ff !important;
+  color: #ffffff !important;
+}
+
+.bot-name-label {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.bot-summary {
+  font-size: 0.8rem;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+.active-bot .bot-summary {
+  color: #c9d1d9;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0d1117;
+  padding: 20px;
+  height: 100vh;
+}
+
+.detail-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #8b949e;
+  text-align: center;
+}
+
+.pulse-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.detail-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #30363d;
+}
+
+.detail-header h2 {
+  color: #58a6ff;
+  font-size: 1.2rem;
+}
+
+.turn-counter {
+  background: #21262d;
+  border: 1px solid #30363d;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.logs-box {
+  flex: 1;
+  width: 100%;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #3fb950;
+  padding: 15px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  cursor: pointer;
+}
+
+#active-polling {
+  display: none;
+}

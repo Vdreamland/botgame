@@ -41,9 +41,6 @@ class ClawRoyaleSocketClient:
 
         while True:
             self.log_state.clear()
-            if len(self.joined_bots) == 0:
-                print("All bots queued. Waiting for match...")
-                sys.stdout.flush()
 
             try:
                 async with aiohttp.ClientSession() as session:
@@ -78,16 +75,13 @@ class ClawRoyaleSocketClient:
 
                         # --- Penanganan Setelah Perulangan Pesan Selesai / Putus ---
                         
-                        # Jika bot mati, keluar sepenuhnya dari perulangan utama (tidak re-antre)
                         if self.log_state.get("is_dead_break"):
                             break
                             
-                        # Jika lobi di-block, tunggu sejenak lalu keluar sepenuhnya
                         if self.log_state.get("blocked_exit"):
                             await asyncio.sleep(5)
                             break
                             
-                        # Log warning jika koneksi terputus dan lakukan proses pembersihan sebelum mencoba kembali
                         log_system.warning(f"[{bot_name}] Disconnected from game room.")
                         if bot_name in self.joined_bots:
                             self.joined_bots.remove(bot_name)
@@ -97,7 +91,6 @@ class ClawRoyaleSocketClient:
                             
                         await asyncio.sleep(5)
 
-                # Cek kembali jika loop luar perlu dihentikan karena bot mati atau diblokir
                 if self.log_state.get("is_dead_break") or self.log_state.get("blocked_exit"):
                     break
 

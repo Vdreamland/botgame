@@ -23,6 +23,10 @@ $env:CLAWROYALE_API_KEY="mr_live_3JiEDObzgek3V3tRE6M4AAmFr3oDCUgX"
 clear cache
 Get-ChildItem -Path . -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
 
+di powershel :
 python rungame.py
 
-relic unequip python tools/setup_loadout.py
+lalu di browser :
+http://localhost:8080
+
+reset relic : relic unequip python tools/setup_loadout.py

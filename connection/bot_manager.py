@@ -8,6 +8,7 @@ from connection.http_client import ClawRoyaleHTTPClient
 from connection.socket_client import ClawRoyaleSocketClient
 from connection.loadout import ClawRoyaleLoadoutClient
 from ui import log_system, GREEN, RED, RESET
+from ui.web.server import start_dashboard_server
 
 async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, version: str) -> dict:
     main_name = "None"
@@ -115,6 +116,11 @@ async def start_multi_bots():
         print(f"{bot_idx_padded}{loadout_padded}{full_set_colored}{ws_test_colored}")
         sys.stdout.flush()
 
+    try:
+        await start_dashboard_server(host="localhost", port=8080)
+    except Exception as e:
+        log_system.error(f"Failed to start web dashboard: {str(e)}")
+
     joined_bots = []
     join_tasks = []
     for i in range(1, num_bots + 1):
@@ -125,5 +131,6 @@ async def start_multi_bots():
             join_tasks.append(client.connect_and_listen(name, silent=False))
 
     if join_tasks:
-        print()
+        print("All bots queued. Waiting for match...")
+        sys.stdout.flush()
         await asyncio.gather(*join_tasks)

@@ -1,5 +1,4 @@
 # ui/log_game.py
-
 import sys
 import asyncio
 import aiohttp
@@ -58,29 +57,42 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
     else:
         visibility_zones = links_count + 1
 
-    main_pack = loadout_data.get("activePack")
-    sub_pack = loadout_data.get("subPack")
-    main_name = main_pack.get("displayName") if main_pack else "None"
-    sub_name = sub_pack.get("displayName") if sub_pack else "None"
-
-    hp_color = RED if hp < (max_hp * 0.3) else GREEN
-    hp_display = f"{hp_color}{hp}{RESET}"
-    status_display = f"Status : {GREEN}ALIVE{RESET}" if is_alive else f"Status : {RED}DEAD{RESET}"
-
-    print(f"# TURN {turn} [{bot_name}]")
-    print(status_display)
-    print(f"Hp {hp_display} / Ep {ep} / Kill {kills}")
-    print(f"ATK: {atk} / DEF: {def_val}")
-    print(f"Visibility [{visibility_zones}]")
-    print(f"Location : {region_name} / Terrain : {terrain} / Weather : {weather} / Vision {vision} / Links {links_count}")
-    
+    layers_lines = []
     for l_data in layers:
-        print(f"Layer {l_data['layer']} : P {l_data['P']} / M {l_data['M']} / A {l_data['A']}")
-        
-    print(f"Equipped : Weapon : {weapon_name} / Armor  : {armor_name}")
-    print(f"Inventory ({inv['slot_count']}/10 Slots) : {inventory_str}")
-    print()
-    sys.stdout.flush()
+        layers_lines.append(f"Layer {l_data['layer']} : P {l_data['P']} / M {l_data['M']} / A {l_data['A']}")
+    layers_block = "\n".join(layers_lines)
+
+    status_display_plain = "ALIVE" if is_alive else "DEAD"
+
+    # Konstruksi string multiline log persis seperti log terminal powershell lama
+    turn_log_text = (
+        f"TURN {turn} [{bot_name}]\n"
+        f"Status : {status_display_plain}\n"
+        f"Hp {hp} / Ep {ep} / Kill {kills}\n"
+        f"ATK: {atk} / DEF: {def_val}\n"
+        f"Visibility [{visibility_zones}]\n"
+        f"Location : {region_name} / Terrain : {terrain} / Weather : {weather} / Vision {vision} / Links {links_count}\n"
+        f"{layers_block}\n"
+        f"Equipped : Weapon : {weapon_name} / Armor  : {armor_name}\n"
+        f"Inventory ({inv['slot_count']}/10 Slots) : {inventory_str}\n"
+    )
+
+    # Kirim payload data lengkap beserta nama room ke server dashboard web
+    async with aiohttp.ClientSession() as session:
+        try:
+            payload = {
+                "bot_name": bot_name,
+                "hp": hp,
+                "max_hp": max_hp,
+                "turn": turn,
+                "is_alive": is_alive,
+                "room_name": room_name,
+                "log_msg": turn_log_text
+            }
+            await session.post("http://localhost:8080/api/update", json=payload)
+        except Exception:
+            pass
+
     return room_name
 
 async def handle_message(client, bot_name: str, data: dict, ws):
@@ -92,6 +104,8 @@ async def handle_message(client, bot_name: str, data: dict, ws):
             client.joined_bots.append(bot_name)
             if len(client.joined_bots) == client.total_bots:
                 print("All bots successfully joined room!")
+                log_system.success("Web dashboard server started successfully.")
+                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
                 print()
                 sys.stdout.flush()
 
@@ -102,6 +116,8 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                 client.joined_bots.append(bot_name)
                 if len(client.joined_bots) == client.total_bots:
                     print("All bots successfully joined room!")
+                    log_system.success("Web dashboard server started successfully.")
+                    print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
                     print()
                     sys.stdout.flush()
 

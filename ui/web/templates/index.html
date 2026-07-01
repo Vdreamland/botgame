@@ -1,0 +1,114 @@
+<!-- ui/web/templates/index.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claw Royale - AI Arena</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h2>Claw Arena</h2>
+          <p>Live Bots Monitor</p>
+        </div>
+        <!-- Mengurangi frekuensi polling sidebar ke 5 detik untuk menghilangkan tabrakan klik navigasi -->
+        <div
+          id="bots-list"
+          hx-get="/api/bots"
+          hx-trigger="every 5s"
+          class="bots-list-container"
+        >
+          <div class="no-bots">Waiting for bots...</div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div id="dashboard-detail" class="detail-placeholder">
+          <div class="pulse-icon">🤖</div>
+          <h3>Claw Arena Live Logs</h3>
+          <p>
+            Silakan pilih bot di sebelah kiri untuk memantau aktivitas log
+            secara real-time.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <template id="BOT_ITEM">
+      <button
+        class="bot-item {active_class}"
+        hx-get="/api/bot/{name}"
+        hx-target="#dashboard-detail"
+        hx-push-url="false"
+        onclick="setActiveBot('{name}')"
+      >
+        <div class="bot-name-label">{name} ({status_text})</div>
+        <div class="bot-summary" style="margin-bottom: 4px; color: #58a6ff">
+          Room: {room_name}
+        </div>
+        <div class="bot-summary">HP: {hp}/{max_hp} | Turn: {turn}</div>
+      </button>
+    </template>
+
+    <template id="BOT_DETAIL">
+      <div id="dashboard-detail" class="detail-container">
+        <div class="detail-header">
+          <h2>{name} - Live Audit Terminal (Room: {room_name})</h2>
+          <div class="turn-counter">LATEST: TURN {turn}</div>
+        </div>
+        <textarea
+          class="logs-box"
+          readonly
+          onclick="
+            this.select();
+            document.execCommand('copy');
+          "
+        >
+{logs_str}</textarea
+        >
+        <!-- Mengatur polling log per 2 detik agar performa CPU browser tetap ringan saat memantau banyak bot -->
+        <div
+          id="active-polling"
+          hx-get="/api/bot/{name}"
+          hx-trigger="every 2s"
+          hx-target="#dashboard-detail"
+          hx-swap="outerHTML"
+        ></div>
+      </div>
+    </template>
+
+    <script>
+      let activeBot = "";
+      let initialLoad = true;
+
+      function setActiveBot(name) {
+        activeBot = name;
+        initialLoad = true;
+      }
+
+      document.body.addEventListener("htmx:configRequest", function (evt) {
+        if (evt.detail.path === "/api/bots") {
+          evt.detail.parameters["selected"] = activeBot;
+        }
+      });
+
+      // Logika Smart Auto-Scroll
+      document.body.addEventListener("htmx:afterSwap", function (evt) {
+        const logBox = document.querySelector(".logs-box");
+        if (logBox) {
+          const isNearBottom =
+            logBox.scrollHeight - logBox.clientHeight - logBox.scrollTop < 100;
+
+          if (isNearBottom || initialLoad) {
+            logBox.scrollTop = logBox.scrollHeight;
+            initialLoad = false;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

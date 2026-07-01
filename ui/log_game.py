@@ -6,12 +6,14 @@ import aiohttp
 from collections import Counter
 from connection.loadout import ClawRoyaleLoadoutClient
 from connection.http_client import ClawRoyaleHTTPClient
-from utility.detector.bot_stats_detector import detect_bot_stats, detect_agent_stats
-from utility.detector.inventory_detector import detect_inventory
-from utility.detector.zone_detector import detect_zone
+from utility.detector.bot_stats_detector import detect_bot_stats
 from utility.detector.layer_detector import detect_layers
 from ui.damage_logs import track_damage_event, get_turn_damage_reason
+from ui.combat_logs import detect_combat_log_string
+from ui.zone_logs import detect_zone_log_string
+from ui.loot_logs import detect_loot_log_string
 from ui import log_system, GREEN, RED, RESET
+from utility.strategy.decision_engine import make_decision
 
 async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str, turn: int, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, resolved_room_name: str = None, log_state: dict = None) -> str:
     room_name = resolved_room_name
@@ -33,64 +35,23 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             preseason_data = await http_client.get_preseason_summary(api_key, version)
             season_points = preseason_data.get("seasonPoints") or preseason_data.get("points") or 0
             rank = preseason_data.get("rank") or "UNRANKED"
-
-            loadout_client = ClawRoyaleLoadoutClient(session)
-            loadout_data = await loadout_client.get_loadout(api_key, version)
         except Exception:
             pass
 
     stats = detect_bot_stats(self_data)
-    inv = detect_inventory(self_data)
-    zone = detect_zone(current_region, view_data)
-    layers = detect_layers(bot_name, self_data, current_region, view_data, joined_bots)
-
     hp = stats["hp"]
     max_hp = stats["max_hp"]
-    ep = stats["ep"]
-    max_ep = stats["max_ep"]
-    kills = stats["kills"]
-    atk = stats["atk"]
-    def_val = stats["def"]
     is_alive = stats["is_alive"]
-    weapon_name = stats["weapon_name"]
-    armor_name = stats["armor_name"]
 
-    inventory_str = inv["items_str"]
+    # 1. Hitung Lapisan BFS Terlebih Dahulu
+    layers = detect_layers(bot_name, self_data, current_region, view_data, joined_bots)
 
-    region_name = zone["region_name"]
-    terrain = zone["terrain"]
-    weather = zone["weather"]
-    links_count = zone["links_count"]
-    vision = zone["vision"]
-    
-    regions_list = view_data.get("visibleRegions") or view_data.get("regions")
-    if isinstance(regions_list, list):
-        visibility_zones = len(regions_list)
-    else:
-        visibility_zones = links_count + 1
+    # 2. Panggil Pembuat Log Modular Terpisah (Code Reuse & DRY) [2]
+    combat_text = detect_combat_log_string(bot_name, self_data, layers)
+    zone_text = detect_zone_log_string(current_region, view_data)
+    loot_text = detect_loot_log_string(self_data)
 
-    layers_parts = []
-    for l_data in layers:
-        layers_parts.append(f"Layer {l_data['layer']} : P {l_data['P']} / M {l_data['M']} / A {l_data['A']}")
-    layers_block = " | ".join(layers_parts)
-
-    status_display_plain = "ALIVE" if is_alive else "DEAD"
-
-    # Detail perlengkapan senjata & armor yang lebih mendalam sesuai versi 1.12.0
-    weapon_desc = "None"
-    if weapon_name != "None":
-        weapon_desc = weapon_name
-
-    armor_desc = "None"
-    equipped_armor = self_data.get("equippedArmor")
-    if isinstance(equipped_armor, dict):
-        armor_grade = equipped_armor.get("grade") or "N/A"
-        armor_def = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
-        armor_desc = f"{armor_name} (Grade: {armor_grade}, +{armor_def} DEF)"
-    elif isinstance(equipped_armor, str) and equipped_armor != "None":
-        armor_desc = equipped_armor
-
-    # Kalkulasi audit riwayat damage/healing per turn ke dalam baris ZoneHistory
+    # 3. Panggil Log ZoneHistory khusus dari ui/damage_logs.py
     zone_history = "No damage events recorded."
     if log_state is not None:
         zone_history = get_turn_damage_reason(
@@ -102,48 +63,18 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             joined_bots=joined_bots,
             log_state=log_state
         )
+    damage_text = f"ZoneHistory : {zone_history}"
 
-    # Deteksi log peringatan ekspansi zona mati mendatang (Incoming Death Zone Warning)
-    pending_dz = view_data.get("pendingDeathzones") or []
-    if pending_dz:
-        names = [rz.get("name") or rz.get("id") or "Unknown" for rz in pending_dz if isinstance(rz, dict)]
-        dz_warning = f"Incoming ({', '.join(names)})"
-    else:
-        dz_warning = "None"
-
-    # Deteksi semua wilayah yang sudah aktif menjadi zona mati (isDeathZone == True)
-    active_dz_names = []
-    if current_region.get("isDeathZone") or current_region.get("is_death_zone"):
-        curr_name = current_region.get("name") or "Current Region"
-        active_dz_names.append(curr_name)
-
-    regions_to_check = view_data.get("visibleRegions") or view_data.get("regions") or []
-    for rz in regions_to_check:
-        if isinstance(rz, dict):
-            if rz.get("isDeathZone") or rz.get("is_death_zone"):
-                name = rz.get("name") or rz.get("id")
-                if name and name not in active_dz_names:
-                    active_dz_names.append(name)
-
-    active_dz = ", ".join(active_dz_names) if active_dz_names else "None"
-
-    # Susun ulang sesuai visual log format yang diminta, dengan tambahan ZoneHistory
+    # 4. Satukan Seluruh Potongan Log Modular Menggunakan Baris Baru (Sangat Bersih & Terstruktur) [2]
     turn_log_text = (
         f"TURN {turn} [{bot_name}]\n"
-        f"Status : {status_display_plain}\n"
-        f"Hp {hp} / Ep {ep} / Kill {kills}\n"
-        f"ATK: {atk} / DEF: {def_val}\n"
-        f"Visibility [{visibility_zones}]\n"
-        f"Location : {region_name} / Terrain : {terrain} / Weather : {weather} / Vision {vision} / Links {links_count}\n"
-        f"Equipped : Weapon : {weapon_desc} | Armor : {armor_desc}\n"
-        f"Inventory ({inv['slot_count']}/10 Slots) : {inventory_str}\n"
-        f"{layers_block}\n"
-        f"ZoneHistory : {zone_history}\n"
-        f"DeadZoneWarning : {dz_warning}\n"
-        f"Active DeathZones : {active_dz}\n"
+        f"{combat_text}\n"
+        f"{zone_text}\n"
+        f"{loot_text}\n"
+        f"{damage_text}"
     )
 
-    # Kirim payload data lengkap ke server web lokal
+    # Kirim payload data lengkap beserta status preseason 1 ke server web lokal
     async with aiohttp.ClientSession() as session:
         try:
             payload = {
@@ -154,6 +85,8 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
                 "is_alive": is_alive,
                 "room_name": room_name,
                 "balance": balance,
+                "season_points": season_points,
+                "rank": rank,
                 "log_msg": turn_log_text
             }
             await session.post("http://localhost:8080/api/update", json=payload)
@@ -170,6 +103,17 @@ async def handle_message(client, bot_name: str, data: dict, ws):
     if msg_type == "event":
         event_data = data.get("event") or {}
         track_damage_event(bot_name, event_data, log_state)
+        
+        # Simpan memori jangka pendek wilayah kematian musuh untuk rute pergerakan taktis koin sMoltz (Loot)
+        event_type = event_data.get("type")
+        if event_type in ("agent_died", "death"):
+            dead_r_id = event_data.get("regionId") or event_data.get("region_id")
+            if dead_r_id:
+                if "recent_kill_zones" not in log_state:
+                    log_state["recent_kill_zones"] = []
+                log_state["recent_kill_zones"].append(dead_r_id)
+                if len(log_state["recent_kill_zones"]) > 5:
+                    log_state["recent_kill_zones"].pop(0)
         return
 
     # Deteksi pesan akhir permainan (game_ended) secara resmi dari server game
@@ -184,14 +128,10 @@ async def handle_message(client, bot_name: str, data: dict, ws):
         if bot_name not in client.joined_bots:
             client.joined_bots.append(bot_name)
             print(f"[{bot_name}] successfully joined room!")
+            # Tampilkan informasi "Game is ready!" tepat di bagian paling bawah hanya jika bot sukses terhubung
+            print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+            print()
             sys.stdout.flush()
-
-            # Cetak informasi "Game is ready!" tepat setelah seluruh bot dikonfirmasi sukses bergabung ke lobi
-            if len(client.joined_bots) == client.total_bots:
-                print()  # Margin kosong
-                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-                print()
-                sys.stdout.flush()
 
     elif msg_type in ("agent_view", "turn_advanced", "action_result"):
         if not log_state.get("is_active_logged"):
@@ -199,13 +139,9 @@ async def handle_message(client, bot_name: str, data: dict, ws):
             if bot_name not in client.joined_bots:
                 client.joined_bots.append(bot_name)
                 print(f"[{bot_name}] successfully joined room!")
+                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+                print()
                 sys.stdout.flush()
-
-                if len(client.joined_bots) == client.total_bots:
-                    print()  # Margin kosong
-                    print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-                    print()
-                    sys.stdout.flush()
 
         view = data.get("view") or data.get("data", {}).get("view") or {}
         self_data = view.get("self", {})

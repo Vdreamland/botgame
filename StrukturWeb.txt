@@ -24,12 +24,12 @@
 │   │   ├── zone_detector.py          # Menganalisis kondisi terrain, cuaca, serta visibilitas wilayah bot saat ini
 │   │   └── layer_detector.py         # Mengalkulasi lapisan jarak (BFS) posisi unit lain (P/M/A) di sekitar wilayah bot
 │   │
-│   └── strategy/                     # Folder rancangan modul taktik pergerakan dan pertempuran (AI Engine) # ini hanya rencana belum ada isinya 
+│   └── strategy/                     # Folder rancangan modul taktik pergerakan dan pertempuran (AI Engine)
 │       ├── init.py                   # Penanda paket Python untuk folder strategy # ini hanya rencana belum ada isinya
-│       ├── #movement_solver.py       # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman) # ini hanya rencana belum ada isinya
+│       ├── movement_solver.py        # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman)
 │       ├── combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan
-│       ├── loot_solver.py          # Pemecah taktis jarahan (Need, Risk, EV, & Inventory Priority)
-│       └── #decision_engine.py       # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn # ini hanya rencana belum ada isinya
+│       ├── loot_solver.py            # Pemecah taktis jarahan (Need, Risk, EV, & Inventory Priority)
+│       └── decision_engine.py        # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn
 │
 ├── game_data/                        # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
 │   ├── init.py                       # Penanda paket Python untuk folder game_data
@@ -45,6 +45,10 @@
 └── ui/                               # Modul Antarmuka / Logging Visual
     ├── init.py                       # Penanda paket Python untuk folder ui
     ├── log_system.py                 # Log status sistem global
+    ├── damage_logs.py                # Log deteksi terkena damage oleh musuh
+    ├── #combat_logs.py               # Memproses dan memformat log "Combat" (HP, EP, ATK, DEF, detail Equipped, & visual Layer BFS)
+    ├── #zone_logs.py                 # Memproses dan memformat log "Wilayah" (Location, Terrain, Weather, Warning, & Active Death Zones)
+    ├── #loot_logs.py                 # Memproses dan memformat log "Penjarahan" (Inventaris slot, daftar koin sMoltz, & item lantai)
     ├── damage_logs.py                # Log deteksi terkena damage oleh musuh
     ├── log_connection.py             # Log detail koneksi (dipertahankan)
     ├── log_game.py                   # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi

@@ -168,9 +168,9 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
             m_type = "guardian"
             
         monster_stats = MONSTERS.get(m_type, MONSTERS["wolf"])
-        target_def = monster_stats.get("def", 1)
-        target_atk = monster_stats.get("atk", 10)
-        target_hp = monster.get("hp", monster_stats.get("hp", 25))
+        target_def = monster_stats.get("def", 0)
+        target_atk = monster_stats.get("atk", 0)
+        target_hp = monster.get("hp") or monster_stats.get("hp", 0)
         
         damage_dealt = max(1, our_total_atk - target_def)
         damage_received = max(1, target_atk - our_total_def)

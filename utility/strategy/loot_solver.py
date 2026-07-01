@@ -3,7 +3,7 @@
 from utility.detector.layer_detector import calculate_distances
 from utility.detector.bot_stats_detector import detect_agent_stats
 from utility.detector.inventory_detector import detect_agent_inventory
-from game_data import WEAPONS, ARMOURS
+from game_data import WEAPONS, ARMOURS, ITEMS
 
 def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, log_state: dict) -> dict:
     """Mengevaluasi nilai kelayakan penjarahan koin sMoltz atau item di tanah berdasarkan Need, Risk, dan Expected Value"""
@@ -195,7 +195,15 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
             elif item_type == "recovery":
                 hp_ratio = our_hp / our_max_hp
                 need_score = int((1.0 - hp_ratio) * 100)
-                item_value = 60 if "medkit" in item_name else 30
+                
+                hp_bonus = 0
+                ep_bonus = 0
+                for i_id, i_stats in ITEMS.items():
+                    if i_id in item_name or i_stats.get("display_name", "").lower() in item_name:
+                        hp_bonus = i_stats.get("hp_bonus", 0)
+                        ep_bonus = i_stats.get("ep_bonus", 0)
+                        break
+                item_value = 10 + (hp_bonus * 1.5) + (ep_bonus * 3.0)
                 
         success_chance = (100 - risk_score) / 100.0
         failure_chance = risk_score / 100.0

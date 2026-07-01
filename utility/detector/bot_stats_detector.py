@@ -61,12 +61,12 @@ def detect_bot_stats(self_data: dict) -> dict:
 
 def detect_agent_stats(agent_data: dict) -> dict:
     """Fungsi detektor umum terpusat untuk memindai statistik dinamis agen musuh, aliansi, atau monster"""
-    hp = agent_data.get("hp", 100)
-    max_hp = agent_data.get("maxHp") or agent_data.get("max_hp") or 100
-    ep = agent_data.get("ep", 10)
-    max_ep = agent_data.get("maxEp") or agent_data.get("max_ep") or 10
-    atk = agent_data.get("atk") or 25
-    def_val = agent_data.get("def") or 5
+    hp = agent_data.get("hp", PLAYER_DEFAULT_STATS["hp"])
+    max_hp = agent_data.get("maxHp") or agent_data.get("max_hp") or PLAYER_DEFAULT_STATS["hp"]
+    ep = agent_data.get("ep", PLAYER_DEFAULT_STATS["max_ep"])
+    max_ep = agent_data.get("maxEp") or agent_data.get("max_ep") or PLAYER_DEFAULT_STATS["max_ep"]
+    atk = agent_data.get("atk") or PLAYER_DEFAULT_STATS["atk"]
+    def_val = agent_data.get("def") or PLAYER_DEFAULT_STATS["def"]
     is_alive = agent_data.get("isAlive")
     if is_alive is None:
         is_alive = agent_data.get("is_alive", True)
@@ -81,7 +81,7 @@ def detect_agent_stats(agent_data: dict) -> dict:
     elif isinstance(equipped_weapon, str):
         weapon_name = equipped_weapon
 
-    equipped_armor = agent_data.get("equippedArmor")
+    equipped_armor = self_data.get("equippedArmor")
     armor_name = "None"
     armor_desc = "None"
     if isinstance(equipped_armor, dict):

@@ -59,3 +59,85 @@
         └── templates/                # Folder penyimpanan berkas template frontend  # ini hanya rencana belum ada isinya
             ├── index.html            # Halaman dashboard utama (HTML) yang dibuka oleh pengguna di browser  # ini hanya rencana belum ada isinya 
             └── style.css             # Berkas gaya tampilan (CSS) untuk merapikan dashboard agar modern  # ini hanya rencana belum ada isinya
+
+
+--Link url file github--
+
+#Dokumentasi
+Docs.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/Docs.txt
+GameGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/GameGuide.txt
+PlayGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PlayGuide.txt
+PreaSeasonGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PreaSeasonGuide1.txt
+skill.md https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/skill-1.11.2.md
+StrukturWebsite.txt : https://github.com/Vdreamland/botgame/blob/master/StrukturWeb.txt
+
+# game
+.env : https://github.com/Vdreamland/botgame/blob/master/.env
+requirements.txt : https://github.com/Vdreamland/botgame/blob/master/requirements.txt
+rungame.py : https://github.com/Vdreamland/botgame/blob/master/rungame.py
+
+/connection/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/connection/__init__.py
+api_endpoints.py : https://github.com/Vdreamland/botgame/blob/master/connection/api_endpoints.py
+bot_manager.py : https://github.com/Vdreamland/botgame/blob/master/connection/bot_manager.py
+http_client.py : https://github.com/Vdreamland/botgame/blob/master/connection/http_client.py
+loadout.py : https://github.com/Vdreamland/botgame/blob/master/connection/loadout.py
+socket_client.py https://github.com/Vdreamland/botgame/blob/master/connection/socket_client.py
+
+/game_data/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/game_data/__init__.py
+action_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/action_info.py
+item_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/item_info.py
+monster_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/monster_info.py
+pack_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/pack_info.py
+player_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/player_info.py
+relic_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/relic_info.py
+weapon_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/weapon_info.py
+world_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/world_info.py
+
+/tools/
+setup_loadout.py : https://github.com/Vdreamland/botgame/blob/master/tools/setup_loadout.py
+
+/ui/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/ui/__init__.py
+combat_logs.py : https://github.com/Vdreamland/botgame/blob/master/ui/combat_logs.py
+damage_logs.py : https://github.com/Vdreamland/botgame/blob/master/ui/damage_logs.py
+log_connection.py : https://github.com/Vdreamland/botgame/blob/master/ui/log_connection.py
+log_game.py : https://github.com/Vdreamland/botgame/blob/master/ui/log_game.py
+log_system.py : https://github.com/Vdreamland/botgame/blob/master/ui/log_system.py
+loot_logs.py : https://github.com/Vdreamland/botgame/blob/master/ui/loot_logs.py
+zone_logs.py : https://github.com/Vdreamland/botgame/blob/master/ui/zone_logs.py
+
+/ui/web/
+server.py : https://github.com/Vdreamland/botgame/blob/master/ui/web/server.py
+
+ui/web/templates/
+index.html : https://github.com/Vdreamland/botgame/blob/master/ui/web/templates/index.html
+style.css : https://github.com/Vdreamland/botgame/blob/master/ui/web/templates/style.css
+
+utility/detector/
+bot_stats_detector.py : https://github.com/Vdreamland/botgame/blob/master/utility/detector/bot_stats_detector.py
+inventory_detector.py : https://github.com/Vdreamland/botgame/blob/master/utility/detector/inventory_detector.py
+layer_detector.py : https://github.com/Vdreamland/botgame/blob/master/utility/detector/layer_detector.py
+zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/utility/detector/zone_detector.py
+
+utility/strategy/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/utility/strategy/__init__.py
+combat_solver.py : https://github.com/Vdreamland/botgame/blob/master/utility/strategy/combat_solver.py
+decision_engine.py : https://github.com/Vdreamland/botgame/blob/master/utility/strategy/decision_engine.py
+loot_solver.py : https://github.com/Vdreamland/botgame/blob/master/utility/strategy/loot_solver.py
+/movement_solver.py : https://github.com/Vdreamland/botgame/blob/master/utility/strategy/movement_solver.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -9,30 +9,23 @@
   </head>
   <body>
     <div class="dashboard-container">
-      <!-- Sidebar: Daftar Bot -->
       <div class="sidebar">
         <div class="sidebar-header">
           <h2>Claw Arena</h2>
           <p>Live Bots Monitor</p>
         </div>
 
-        <!-- Widget Total sMoltz Global -->
         <div
           id="total-smoltz-container"
           hx-get="/api/bots"
           hx-trigger="load, every 5s"
           hx-target="#bots-list"
           hx-swap="innerHTML"
-        >
-          <!-- Total sMoltz akan disuntikkan secara dinamis -->
-        </div>
+        ></div>
 
-        <div class="bots-list-container" id="bots-list">
-          <!-- Daftar bot akan dimuat di sini oleh HTMX -->
-        </div>
+        <div class="bots-list-container" id="bots-list"></div>
       </div>
 
-      <!-- Main Content: Terminal Log Real-time -->
       <div class="main-content" id="dashboard-detail">
         <div class="no-selection">
           Silakan pilih bot di sebelah kiri untuk memantau status.
@@ -40,7 +33,6 @@
       </div>
     </div>
 
-    <!-- Template Block HTMX -->
     <template id="BOT_ITEM">
       <button
         class="bot-item {active_class}"

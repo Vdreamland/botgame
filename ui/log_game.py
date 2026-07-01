@@ -128,10 +128,14 @@ async def handle_message(client, bot_name: str, data: dict, ws):
         if bot_name not in client.joined_bots:
             client.joined_bots.append(bot_name)
             print(f"[{bot_name}] successfully joined room!")
-            # Tampilkan informasi "Game is ready!" tepat di bagian paling bawah hanya jika bot sukses terhubung
-            print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-            print()
             sys.stdout.flush()
+
+            # Pastikan pesan lobi "Game is ready" hanya dicetak sekali saat SEMUA bot sukses bergabung
+            if len(client.joined_bots) == client.total_bots:
+                print()  # Margin kosong
+                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+                print()
+                sys.stdout.flush()
 
     elif msg_type in ("agent_view", "turn_advanced", "action_result"):
         if not log_state.get("is_active_logged"):
@@ -139,9 +143,13 @@ async def handle_message(client, bot_name: str, data: dict, ws):
             if bot_name not in client.joined_bots:
                 client.joined_bots.append(bot_name)
                 print(f"[{bot_name}] successfully joined room!")
-                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-                print()
                 sys.stdout.flush()
+
+                if len(client.joined_bots) == client.total_bots:
+                    print()  # Margin kosong
+                    print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+                    print()
+                    sys.stdout.flush()
 
         view = data.get("view") or data.get("data", {}).get("view") or {}
         self_data = view.get("self", {})

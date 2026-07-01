@@ -136,7 +136,8 @@ async def bot_detail_handler(request):
     if not template:
         return web.Response(text="Template BOT_DETAIL not found.", status=500)
 
-    logs_str = "\n".join(bot["logs"]) if bot["logs"] else "Waiting for turn actions..."
+    # Menyatukan data log menggunakan dobel baris baru (\n\n) untuk memberikan jeda/margin antar-turn di browser
+    logs_str = "\n\n".join(bot["logs"]) if bot["logs"] else "Waiting for turn actions..."
     log_count = len(bot["logs"])
 
     detail_html = template.format(

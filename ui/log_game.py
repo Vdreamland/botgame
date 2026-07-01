@@ -68,6 +68,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             log_state=log_state
         )
 
+    decision = {}
     ai_thought = "Waiting for game actions..."
     if is_alive and log_state is not None:
         try:
@@ -76,6 +77,90 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         except Exception:
             pass
 
+    main_action = decision.get("action") or {}
+    main_type = main_action.get("type")
+    
+    pickups = decision.get("free_pickups", [])
+    if main_type == "pickup":
+        p_id = main_action.get("itemId")
+        if p_id not in pickups:
+            pickups = list(pickups) + [p_id]
+            
+    picked_names = []
+    for p_id in pickups:
+        for item in (current_region.get("items") or current_region.get("groundItems") or []):
+            if isinstance(item, dict) and (item.get("id") == p_id or item.get("instanceId") == p_id):
+                picked_names.append(item.get("displayName") or item.get("name") or "Item")
+                break
+                
+    t_name = "Unknown"
+    if main_type == "attack":
+        t_id = main_action.get("targetId")
+        for agent in (view_data.get("visibleAgents") or []):
+            if isinstance(agent, dict) and (agent.get("id") == t_id or agent.get("name") == t_id):
+                t_name = agent.get("name", "Unknown Player")
+                break
+        if t_name == "Unknown":
+            for monster in (view_data.get("visibleMonsters") or []):
+                if isinstance(monster, dict) and (monster.get("id") == t_id or monster.get("instanceId") == t_id or monster.get("name") == t_id):
+                    t_name = monster.get("name") or monster.get("displayName") or "Monster"
+                    break
+                    
+    equips = decision.get("free_equips", [])
+    if main_type == "equip":
+        e_id = main_action.get("itemId")
+        if e_id not in equips:
+            equips = list(equips) + [e_id]
+            
+    equipped_names = []
+    for e_id in equips:
+        for item in (self_data.get("inventory") or []):
+            if isinstance(item, dict) and (item.get("id") == e_id or item.get("instanceId") == e_id):
+                equipped_names.append(item.get("displayName") or item.get("name") or "Equip")
+                break
+                
+    u_name = "Item"
+    if main_type == "use_item":
+        u_id = main_action.get("itemId")
+        for item in (self_data.get("inventory") or []):
+            if isinstance(item, dict) and (item.get("id") == u_id or item.get("instanceId") == u_id):
+                u_name = item.get("displayName") or item.get("name") or "Item"
+                break
+                
+    f_name = "Facility"
+    if main_type == "interact":
+        facilities = current_region.get("interactables") or current_region.get("facilities") or []
+        if facilities:
+            first_f = facilities[0]
+            if isinstance(first_f, dict):
+                f_name = (first_f.get("type") or first_f.get("id") or "Facility").replace("_", " ").title()
+                
+    action_str = "Nothing"
+    if main_type == "pickup" or picked_names:
+        action_str = "Loot " + ", ".join(picked_names) if picked_names else "Loot"
+    elif main_type == "attack":
+        action_str = f"Attack {t_name}"
+    elif main_type == "interact":
+        action_str = f"Interact {f_name}"
+    elif main_type == "use_item":
+        action_str = f"Use {u_name}"
+    elif main_type == "equip" or equipped_names:
+        action_str = "Equip " + ", ".join(equipped_names) if equipped_names else "Equip"
+    elif main_type == "rest":
+        action_str = "Rest"
+    elif main_type == "move":
+        action_str = "Move"
+        
+    sub_actions = []
+    if equipped_names and main_type != "equip":
+        sub_actions.append(f"Equip {', '.join(equipped_names)}")
+    if picked_names and main_type != "pickup":
+        sub_actions.append(f"Loot {', '.join(picked_names)}")
+        
+    if sub_actions:
+        action_str += " | " + " | ".join(sub_actions)
+        
+    loot_text = f"{loot_text} | Action : {action_str}"
     damage_text = f"ZoneHistory : {zone_history} ({ai_thought})"
 
     turn_log_text = (

@@ -8,8 +8,13 @@ def detect_inventory(self_data: dict) -> dict:
     
     for item in inventory:
         item_name = ""
+        qty = 1
         if isinstance(item, dict):
             item_name = (item.get("displayName") or item.get("name") or "").lower()
+            try:
+                qty = int(item.get("count") or item.get("quantity") or item.get("qty") or 1)
+            except Exception:
+                qty = 1
         elif isinstance(item, str):
             item_name = item.lower()
             
@@ -17,11 +22,12 @@ def detect_inventory(self_data: dict) -> dict:
             if "smoltz" in item_name or "moltz" in item_name:
                 has_smoltz = True
             else:
-                non_smoltz_count += 1
+                non_smoltz_count += qty
                 
             display = item.get("displayName") or item.get("name") if isinstance(item, dict) else item
-            item_names.append(display)
-            
+            for _ in range(qty):
+                item_names.append(display)
+                
     slot_count = non_smoltz_count + (1 if has_smoltz else 0)
     
     from collections import Counter
@@ -45,8 +51,13 @@ def detect_agent_inventory(agent_data: dict) -> dict:
     
     for item in inventory:
         item_name = ""
+        qty = 1
         if isinstance(item, dict):
             item_name = (item.get("displayName") or item.get("name") or "").lower()
+            try:
+                qty = int(item.get("count") or item.get("quantity") or item.get("qty") or 1)
+            except Exception:
+                qty = 1
         elif isinstance(item, str):
             item_name = item.lower()
             
@@ -54,11 +65,12 @@ def detect_agent_inventory(agent_data: dict) -> dict:
             if "smoltz" in item_name or "moltz" in item_name:
                 has_smoltz = True
             else:
-                non_smoltz_count += 1
+                non_smoltz_count += qty
                 
             display = item.get("displayName") or item.get("name") if isinstance(item, dict) else item
-            item_names.append(display)
-            
+            for _ in range(qty):
+                item_names.append(display)
+                
     slot_count = non_smoltz_count + (1 if has_smoltz else 0)
     
     from collections import Counter

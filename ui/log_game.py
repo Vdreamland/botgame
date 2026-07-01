@@ -21,7 +21,8 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
     season_points = 0
     rank = "UNRANKED"
 
-    async with aiohttp.ClientSession() as session:
+    timeout = aiohttp.ClientTimeout(total=5)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         http_client = ClawRoyaleHTTPClient(session)
 
         if not room_name:
@@ -136,7 +137,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
                 f_name = (first_f.get("type") or first_f.get("id") or "Facility").replace("_", " ").title()
                 
     action_str = "Nothing"
-    if main_type == "pickup":
+    if main_type == "pickup" or picked_names:
         action_str = "Loot " + ", ".join(picked_names) if picked_names else "Loot"
     elif main_type == "attack":
         action_str = f"Attack {t_name}"
@@ -144,7 +145,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         action_str = f"Interact {f_name}"
     elif main_type == "use_item":
         action_str = f"Use {u_name}"
-    elif main_type == "equip":
+    elif main_type == "equip" or equipped_names:
         action_str = "Equip " + ", ".join(equipped_names) if equipped_names else "Equip"
     elif main_type == "rest":
         action_str = "Rest"
@@ -160,6 +161,11 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
     if sub_actions:
         action_str += " | " + " | ".join(sub_actions)
         
+    if not is_alive:
+        zone_history = "ELIMINATED - Bot has died in combat or DeadZone."
+        ai_thought = "Match ended"
+        action_str = "Terminated"
+
     loot_text = f"{loot_text} | Action : {action_str}"
     damage_text = f"ZoneHistory : {zone_history} ({ai_thought})"
 
@@ -171,7 +177,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         f"{damage_text}"
     )
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         try:
             payload = {
                 "bot_name": bot_name,
@@ -261,13 +267,18 @@ async def handle_message(client, bot_name: str, data: dict, ws):
         is_alive = stats["is_alive"]
         hp = stats["hp"]
 
+        try:
+            current_turn_int = int(turn)
+        except Exception:
+            current_turn_int = 1
+
         last_hp = log_state.get("last_hp")
         if last_hp is not None and hp < last_hp:
             curr_r_id = current_region.get("id")
             if curr_r_id:
                 if "hostile_regions" not in log_state:
                     log_state["hostile_regions"] = {}
-                log_state["hostile_regions"][curr_r_id] = turn
+                log_state["hostile_regions"][curr_r_id] = current_turn_int
         log_state["last_hp"] = hp
 
         if is_alive and "bot_id" not in log_state:

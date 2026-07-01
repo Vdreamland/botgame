@@ -76,9 +76,13 @@ def evaluate_movement_routes(bot_name: str, self_data: dict, current_region: dic
             
         hostile_regions = log_state.get("hostile_regions", {}) if log_state else {}
         if target_id in hostile_regions:
-            damage_turn = hostile_regions[target_id]
-            if turn - damage_turn <= 5:
-                score -= 300
+            try:
+                current_turn_val = int(turn)
+                damage_turn_val = int(hostile_regions[target_id])
+                if current_turn_val - damage_turn_val <= 5:
+                    score -= 300
+            except Exception:
+                pass
             
         visible_agents = view_data.get("visibleAgents") or []
         for agent in visible_agents:

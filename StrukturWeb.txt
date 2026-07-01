@@ -86,6 +86,7 @@ socket_client.py https://github.com/Vdreamland/botgame/blob/master/connection/so
 
 /game_data/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/game_data/__init__.py
+armour_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/armour_info.py
 action_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/action_info.py
 item_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/item_info.py
 monster_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/monster_info.py

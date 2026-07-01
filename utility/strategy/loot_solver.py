@@ -3,6 +3,7 @@
 from utility.detector.layer_detector import calculate_distances
 from utility.detector.bot_stats_detector import detect_agent_stats
 from utility.detector.inventory_detector import detect_agent_inventory
+from game_data import WEAPONS, ARMOURS
 
 def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, log_state: dict) -> dict:
     """Mengevaluasi nilai kelayakan penjarahan koin sMoltz atau item di tanah berdasarkan Need, Risk, dan Expected Value"""
@@ -143,14 +144,26 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
         item_id = item.get("id") or item.get("instanceId")
         item_name = (item.get("displayName") or item.get("name") or "").lower()
         
+        is_w = False
+        for w_id, w_stats in WEAPONS.items():
+            if w_id in item_name or w_stats.get("display_name", "").lower() in item_name:
+                is_w = True
+                break
+                
+        is_a = False
+        for a_id, a_stats in ARMOURS.items():
+            if a_id in item_name or a_stats.get("display_name", "").lower() in item_name:
+                is_a = True
+                break
+
         item_type = "utility"
         if "food" in item_name or "bandage" in item_name or "medkit" in item_name or "drink" in item_name:
             item_type = "recovery"
         elif "smoltz" in item_name or "moltz" in item_name:
             item_type = "currency"
-        elif "sword" in item_name or "dagger" in item_name or "katana" in item_name or "bow" in item_name or "pistol" in item_name or "sniper" in item_name:
+        elif is_w:
             item_type = "weapon"
-        elif "armor" in item_name or "leather" in item_name or "chainmail" in item_name:
+        elif is_a:
             item_type = "armor"
             
         item_value = 50
@@ -165,10 +178,20 @@ def evaluate_loot_desire(bot_name: str, self_data: dict, current_region: dict, v
         else:
             if item_type == "weapon":
                 need_score = 100 if not has_weapon else 15
-                item_value = 80 if "katana" in item_name or "sniper" in item_name else 40
+                atk_bonus = 0
+                for w_id, w_stats in WEAPONS.items():
+                    if w_id in item_name or w_stats.get("display_name", "").lower() in item_name:
+                        atk_bonus = w_stats.get("atk_bonus", 0)
+                        break
+                item_value = 40 + (atk_bonus * 1.2)
             elif item_type == "armor":
                 need_score = 90 if not has_armor else 20
-                item_value = 70
+                def_bonus = 0
+                for a_id, a_stats in ARMOURS.items():
+                    if a_id in item_name or a_stats.get("display_name", "").lower() in item_name:
+                        def_bonus = a_stats.get("def_bonus", 0)
+                        break
+                item_value = 40 + (def_bonus * 10)
             elif item_type == "recovery":
                 hp_ratio = our_hp / our_max_hp
                 need_score = int((1.0 - hp_ratio) * 100)

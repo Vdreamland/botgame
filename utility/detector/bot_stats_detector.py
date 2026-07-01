@@ -1,6 +1,7 @@
 # utility/detector/bot_stats_detector.py
 
 from game_data.player_info import PLAYER_DEFAULT_STATS
+from game_data.armour_info import ARMOURS
 
 def detect_bot_stats(self_data: dict) -> dict:
     hp = self_data.get("hp", PLAYER_DEFAULT_STATS["hp"])
@@ -29,6 +30,16 @@ def detect_bot_stats(self_data: dict) -> dict:
         armor_name = equipped_armor.get("displayName") or equipped_armor.get("name") or "None"
         armor_grade = equipped_armor.get("grade") or "N/A"
         armor_def = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
+        
+        if armor_grade == "N/A" or armor_def == 0:
+            for a_id, a_stats in ARMOURS.items():
+                if a_id in armor_name.lower() or a_stats.get("display_name", "").lower() in armor_name.lower():
+                    if armor_grade == "N/A":
+                        armor_grade = a_stats.get("grade", "N/A").upper()
+                    if armor_def == 0:
+                        armor_def = a_stats.get("def_bonus", 0)
+                    break
+                    
         armor_desc = f"{armor_name} (Grade: {armor_grade}, +{armor_def} DEF)"
     elif isinstance(equipped_armor, str):
         armor_name = equipped_armor
@@ -77,6 +88,16 @@ def detect_agent_stats(agent_data: dict) -> dict:
         armor_name = equipped_armor.get("displayName") or equipped_armor.get("name") or "None"
         armor_grade = equipped_armor.get("grade") or "N/A"
         armor_def = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
+        
+        if armor_grade == "N/A" or armor_def == 0:
+            for a_id, a_stats in ARMOURS.items():
+                if a_id in armor_name.lower() or a_stats.get("display_name", "").lower() in armor_name.lower():
+                    if armor_grade == "N/A":
+                        armor_grade = a_stats.get("grade", "N/A").upper()
+                    if armor_def == 0:
+                        armor_def = a_stats.get("def_bonus", 0)
+                    break
+                    
         armor_desc = f"{armor_name} (Grade: {armor_grade}, +{armor_def} DEF)"
     elif isinstance(equipped_armor, str):
         armor_name = equipped_armor

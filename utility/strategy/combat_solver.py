@@ -2,6 +2,7 @@
 
 from game_data.monster_info import MONSTERS
 from game_data.weapon_info import WEAPONS
+from game_data.armour_info import ARMOURS
 from utility.detector.layer_detector import calculate_distances
 from utility.detector.bot_stats_detector import detect_agent_stats
 from utility.detector.zone_detector import detect_zone
@@ -21,6 +22,13 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
     equipped_armor = self_data.get("equippedArmor")
     if isinstance(equipped_armor, dict):
         our_def_bonus = equipped_armor.get("defBonus") or equipped_armor.get("def_bonus") or 0
+        if our_def_bonus == 0:
+            our_a_name = (equipped_armor.get("name") or "").lower()
+            for a_id, a_stats in ARMOURS.items():
+                if a_id in our_a_name or a_stats.get("display_name", "").lower() in our_a_name:
+                    our_def_bonus = a_stats.get("def_bonus", 0)
+                    break
+                    
     our_total_def = our_def_stat + our_def_bonus
     
     our_atk_bonus = 0
@@ -32,7 +40,7 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
     if isinstance(equipped_weapon, dict):
         weapon_display = (equipped_weapon.get("displayName") or equipped_weapon.get("name") or "").lower()
         for w_id, w_stats in WEAPONS.items():
-            if w_stats.get("display_name", "").lower() in weapon_display or w_id in weapon_display:
+            if w_id in weapon_display or w_stats.get("display_name", "").lower() in weapon_display:
                 weapon_key = w_id
                 break
                 
@@ -74,6 +82,13 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
         t_armor = agent.get("equippedArmor")
         if isinstance(t_armor, dict):
             t_def_bonus = t_armor.get("defBonus") or t_armor.get("def_bonus") or 0
+            if t_def_bonus == 0:
+                t_a_name = (t_armor.get("name") or "").lower()
+                for a_id, a_stats in ARMOURS.items():
+                    if a_id in t_a_name or a_stats.get("display_name", "").lower() in t_a_name:
+                        t_def_bonus = a_stats.get("def_bonus", 0)
+                        break
+                        
         target_def = t_stats["def"] + t_def_bonus
         
         t_atk_bonus = 0
@@ -84,8 +99,8 @@ def evaluate_combat_targets(bot_name: str, self_data: dict, current_region: dict
                 if w_stats.get("display_name", "").lower() in t_w_display or w_id in t_w_display:
                     t_atk_bonus = w_stats.get("atk_bonus", 0)
                     break
+                    
         target_atk = t_stats["atk"] + t_atk_bonus
-        
         target_hp = t_stats["hp"]
         
         damage_dealt = max(1, our_total_atk - target_def)

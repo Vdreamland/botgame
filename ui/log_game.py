@@ -27,21 +27,21 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         if not room_name:
             room_name = await http_client.get_room_name(game_id, api_key, version)
 
+        try:
+            account_data = await http_client.get_account_me(api_key, version)
+            balance = account_data.get("balance", 0)
+        except Exception:
+            pass
+
+        try:
+            preseason_data = await http_client.get_preseason_summary(api_key, version)
+            season_points = preseason_data.get("seasonPoints") or preseason_data.get("points") or 0
+            rank = preseason_data.get("rank") or "UNRANKED"
+        except Exception:
+            pass
+
     loadout_data = {}
     
-    try:
-        account_data = await http_client.get_account_me(api_key, version)
-        balance = account_data.get("balance", 0)
-    except Exception:
-        pass
-
-    try:
-        preseason_data = await http_client.get_preseason_summary(api_key, version)
-        season_points = preseason_data.get("seasonPoints") or preseason_data.get("points") or 0
-        rank = preseason_data.get("rank") or "UNRANKED"
-    except Exception:
-        pass
-
     stats = detect_bot_stats(self_data)
     hp = stats["hp"]
     max_hp = stats["max_hp"]

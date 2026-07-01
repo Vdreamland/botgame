@@ -66,25 +66,20 @@
 
     <template id="BOT_DETAIL">
       <div
-        class="bot-detail-view"
+        class="detail-container"
         hx-get="/api/bot/{name}?current_turn={turn}&log_count={log_count}"
         hx-trigger="every 2s"
         hx-target="#dashboard-detail"
         hx-swap="outerHTML"
       >
         <div class="detail-header">
-          <div class="header-main">
-            <h1>Terminal Log: {name}</h1>
-            <span class="room-indicator">Active Room: {room_name}</span>
-          </div>
-          <div class="turn-badge">Turn {turn}</div>
+          <h2>Terminal Log: {name}</h2>
+          <div class="turn-counter">Turn {turn}</div>
         </div>
 
-        <div class="terminal-container">
-          <textarea class="logs-box" id="terminal-logs" readonly>
+        <textarea class="logs-box" id="terminal-logs" readonly>
 {logs_str}</textarea
-          >
-        </div>
+        >
       </div>
     </template>
 

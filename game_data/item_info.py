@@ -25,24 +25,9 @@ ITEMS = {
         "ep_bonus": 5,
         "type": "recovery"
     },
-    "megaphone": {
-        "display_name": "Megaphone",
-        "effect": "Global broadcast",
-        "type": "utility"
-    },
-    "map": {
-        "display_name": "Map",
-        "effect": "Reveals entire map",
-        "type": "utility"
-    },
     "binoculars": {
         "display_name": "Binoculars",
         "effect": "Personal vision +1",
-        "type": "utility"
-    },
-    "radio": {
-        "display_name": "Radio",
-        "effect": "Long-range communication",
         "type": "utility"
     }
 }

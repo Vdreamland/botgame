@@ -28,10 +28,10 @@
       <div class="main-content">
         <div id="dashboard-detail" class="detail-placeholder">
           <div class="pulse-icon">🤖</div>
-          <h3>Claw Arena Live Logs</h3>
+          <h3>Claw Royale Bot Dashboard</h3>
           <p>
-            Silakan pilih bot di sebelah kiri untuk memantau aktivitas log
-            secara real-time.
+            Silakan pilih bot di sebelah kiri untuk memantau status secara
+            real-time.
           </p>
         </div>
       </div>
@@ -45,8 +45,10 @@
         hx-push-url="false"
         onclick="setActiveBot('{name}')"
       >
-        <div class="bot-name-label">{name} ({status_text})</div>
-        <div class="bot-summary" style="margin-bottom: 4px; color: #58a6ff">
+        <div class="bot-header-info">
+          <span class="bot-name-label">{name} ({status_text})</span>
+        </div>
+        <div class="bot-summary" style="margin-bottom: 2px; color: #58a6ff">
           Room: {room_name}
         </div>
         <div class="bot-summary" style="margin-bottom: 4px; color: #ffbc40">

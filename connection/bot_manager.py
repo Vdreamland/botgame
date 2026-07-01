@@ -19,8 +19,42 @@ async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, ve
     async with aiohttp.ClientSession() as session:
         http_client = ClawRoyaleHTTPClient(session)
         loadout_client = ClawRoyaleLoadoutClient(session)
+        
+        is_alive = True
+        room_name = "None"
+        balance = 0
+
         try:
-            await http_client.get_account_me(api_key, version)
+            account_info = await http_client.get_account_me(api_key, version)
+            balance = account_info.get("balance", 0)
+
+            # Ekstrak status game berjalan dan status hidup/mati bot secara real-time dari REST API lobi
+            current_games = account_info.get("currentGames", [])
+            if current_games:
+                game_data = current_games[0]
+                is_alive = game_data.get("isAlive", True)
+                game_id = game_data.get("gameId")
+                if game_id:
+                    try:
+                        room_name = await http_client.get_room_name(game_id, api_key, version)
+                    except Exception:
+                        room_name = game_id[:8]
+
+            # Lakukan registrasi status awal bot ke server web lokal secara instan
+            try:
+                payload = {
+                    "bot_name": bot_name,
+                    "hp": 0 if not is_alive else 100,
+                    "max_hp": 100,
+                    "turn": 1,
+                    "is_alive": is_alive,
+                    "room_name": room_name,
+                    "balance": balance,
+                    "log_msg": f"System: Bot registered at startup. Status: {'ALIVE' if is_alive else 'DEAD'} | Active Room: {room_name}."
+                }
+                await http_client.session.post("http://localhost:8080/api/update", json=payload)
+            except Exception:
+                pass
 
             loadout = await loadout_client.get_loadout(api_key, version)
             main_pack = loadout.get("activePack")
@@ -70,6 +104,17 @@ async def start_multi_bots():
 
     log_system.success("Game database loaded successfully.")
 
+    # Jalankan server web dashboard lokal di latar belakang sesegera mungkin di awal
+    try:
+        await start_dashboard_server(host="localhost", port=8080)
+        print()
+        log_system.success("Web dashboard server started successfully.")
+        print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+        print()
+        sys.stdout.flush()
+    except Exception as e:
+        log_system.error(f"Failed to start web dashboard: {str(e)}")
+
     bot_tasks = []
     active_bot_names = []
     for i in range(1, num_bots + 1):
@@ -83,10 +128,6 @@ async def start_multi_bots():
             log_system.warning(f"Configuration for BOT{i} is incomplete.")
 
     log_system.success(f"Total Bot [{len(bot_tasks)}]")
-
-    if not bot_tasks:
-        log_system.error("No valid bot configurations found.")
-        return
 
     results = await asyncio.gather(*bot_tasks)
 
@@ -115,11 +156,6 @@ async def start_multi_bots():
 
         print(f"{bot_idx_padded}{loadout_padded}{full_set_colored}{ws_test_colored}")
         sys.stdout.flush()
-
-    try:
-        await start_dashboard_server(host="localhost", port=8080)
-    except Exception as e:
-        log_system.error(f"Failed to start web dashboard: {str(e)}")
 
     joined_bots = []
     join_tasks = []

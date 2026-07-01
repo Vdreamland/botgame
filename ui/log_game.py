@@ -154,27 +154,32 @@ async def handle_message(client, bot_name: str, data: dict, ws):
         track_damage_event(bot_name, event_data, log_state)
         return
 
+    # Deteksi pesan akhir permainan (game_ended) secara resmi dari server game
+    elif msg_type == "game_ended":
+        if bot_name in client.joined_bots:
+            client.joined_bots.remove(bot_name)
+        log_system.success(f"[{bot_name}] Game ended. Disconnecting and ready to re-queue.")
+        await ws.close()
+        return
+
     if msg_type in ("assigned", "waiting"):
         if bot_name not in client.joined_bots:
             client.joined_bots.append(bot_name)
-            if len(client.joined_bots) == client.total_bots:
-                print("All bots successfully joined room!")
-                log_system.success("Web dashboard server started successfully.")
-                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-                print()
-                sys.stdout.flush()
+            print(f"[{bot_name}] successfully joined room!")
+            # Tampilkan informasi "Game is ready!" tepat di bagian paling bawah hanya jika bot sukses terhubung
+            print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+            print()
+            sys.stdout.flush()
 
     elif msg_type in ("agent_view", "turn_advanced", "action_result"):
         if not log_state.get("is_active_logged"):
             log_state["is_active_logged"] = True
             if bot_name not in client.joined_bots:
                 client.joined_bots.append(bot_name)
-                if len(client.joined_bots) == client.total_bots:
-                    print("All bots successfully joined room!")
-                    log_system.success("Web dashboard server started successfully.")
-                    print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-                    print()
-                    sys.stdout.flush()
+                print(f"[{bot_name}] successfully joined room!")
+                print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
+                print()
+                sys.stdout.flush()
 
         view = data.get("view") or data.get("data", {}).get("view") or {}
         self_data = view.get("self", {})
@@ -186,9 +191,6 @@ async def handle_message(client, bot_name: str, data: dict, ws):
             is_alive = False
 
         if turn != log_state.get("last_printed_turn", -1):
-            while len(client.joined_bots) < client.total_bots:
-                await asyncio.sleep(0.5)
-
             game_id = data.get("gameId") or view.get("gameId") or ""
             resolved_name = log_state.get("resolved_room_name")
             if not resolved_name:
@@ -218,11 +220,5 @@ async def handle_message(client, bot_name: str, data: dict, ws):
         if not is_alive:
             if bot_name in client.joined_bots:
                 client.joined_bots.remove(bot_name)
-            log_system.warning(f"[{bot_name}] Dead. Waiting for other bots to finish...")
+            log_system.warning(f"[{bot_name}] Dead. Disconnecting and waiting to re-queue...")
             await ws.close()
-            
-            while len(client.joined_bots) > 0:
-                await asyncio.sleep(1)
-                
-            await asyncio.sleep(30)
-            log_state["is_dead_break"] = True

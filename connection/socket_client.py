@@ -63,8 +63,8 @@ class ClawRoyaleSocketClient:
                                         self.log_state["blocked_exit"] = True
                                         break
                                         
-                                # Tambahkan tipe pesan "event" ke dalam daftar pelacakan agar real-time combat log ditangkap
-                                elif msg_type in ("assigned", "waiting", "agent_view", "turn_advanced", "action_result", "event"):
+                                # Teruskan event "game_ended" dari server agar dideteksi dengan benar
+                                elif msg_type in ("assigned", "waiting", "agent_view", "turn_advanced", "action_result", "event", "game_ended"):
                                     await log_game.handle_message(self, bot_name, data, ws)
                                     if self.log_state.get("is_dead_break"):
                                         break
@@ -82,13 +82,29 @@ class ClawRoyaleSocketClient:
                         if self.log_state.get("blocked_exit"):
                             await asyncio.sleep(5)
                             break
-                            
-                        log_system.warning(f"[{bot_name}] Disconnected from game room.")
+                        
+                        # Analisis mendalam close_code WebSocket untuk memberikan detail debug yang sesuai dokumentasi
+                        close_code = ws.close_code
+                        close_reason = "Unknown Disconnection"
+                        if close_code is not None:
+                            if close_code == 4000:
+                                close_reason = "VERSION_MISMATCH (4000) - API version is outdated"
+                            elif close_code == 4001:
+                                close_reason = "READINESS_BLOCKED (4001) - Check sMoltz balance or active room lock"
+                            elif close_code == 4003:
+                                close_reason = "HELLO_TIMEOUT (4003) - Handshake hello frame timeout"
+                            elif close_code == 4009:
+                                close_reason = "ALREADY_IN_GAME (4009) - Agent is already active inside a running game"
+                            elif close_code == 1000:
+                                close_reason = "not_selected / Cycle Close (1000) - Lobby cleared, waiting for next matchmaking cycle"
+                            elif close_code == 1006:
+                                close_reason = "Abnormal Close (1006) - Connection lost or dropped by server proxy"
+                            else:
+                                close_reason = f"Websocket Close Code {close_code}"
+
+                        log_system.warning(f"[{bot_name}] Disconnected: {close_reason}")
                         if bot_name in self.joined_bots:
                             self.joined_bots.remove(bot_name)
-                            
-                        while len(self.joined_bots) > 0:
-                            await asyncio.sleep(1)
                             
                         await asyncio.sleep(5)
 
@@ -99,8 +115,5 @@ class ClawRoyaleSocketClient:
                 log_system.error(f"[{bot_name}] Connection failed: {str(e)}")
                 if bot_name in self.joined_bots:
                     self.joined_bots.remove(bot_name)
-                    
-                while len(self.joined_bots) > 0:
-                    await asyncio.sleep(1)
                     
                 await asyncio.sleep(5)

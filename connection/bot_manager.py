@@ -130,6 +130,4 @@ async def start_multi_bots():
 
     if join_tasks:
         print()
-        print("All bots queued. Waiting for match...")
-        sys.stdout.flush()
         await asyncio.gather(*join_tasks)

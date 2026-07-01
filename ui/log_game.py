@@ -110,13 +110,11 @@ async def handle_message(client, bot_name: str, data: dict, ws):
     if msg_type in ("assigned", "waiting"):
         if log_state.get("current_status") != "WAITING":
             game_id = data.get("gameId", "")
-            agent_id = data.get("agentId", "")
             resolved_name = log_state.get("resolved_room_name")
             if not resolved_name:
                 resolved_name = await fetch_room_name(game_id, client.api_key, client.version)
                 log_state["resolved_room_name"] = resolved_name
             
-            log_system.success(f"[{bot_name}] Joined Room: {resolved_name} (Agent: {agent_id[:8]}) | Status: WAITING")
             log_state["current_status"] = "WAITING"
             
             if bot_name not in client.joined_bots:
@@ -156,8 +154,6 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                 log_state["resolved_room_name"] = resolved_name
 
             if log_state.get("current_status") != "IN PROGRESS":
-                agent_id = data.get("agentId") or view.get("agentId") or ""
-                log_system.success(f"[{bot_name}] Joined Room: {resolved_name} (Agent: {agent_id[:8]}) | Status: IN PROGRESS")
                 log_state["current_status"] = "IN PROGRESS"
 
             await print_turn_log(

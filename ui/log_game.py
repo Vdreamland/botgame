@@ -49,7 +49,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
     # 2. Panggil Pembuat Log Modular Terpisah (Code Reuse & DRY) [2]
     combat_text = detect_combat_log_string(bot_name, self_data, layers)
     zone_text = detect_zone_log_string(current_region, view_data)
-    loot_text = detect_loot_log_string(self_data)
+    loot_text = detect_loot_log_string(self_data, current_region)
 
     # 3. Panggil Log ZoneHistory khusus dari ui/damage_logs.py
     zone_history = "No damage events recorded."
@@ -63,9 +63,20 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
             joined_bots=joined_bots,
             log_state=log_state
         )
-    damage_text = f"ZoneHistory : {zone_history}"
 
-    # 4. Satukan Seluruh Potongan Log Modular Menggunakan Baris Baru (Sangat Bersih & Terstruktur) [2]
+    # 4. Ambil keputusan taktis AI secara pasif untuk pencatatan log alasan tindakan (Reason)
+    ai_thought = "Waiting for game actions..."
+    if is_alive and log_state is not None:
+        try:
+            decision = make_decision(bot_name, self_data, current_region, view_data, joined_bots, log_state)
+            ai_thought = decision.get("thought", "Executing tactical decision")
+        except Exception:
+            pass
+    
+    # Satukan log kejadian HP dengan alasan taktis bot saat ini
+    damage_text = f"ZoneHistory : {zone_history} ({ai_thought})"
+
+    # 5. Satukan Seluruh Potongan Log Modular Menggunakan Baris Baru (Sangat Bersih & Terstruktur) [2]
     turn_log_text = (
         f"TURN {turn} [{bot_name}]\n"
         f"{combat_text}\n"
@@ -74,7 +85,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         f"{damage_text}"
     )
 
-    # Kirim payload data lengkap beserta status preseason 1 ke server web lokal
+    # Kirim payload data lengkap ke server web lokal
     async with aiohttp.ClientSession() as session:
         try:
             payload = {
@@ -85,8 +96,6 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
                 "is_alive": is_alive,
                 "room_name": room_name,
                 "balance": balance,
-                "season_points": season_points,
-                "rank": rank,
                 "log_msg": turn_log_text
             }
             await session.post("http://localhost:8080/api/update", json=payload)
@@ -186,6 +195,40 @@ async def handle_message(client, bot_name: str, data: dict, ws):
                 log_state=log_state
             )
             log_state["last_printed_turn"] = turn
+
+            # --- SINKRONISASI EKSEKUSI OTAK TAKTIS AI (DECISION ENGINE) ---
+            if is_alive:
+                # Dapatkan hasil keputusan komprehensif dari jenderal taktis AI kita (Code Reuse)
+                decision = make_decision(bot_name, self_data, current_region, view, client.joined_bots, log_state)
+                
+                # 1. Kirim semua aksi penjarahan koin sMoltz/loot lantai gratis (EP 0) terlebih dahulu
+                for item_id in decision.get("free_pickups", []):
+                    try:
+                        pickup_payload = {
+                            "type": "action",
+                            "data": {
+                                "type": "pickup",
+                                "itemId": item_id
+                            },
+                            "thought": "Sapu bersih koin/barang gratis di lantai (EP 0)"
+                        }
+                        await ws.send_json(pickup_payload)
+                        await asyncio.sleep(0.1)  # Jeda mikro agar jaringan stabil
+                    except Exception:
+                        pass
+
+                # 2. Kirim keputusan aksi utama turn yang memakan turn/EP secara akurat (memperbaiki bug key "data")
+                main_action = decision.get("action")
+                if main_action:
+                    try:
+                        action_payload = {
+                            "type": "action",
+                            "data": main_action,
+                            "thought": decision.get("thought", "Melakukan keputusan taktis")
+                        }
+                        await ws.send_json(action_payload)
+                    except Exception as e:
+                        log_system.error(f"[{bot_name}] Gagal mengirimkan aksi utama turn: {str(e)}")
 
         if not is_alive:
             if bot_name in client.joined_bots:

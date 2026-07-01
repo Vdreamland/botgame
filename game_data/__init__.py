@@ -3,6 +3,7 @@
 from game_data.player_info import PLAYER_DEFAULT_STATS
 from game_data.monster_info import MONSTERS
 from game_data.weapon_info import WEAPONS
+from game_data.armour_info import ARMOURS
 from game_data.item_info import ITEMS
 from game_data.action_info import ACTIONS, RUINS_ALERT_SYSTEM
 from game_data.relic_info import RELICS_RULES

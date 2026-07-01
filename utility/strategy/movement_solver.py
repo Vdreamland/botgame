@@ -4,8 +4,6 @@ from utility.detector.layer_detector import calculate_distances
 from game_data.world_info import TERRAINS
 
 def evaluate_movement_routes(bot_name: str, self_data: dict, current_region: dict, view_data: dict, joined_bots: list, log_state: dict) -> dict:
-    """Mengevaluasi wilayah tetangga sekitar dan menghitung skor daya tarik arah gerak teraman menghindari Death Zone"""
-    
     connections = current_region.get("connections") or []
     if not connections:
         return {
@@ -17,6 +15,7 @@ def evaluate_movement_routes(bot_name: str, self_data: dict, current_region: dic
         }
         
     our_hp = self_data.get("hp", 100)
+    turn = view_data.get("turn") or 1
     
     active_death_zones = []
     if current_region.get("isDeathZone") or current_region.get("is_death_zone"):
@@ -74,6 +73,12 @@ def evaluate_movement_routes(bot_name: str, self_data: dict, current_region: dic
         recent_kills = log_state.get("recent_kill_zones") or []
         if target_id in recent_kills:
             score += 45
+            
+        hostile_regions = log_state.get("hostile_regions", {}) if log_state else {}
+        if target_id in hostile_regions:
+            damage_turn = hostile_regions[target_id]
+            if turn - damage_turn <= 5:
+                score -= 300
             
         visible_agents = view_data.get("visibleAgents") or []
         for agent in visible_agents:

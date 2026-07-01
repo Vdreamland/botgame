@@ -136,7 +136,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
                 f_name = (first_f.get("type") or first_f.get("id") or "Facility").replace("_", " ").title()
                 
     action_str = "Nothing"
-    if main_type == "pickup" or picked_names:
+    if main_type == "pickup":
         action_str = "Loot " + ", ".join(picked_names) if picked_names else "Loot"
     elif main_type == "attack":
         action_str = f"Attack {t_name}"
@@ -144,7 +144,7 @@ async def print_turn_log(bot_name: str, api_key: str, version: str, game_id: str
         action_str = f"Interact {f_name}"
     elif main_type == "use_item":
         action_str = f"Use {u_name}"
-    elif main_type == "equip" or equipped_names:
+    elif main_type == "equip":
         action_str = "Equip " + ", ".join(equipped_names) if equipped_names else "Equip"
     elif main_type == "rest":
         action_str = "Rest"
@@ -259,6 +259,16 @@ async def handle_message(client, bot_name: str, data: dict, ws):
 
         stats = detect_bot_stats(self_data)
         is_alive = stats["is_alive"]
+        hp = stats["hp"]
+
+        last_hp = log_state.get("last_hp")
+        if last_hp is not None and hp < last_hp:
+            curr_r_id = current_region.get("id")
+            if curr_r_id:
+                if "hostile_regions" not in log_state:
+                    log_state["hostile_regions"] = {}
+                log_state["hostile_regions"][curr_r_id] = turn
+        log_state["last_hp"] = hp
 
         if is_alive and "bot_id" not in log_state:
             log_state["bot_id"] = self_data.get("id")

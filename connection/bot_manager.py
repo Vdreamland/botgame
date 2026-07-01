@@ -28,7 +28,6 @@ async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, ve
             account_info = await http_client.get_account_me(api_key, version)
             balance = account_info.get("balance", 0)
 
-            # Ekstrak status game berjalan dan status hidup/mati bot secara real-time dari REST API lobi
             current_games = account_info.get("currentGames", [])
             if current_games:
                 game_data = current_games[0]
@@ -40,7 +39,6 @@ async def run_bot_instance(bot_name: str, api_key: str, room_preference: str, ve
                     except Exception:
                         room_name = game_id[:8]
 
-            # Lakukan registrasi status awal bot ke server web lokal secara instan
             try:
                 payload = {
                     "bot_name": bot_name,
@@ -104,14 +102,9 @@ async def start_multi_bots():
 
     log_system.success("Game database loaded successfully.")
 
-    # Jalankan server web dashboard lokal di latar belakang sesegera mungkin di awal
+    # Jalankan server web dashboard lokal secara diam-diam di awal
     try:
         await start_dashboard_server(host="localhost", port=8080)
-        print()
-        log_system.success("Web dashboard server started successfully.")
-        print(f"{GREEN}[INFO]{RESET} Game is ready! Please open your browser at: http://localhost:8080")
-        print()
-        sys.stdout.flush()
     except Exception as e:
         log_system.error(f"Failed to start web dashboard: {str(e)}")
 

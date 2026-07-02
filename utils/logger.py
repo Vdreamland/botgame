@@ -1,5 +1,9 @@
 import logging
 import sys
+import os
+
+if sys.platform == "win32":
+    os.system("")
 
 class CustomFormatter(logging.Formatter):
     def format(self, record):

@@ -131,7 +131,7 @@ StrukturWebsite.txt : https://github.com/Vdreamland/botgame/blob/master/Struktur
 
 
 
-
+# bukan struktur asli hanya contoh di bawah
 ai/                                                # Pusat kecerdasan buatan untuk analisis real-time, strategi aktif, dan keputusan giliran bot
 ├── __init__.py                                    # Penanda paket Python
 

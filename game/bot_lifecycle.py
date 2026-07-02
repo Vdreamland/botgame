@@ -76,7 +76,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 latest_view["self"]["hp"] = 0
                 latest_view["self"]["isAlive"] = False
             turn = frame.get("turn") or ws_client.last_logged_turn
-            write_gameplay_log(bot_name, f"# Turn {turn}", latest_view)
+            if turn >= 0:
+                write_gameplay_log(bot_name, f"# Turn {turn}", latest_view)
             write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
             return False
 
@@ -91,9 +92,12 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 latest_view["self"] = {}
             latest_view["self"]["hp"] = 0
             latest_view["self"]["isAlive"] = False
-        death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
-        logger.info(f"[-] {bot_name} match ended (game_ended received). Logging final turn {death_turn}.")
-        write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+            
+        if ws_client.last_logged_turn >= 0:
+            death_turn = ws_client.last_logged_turn + 1
+            logger.info(f"[-] {bot_name} match ended (game_ended received). Logging final turn {death_turn}.")
+            write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+            
         write_gameplay_log(bot_name, "[SYSTEM] Match has ended (game_ended received). Exiting game loop...")
         return False
 
@@ -147,16 +151,18 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                 if coordinator.bots_state[bot_name].get("alive", True):
                     coordinator.bots_state[bot_name]["alive"] = False
                     await coordinator.draw_table()
-                    latest_view = coordinator.bots_state[bot_name].get("view", {})
-                    if isinstance(latest_view, dict):
-                        if "self" not in latest_view:
-                            latest_view["self"] = {}
-                        latest_view["self"]["hp"] = 0
-                        latest_view["self"]["isAlive"] = False
-                    death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
-                    logger.info(f"[-] {bot_name} confirmed dead. Logging final turn {death_turn}.")
-                    write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
-                    write_gameplay_log(bot_name, "[SYSTEM] Agent has been eliminated.")
+                    
+                    if ws_client.last_logged_turn >= 0:
+                        latest_view = coordinator.bots_state[bot_name].get("view", {})
+                        if isinstance(latest_view, dict):
+                            if "self" not in latest_view:
+                                latest_view["self"] = {}
+                            latest_view["self"]["hp"] = 0
+                            latest_view["self"]["isAlive"] = False
+                        death_turn = ws_client.last_logged_turn + 1
+                        logger.info(f"[-] {bot_name} confirmed dead. Logging final turn {death_turn}.")
+                        write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+                        write_gameplay_log(bot_name, "[SYSTEM] Agent has been eliminated.")
 
                 bypass_lobby = getattr(coordinator, "bypass_lobby_on_startup", False)
                 if not (is_first_run and bypass_lobby):
@@ -261,7 +267,8 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             await coordinator.leave_game(bot_name)
             await asyncio.sleep(5.0)
         finally:
-            write_gameplay_log(bot_name, "[SYSTEM] Connection closed. Leaving game room.")
+            if ws_client and getattr(ws_client, 'last_logged_turn', -1) >= 0:
+                write_gameplay_log(bot_name, "[SYSTEM] Connection closed. Leaving game room.")
             if ws_client:
                 await ws_client.close()
             await coordinator.leave_game(bot_name)

@@ -82,7 +82,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
 
                         while True:
                             try:
-                                frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
+                                frame = await asyncio.wait_for(ws_client.receive(), timeout=15.0)
                             except asyncio.TimeoutError:
                                 logger.warning(f"[!] {bot_name} timeout waiting for frame.")
                                 break
@@ -132,7 +132,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         logger.info(f"[+] All Setup ready to play for {bot_name} ...")
                         while True:
                             try:
-                                frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
+                                frame = await asyncio.wait_for(ws_client.receive(), timeout=15.0)
                             except asyncio.TimeoutError:
                                 logger.warning(f"[!] {bot_name} timeout waiting for frame.")
                                 break

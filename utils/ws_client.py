@@ -22,6 +22,7 @@ class ClawRoyaleWSClient:
         self.session = None
         self.ws = None
         self.last_logged_turn = -1
+        self.last_acted_turn = -1
 
     async def connect(self, url: str) -> bool:
         log_ws_connecting(self.bot_name, url)

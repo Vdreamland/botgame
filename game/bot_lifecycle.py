@@ -163,14 +163,12 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         logger.info(f"[-] {bot_name} confirmed dead. Logging final turn {death_turn}.")
                         write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
                         write_gameplay_log(bot_name, "[SYSTEM] Agent has been eliminated.")
-
-                bypass_lobby = getattr(coordinator, "bypass_lobby_on_startup", False)
-                if not (is_first_run and bypass_lobby):
-                    await coordinator.enter_lobby(bot_name)
-                    await coordinator.wait_for_lobby(bot_name)
-                    await coordinator.leave_lobby(bot_name)
             else:
                 coordinator.bots_state[bot_name]["alive"] = True
+
+            await coordinator.enter_lobby(bot_name)
+            await coordinator.wait_for_lobby(bot_name)
+            await coordinator.leave_lobby(bot_name)
 
             success = await ws_client.connect(ws_url)
             if success:

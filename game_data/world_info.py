@@ -2,83 +2,78 @@
 
 TERRAINS = {
     "plains": {
-        "display_name": "plains",
-        "vision_modifier": 1,
-        "move_ep_extra": 0
+        "vision_modifier": 1,  # Memperluas jangkauan penglihatan (+1 Vision)
+        "extra_ep_cost": 0,    # Biaya pergerakan standar (1 EP)
+        "stealth_rating": "poor"
     },
     "forest": {
-        "display_name": "forest",
-        "vision_modifier": -1,
-        "move_ep_extra": 0
+        "vision_modifier": -1, # Mempersempit jangkauan penglihatan (-1 Vision)
+        "extra_ep_cost": 0,
+        "stealth_rating": "good"
     },
     "hills": {
-        "display_name": "hills",
-        "vision_modifier": 2,
-        "move_ep_extra": 0
+        "vision_modifier": 2,  # Memperluas jangkauan penglihatan secara maksimal (+2 Vision)
+        "extra_ep_cost": 0,
+        "stealth_rating": "poor"
     },
     "ruins": {
-        "display_name": "ruins",
         "vision_modifier": 0,
-        "move_ep_extra": 0
+        "extra_ep_cost": 0,
+        "stealth_rating": "medium"
     },
     "water": {
-        "display_name": "water",
         "vision_modifier": 0,
-        "move_ep_extra": 1  # 2 EP total
+        "extra_ep_cost": 1,    # Melangkah ke air memakan total 2 EP (1 standard + 1 extra)
+        "stealth_rating": "poor"
     }
 }
 
-WEATHER = {
+WEATHERS = {
     "clear": {
-        "display_name": "clear",
         "vision_modifier": 0,
-        "combat_modifier_percent": 0
+        "combat_modifier": 0.00 # Tidak ada pengurangan performa pertarungan
     },
     "rain": {
-        "display_name": "rain",
         "vision_modifier": -1,
-        "combat_modifier_percent": -5
+        "combat_modifier": -0.05 # Pengurangan performa pertarungan sebesar -5%
     },
     "fog": {
-        "display_name": "fog",
         "vision_modifier": -2,
-        "combat_modifier_percent": -10
+        "combat_modifier": -0.10 # Pengurangan performa pertarungan sebesar -10%
     },
     "storm": {
-        "display_name": "storm",
         "vision_modifier": -2,
-        "combat_modifier_percent": -15
+        "combat_modifier": -0.15 # Pengurangan performa pertarungan sebesar -15%
     }
 }
 
-TIME_SYSTEM = {
-    "hours_per_turn": 6,
-    "seconds_per_turn": 30,
-    "turns_per_day": 4,
-    "daytime_turns": [0, 1],
-    "nighttime_turns": [2, 3],
-    "max_turns": 60,
+# Diubah agar mencocokkan string payload 'facility' dari API game asli (Supply Cache)
+FACILITIES = {
+    "Broadcast Station": "Aksi broadcast dapat dipanggil secara bebas tanpa Megaphone.",
+    "Supply Cache": "Berisi peti pasokan (Cache) yang menjatuhkan item acak saat dibuka.",
+    "Medical Facility": "Memulihkan HP karakter secara instan.",
+    "Watchtower": "Meningkatkan jangkauan penglihatan karakter secara temporer (+2 vision).",
+    "Cave": "Agen masuk ke dalam goa (cave_in/cave_out). Vision berkurang -2, req +2, dan agen tidak bisa melangkah keluar wilayah."
 }
 
-FACILITIES = {
-    "broadcast_station": {
-        "action": "broadcast",
-        "effect": "Global broadcast without Megaphone"
+DEATH_ZONE = {
+    "start_day": 2,            # Zona kematian mulai menyusut dari ujung luar peta pada hari ke-2
+    "expansion_interval_turns": 3, # Berpindah menyusut setiap 3 turn (18 jam waktu dalam game)
+    "damage_per_second": 1.34, # Mengakibatkan pengurangan HP sebesar 1.34 HP/detik jika berdiri di dalamnya
+    "action_restrictions": {
+        "interact": False      # Memanggil aksi 'interact' di wilayah Death Zone dilarang keras (error)
+    }
+}
+
+# Representasi Sistem Waktu Permainan (60 Turn total, berakhir hari ke-16)
+TIME_SYSTEM = {
+    "turn_duration_hours": 6,  # 1 turn mewakili 6 jam di dalam game (30 detik real-time)
+    "day_hours": {
+        "start": 6,            # Siang hari: pukul 06:00 s.d 18:00 (2 turns)
+        "end": 18
     },
-    "supply_cache": {
-        "action": "loot",
-        "effect": "Drops random item on the floor"
-    },
-    "medical_facility": {
-        "action": "heal",
-        "effect": "Restores agent health"
-    },
-    "watchtower": {
-        "action": "vision_boost",
-        "effect": "Temporary personal vision +2"
-    },
-    "cave": {
-        "action": "cave_entry_exit",
-        "effect": "Enters cave (vision -2, requirement +2, movement disabled)"
+    "night_hours": {
+        "start": 18,           # Malam hari: pukul 18:00 s.d 06:00 (2 turns)
+        "end": 6
     }
 }

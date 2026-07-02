@@ -1,180 +1,225 @@
 # game_data/pack_info.py
 
-PACKS = {
-    "moltz_expert": {
-        "category_id": 0,
-        "display_name": "Moltz Expert",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"high": 12, "middle": 8, "low": 4},
-        "t2": {"high": 9, "middle": 6, "low": 3},
-        "t3": {"high": 6, "middle": 4, "low": 2}
+# 20 kategori pack yang digunakan sebagai Main Pack atau Sub Pack di sistem Loadout
+PACK_CATEGORIES = {
+    "CAT-00": {
+        "name": "Moltz Expert",
+        "description": "Konversi senjata/armor yang ditemukan di dalam arena menjadi koin Moltz.",
+        "tiers": {
+            "T1": {"high": 12, "middle": 8, "low": 4},
+            "T2": {"high": 9, "middle": 6, "low": 3},
+            "T3": {"high": 6, "middle": 4, "low": 2}
+        },
+        "sub_attenuation": 0.5, # Jika dipasang di slot Sub, nilai konversi dikalikan 0.5 (dipotong setengah)
+        "main_only": False
     },
-    "item_expert": {
-        "category_id": 1,
-        "display_name": "Item Expert",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"relic_item_atk_divisor": 20.0, "multiplier": 2.0, "min_bonus": 0.7},
-        "t2": {"relic_item_atk_divisor": 20.0, "multiplier": 1.5, "min_bonus": 0.6},
-        "t3": {"relic_item_atk_divisor": 20.0, "multiplier": 1.0, "min_bonus": 0.5}
+    "CAT-01": {
+        "name": "Item Expert",
+        "description": "Menambahkan damage item ATK dari Relic saat menggunakan senjata.",
+        "tiers": {
+            "T1": "Max(Relic ItemATK / 20 * 2, 0.7)",
+            "T2": "Max(Relic ItemATK / 20 * 1.5, 0.6)",
+            "T3": "Max(Relic ItemATK / 20 * 1, 0.5)"
+        },
+        "sub_attenuation": 0.5,
+        "main_only": False
     },
-    "goliath": {
-        "category_id": 2,
-        "display_name": "Goliath",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"atk_multiplier": 0.85, "extra_ep": 1, "is_aoe": True},
-        "t2": {"atk_multiplier": 0.75, "extra_ep": 1, "is_aoe": True},
-        "t3": {"atk_multiplier": 0.65, "extra_ep": 1, "is_aoe": True}
+    "CAT-02": {
+        "name": "Goliath",
+        "description": "Serangan area (AoE) ke wilayah target. Meningkatkan biaya serangan sebesar +1 EP.",
+        "tiers": {
+            "T1": {"weapon_atk_multiplier": 0.85},
+            "T2": {"weapon_atk_multiplier": 0.75},
+            "T3": {"weapon_atk_multiplier": 0.65}
+        },
+        "sub_attenuation": "multiplier_halved",
+        "main_only": False
     },
-    "thorns": {
-        "category_id": 3,
-        "display_name": "Thorns",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"dmg_reduction_ratio": 0.50, "reflect_ratio": 1.00, "dealt_dmg_multiplier": 0.20},
-        "t2": {"dmg_reduction_ratio": 0.45, "reflect_ratio": 0.95, "dealt_dmg_multiplier": 0.20},
-        "t3": {"dmg_reduction_ratio": 0.40, "reflect_ratio": 0.90, "dealt_dmg_multiplier": 0.20}
+    "CAT-03": {
+        "name": "Thorns",
+        "description": "Mengurangi damage yang diterima dan memantulkan persentase damage tersebut kembali ke penyerang. Damage yang dikeluarkan mandiri dikalikan x0.2.",
+        "tiers": {
+            "T1": {"damage_reduction": 0.50, "reflect_percent": 1.00},
+            "T2": {"damage_reduction": 0.45, "reflect_percent": 0.95},
+            "T3": {"damage_reduction": 0.40, "reflect_percent": 0.90}
+        },
+        "sub_attenuation": "halved_no_def_bonus",
+        "main_only": False
     },
-    "scout": {
-        "category_id": 4,
-        "display_name": "Scout",
-        "is_main_only": True,
-        "sub_multiplier": 0.0,
-        "t1": {"vision_bonus": 2, "move_ep_discount": 2, "dealt_dmg_multiplier": 0.80},
-        "t2": {"vision_bonus": 2, "move_ep_discount": 1, "dealt_dmg_multiplier": 0.70},
-        "t3": {"vision_bonus": 1, "move_ep_discount": 0, "dealt_dmg_multiplier": 0.60}
+    "CAT-04": {
+        "name": "Scout",
+        "description": "Hanya dapat digunakan di slot Main. Memberikan tambahan penglihatan dan mengurangi biaya EP untuk bergerak.",
+        "tiers": {
+            "T1": {"vision_bonus": 2, "move_ep_bonus": -2, "dealt_damage_multiplier": 0.8},
+            "T2": {"vision_bonus": 2, "move_ep_bonus": -1, "dealt_damage_multiplier": 0.7},
+            "T3": {"vision_bonus": 1, "move_ep_bonus": 0, "dealt_damage_multiplier": 0.6}
+        },
+        "sub_attenuation": None,
+        "main_only": True      # Tidak diperkenankan ditaruh di slot Sub Pack
     },
-    "ruin_expert": {
-        "category_id": 5,
-        "display_name": "Ruin Expert",
-        "is_main_only": False,
-        "sub_multiplier": 1.0,
-        "t1": {"instant_grant": True, "alert_max_on_clear": True, "guardian_dmg_multiplier": 1.50},
-        "t2": {"instant_grant": True, "alert_max_on_clear": True, "guardian_dmg_multiplier": 2.00},
-        "t3": {"instant_grant": True, "alert_max_on_clear": True, "guardian_dmg_multiplier": 2.50}
+    "CAT-05": {
+        "name": "Ruin Expert",
+        "description": "Mendapatkan relic/pack secara langsung saat ditemukan tanpa perlu bertahan hidup sampai akhir game. Namun, alert gauge langsung maksimal dan Guardian memberikan damage berkali lipat.",
+        "tiers": {
+            "T1": {"guardian_dmg_multiplier": 1.5},
+            "T2": {"guardian_dmg_multiplier": 2.0},
+            "T3": {"guardian_dmg_multiplier": 2.5}
+        },
+        "sub_attenuation": 1.0,  # Efek sub pack sama persis dengan main pack
+        "main_only": False
     },
-    "berserker": {
-        "category_id": 6,
-        "display_name": "Berserker",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"hp_threshold": 50, "main_dmg_multiplier": 1.7, "sub_dmg_multiplier": 1.3},
-        "t2": {"hp_threshold": 50, "main_dmg_multiplier": 1.5, "sub_dmg_multiplier": 1.2},
-        "t3": {"hp_threshold": 50, "main_dmg_multiplier": 1.3, "sub_dmg_multiplier": 1.1}
+    "CAT-06": {
+        "name": "Berserker",
+        "description": "Meningkatkan damage yang dihasilkan ketika HP di bawah 50.",
+        "tiers": {
+            "T1": {"main_multiplier": 1.7, "sub_multiplier": 1.3},
+            "T2": {"main_multiplier": 1.5, "sub_multiplier": 1.2},
+            "T3": {"main_multiplier": 1.3, "sub_multiplier": 1.1}
+        },
+        "sub_attenuation": "specific",
+        "main_only": False
     },
-    "double_attack": {
-        "category_id": 7,
-        "display_name": "Double Attack",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"hit_count": 2, "main_hit_dmg_multiplier": 0.65, "sub_hit_dmg_multiplier": 0.55, "extra_ep": 1},
-        "t2": {"hit_count": 2, "main_hit_dmg_multiplier": 0.55, "sub_hit_dmg_multiplier": 0.525, "extra_ep": 1},
-        "t3": {"hit_count": 2, "main_hit_dmg_multiplier": 0.50, "sub_hit_dmg_multiplier": 0.50, "extra_ep": 1}
+    "CAT-07": {
+        "name": "Double Attack",
+        "description": "Menyerang dua kali berturut-turut dalam satu aksi attack dengan tambahan biaya +1 EP.",
+        "tiers": {
+            "T1": {"main_dmg_factor": 0.65, "sub_dmg_factor": 0.55},
+            "T2": {"main_dmg_factor": 0.55, "sub_dmg_factor": 0.525},
+            "T3": {"main_dmg_factor": 0.50, "sub_dmg_factor": 0.50}
+        },
+        "sub_attenuation": "specific",
+        "main_only": False
     },
-    "heart_of_the_giant": {
-        "category_id": 8,
-        "display_name": "Heart of the Giant",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"heal_item_bonus": 0.75, "self_heal_pct": 0.03, "base_def_override": 0, "base_atk_offset": -5},
-        "t2": {"heal_item_bonus": 0.50, "self_heal_pct": 0.02, "base_def_override": 0, "base_atk_offset": -5},
-        "t3": {"heal_item_bonus": 0.25, "self_heal_pct": 0.01, "base_def_override": 0, "base_atk_offset": -5}
+    "CAT-08": {
+        "name": "Heart of the Giant",
+        "description": "Meningkatkan pemulihan heal, memberikan pasif self-heal per giliran, namun mengurangi ATK bawaan dan menghapus pertahanan dasar (menjadi 0 DEF).",
+        "tiers": {
+            "T1": {"heal_boost": 0.75, "regen_turn": 0.03, "base_def": 0, "flat_dmg_taken": 5, "base_atk_bonus": -5},
+            "T2": {"heal_boost": 0.50, "regen_turn": 0.02, "base_def": 0, "flat_dmg_taken": 5, "base_atk_bonus": -5},
+            "T3": {"heal_boost": 0.25, "regen_turn": 0.01, "base_def": 0, "flat_dmg_taken": 5, "base_atk_bonus": -5}
+        },
+        "sub_attenuation": "heal_effects_halved",
+        "main_only": False
     },
-    "bomber": {
-        "category_id": 9,
-        "display_name": "Bomber",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"max_bombs_per_turn": 3, "bomb_dmg_atk_ratio": 0.20},
-        "t2": {"max_bombs_per_turn": 2, "bomb_dmg_atk_ratio": 0.15},
-        "t3": {"max_bombs_per_turn": 1, "bomb_dmg_atk_ratio": 0.10}
+    "CAT-09": {
+        "name": "Bomber",
+        "description": "Mengubah item yang dilewati di jalanan menjadi perangkap bom.",
+        "tiers": {
+            "T1": {"max_bombs": 3, "atk_multiplier": 0.20},
+            "T2": {"max_bombs": 2, "atk_multiplier": 0.15},
+            "T3": {"max_bombs": 1, "atk_multiplier": 0.10}
+        },
+        "sub_attenuation": 0.5,  # Damage bom dipotong setengah
+        "main_only": False
     },
-    "trail_ward": {
-        "category_id": 10,
-        "display_name": "Trail Ward",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"main_initial_wards": 3, "sub_initial_wards": 2, "ward_vision_bonus": 1},
-        "t2": {"main_initial_wards": 2, "sub_initial_wards": 1, "ward_vision_bonus": 1},
-        "t3": {"main_initial_wards": 1, "sub_initial_wards": 0, "ward_vision_bonus": 1}
+    "CAT-10": {
+        "name": "Trail Ward",
+        "description": "Mulai permainan dengan ward pelacak yang meningkatkan area penglihatan (+1 vision per ward).",
+        "tiers": {
+            "T1": {"main_wards": 3, "sub_wards": 2},
+            "T2": {"main_wards": 2, "sub_wards": 1},
+            "T3": {"main_wards": 1, "sub_wards": 0}
+        },
+        "sub_attenuation": "specific",
+        "main_only": False
     },
-    "ranged": {
-        "category_id": 11,
-        "display_name": "Ranged",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"range_bonus": 1, "dmg_bonus_pct": 15, "no_melee": True, "no_same_region": True},
-        "t2": {"range_bonus": 1, "dmg_bonus_pct": 10, "no_melee": True, "no_same_region": True},
-        "t3": {"range_bonus": 1, "dmg_bonus_pct": 5, "no_melee": True, "no_same_region": True}
+    "CAT-11": {
+        "name": "Ranged",
+        "description": "Meningkatkan jarak tembak senjata ranged sebesar +1 region dan meningkatkan damage senjata ranged. Memblokir serangan melee dan serangan di satu region yang sama. Sub pack menambah biaya +1 EP.",
+        "tiers": {
+            "T1": {"range_bonus": 1, "dmg_bonus": 0.15},
+            "T2": {"range_bonus": 1, "dmg_bonus": 0.10},
+            "T3": {"range_bonus": 1, "dmg_bonus": 0.05}
+        },
+        "sub_attenuation": "extra_ep_cost",
+        "main_only": False
     },
-    "sword_master": {
-        "category_id": 12,
-        "display_name": "Sword Master",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"no_ranged": True, "main_ignore_ranged_hops_min": 1, "sub_ignore_ranged_hops_min": 2, "main_relic_item_atk_multiplier": 1.0, "sub_relic_item_atk_multiplier": 0.5},
-        "t2": {"no_ranged": True, "main_ignore_ranged_hops_min": 1, "sub_ignore_ranged_hops_min": 2, "main_relic_item_atk_multiplier": 0.75, "sub_relic_item_atk_multiplier": 0.5},
-        "t3": {"no_ranged": True, "main_ignore_ranged_hops_min": 1, "sub_ignore_ranged_hops_min": 2, "main_relic_item_atk_multiplier": 0.50, "sub_relic_item_atk_multiplier": 0.5}
+    "CAT-12": {
+        "name": "Sword Master",
+        "description": "Memblokir penggunaan senjata ranged. Mengabaikan serangan jarak jauh musuh dari jarak jauh (1+ hop). Memperkuat ATK item relic.",
+        "tiers": {
+            "T1": {"relic_item_atk_mult": 1.00, "ignore_range_hops": 1},
+            "T2": {"relic_item_atk_mult": 0.75, "ignore_range_hops": 1},
+            "T3": {"relic_item_atk_mult": 0.50, "ignore_range_hops": 1}
+        },
+        "sub_attenuation": {"relic_mult_factor": 0.5, "ignore_range_hops_sub": 2},
+        "main_only": False
     },
-    "duelist": {
-        "category_id": 13,
-        "display_name": "Duelist",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"isolated_relic_atk_multiplier": 0.9, "isolated_relic_def_multiplier": 0.9},
-        "t2": {"isolated_relic_atk_multiplier": 0.7, "isolated_relic_def_multiplier": 0.7},
-        "t3": {"isolated_relic_atk_multiplier": 0.5, "isolated_relic_def_multiplier": 0.5}
+    "CAT-13": {
+        "name": "Duelist",
+        "description": "Mendapatkan bonus statistik ATK dan DEF dari relic saat berduel satu-lawan-satu dengan musuh.",
+        "tiers": {
+            "T1": {"relic_stat_multiplier": 0.9},
+            "T2": {"relic_stat_multiplier": 0.7},
+            "T3": {"relic_stat_multiplier": 0.5}
+        },
+        "sub_attenuation": 0.5,
+        "main_only": False
     },
-    "raider": {
-        "category_id": 14,
-        "display_name": "Raider",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"steal_inventory_slot": 1, "no_floor_pickup": True}
+    "CAT-14": {
+        "name": "Raider",
+        "description": "Hanya aktif untuk Tier 1 (T1). Serangan berhasil akan mencuri 1 slot inventaris musuh. Memblokir pengambilan barang drop di tanah. Sub pack menambah biaya +1 EP ekstra.",
+        "tiers": {
+            "T1": {"enabled": True},
+            "T2": {"enabled": False},
+            "T3": {"enabled": False}
+        },
+        "sub_attenuation": "extra_ep_cost",
+        "main_only": False
     },
-    "last_stand": {
-        "category_id": 15,
-        "display_name": "Last Stand",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"survive_lethal_hp": 1, "main_berserk_turns": 3, "sub_berserk_turns": 1, "hp_regen_pct_bonus": 5.0, "atk_multiplier_of_regen": 10.0},
-        "t2": {"survive_lethal_hp": 1, "main_berserk_turns": 2, "sub_berserk_turns": 1, "hp_regen_pct_bonus": 4.0, "atk_multiplier_of_regen": 10.0},
-        "t3": {"survive_lethal_hp": 1, "main_berserk_turns": 1, "sub_berserk_turns": 1, "hp_regen_pct_bonus": 3.0, "atk_multiplier_of_regen": 10.0}
+    "CAT-15": {
+        "name": "Last Stand",
+        "description": "Satu kali per game: Menolak kematian dan bertahan hidup di HP 1, lalu masuk ke mode berserk dengan HP regenerasi masif dan ATK berlipat ganda berdasarkan tingkat pemulihan.",
+        "tiers": {
+            "T1": {"berserk_turns": 3, "hp_regen_boost": 5.0, "atk_boost_from_regen": 10.0},
+            "T2": {"berserk_turns": 2, "hp_regen_boost": 4.0, "atk_boost_from_regen": 10.0},
+            "T3": {"berserk_turns": 1, "hp_regen_boost": 3.0, "atk_boost_from_regen": 10.0}
+        },
+        "sub_attenuation": {"berserk_turns": 1},
+        "main_only": False
     },
-    "iron_heart": {
-        "category_id": 16,
-        "display_name": "Iron Heart",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"extra_hp_div": 10, "flat_hp_gain": 5, "def_gain": 1, "max_def_stack": 10, "dealt_dmg_multiplier": 0.90},
-        "t2": {"extra_hp_div": 10, "flat_hp_gain": 3, "def_gain": 1, "max_def_stack": 10, "dealt_dmg_multiplier": 0.80},
-        "t3": {"extra_hp_div": 10, "flat_hp_gain": 1, "def_gain": 1, "max_def_stack": 10, "dealt_dmg_multiplier": 0.70}
+    "CAT-16": {
+        "name": "Iron Heart",
+        "description": "Setiap kali menyerang, secara permanen meningkatkan HP maksimal dasar dan pertahanan dasar (DEF cap 10). Sedikit mengurangi damage yang dihasilkan.",
+        "tiers": {
+            "T1": {"max_hp_gain": 5, "def_gain": 1, "damage_multiplier": 0.9},
+            "T2": {"max_hp_gain": 3, "def_gain": 1, "damage_multiplier": 0.8},
+            "T3": {"max_hp_gain": 1, "def_gain": 1, "damage_multiplier": 0.7}
+        },
+        "sub_attenuation": "stack_bonus_halved",
+        "main_only": False
     },
-    "sunflame_cloak": {
-        "category_id": 17,
-        "display_name": "Sunflame Cloak",
-        "is_main_only": False,
-        "sub_multiplier": 0.5,
-        "t1": {"aura_radius": 1, "damage_coef": 1.0, "dealt_dmg_multiplier": 0.65},
-        "t2": {"aura_radius": 1, "damage_coef": 0.8, "dealt_dmg_multiplier": 0.55},
-        "t3": {"aura_radius": 0, "damage_coef": 0.6, "dealt_dmg_multiplier": 0.45}
+    "CAT-17": {
+        "name": "Sunflame Cloak",
+        "description": "Membakar musuh di sekitar setiap pergantian giliran berdasarkan nilai HP maksimum dan DEF. Mengurangi damage serangan langsung kita.",
+        "tiers": {
+            "T1": {"aura_radius": 1, "damage_factor": 1.0, "combat_dmg_mult": 0.65},
+            "T2": {"aura_radius": 1, "damage_factor": 0.8, "combat_dmg_mult": 0.55},
+            "T3": {"aura_radius": 0, "damage_factor": 0.6, "combat_dmg_mult": 0.45}
+        },
+        "sub_attenuation": "aura_damage_halved",
+        "main_only": False
     },
-    "assassin": {
-        "category_id": 18,
-        "display_name": "Assassin",
-        "is_main_only": True,
-        "sub_multiplier": 0.0,
-        "t1": {"stealth_expose_vision_bonus": 3, "bonus_dmg_multiplier_of_total": 0.6, "exposed_turns": 2},
-        "t2": {"stealth_expose_vision_bonus": 2, "bonus_dmg_multiplier_of_total": 0.5, "exposed_turns": 2},
-        "t3": {"stealth_expose_vision_bonus": 1, "bonus_dmg_multiplier_of_total": 0.4, "exposed_turns": 2}
+    "CAT-18": {
+        "name": "Assassin",
+        "description": "Hanya dapat digunakan di slot Main. Memberikan status stealth (tidak terlihat) dan bonus damage kejutan jika menyerang dari persembunyian. Menyerang akan membatalkan status stealth selama 2 turn.",
+        "tiers": {
+            "T1": {"expose_vision_threshold": 3, "bonus_dmg_mult": 0.6},
+            "T2": {"expose_vision_threshold": 2, "bonus_dmg_mult": 0.5},
+            "T3": {"expose_vision_threshold": 1, "bonus_dmg_mult": 0.4}
+        },
+        "sub_attenuation": None,
+        "main_only": True
     },
-    "pickpocket": {
-        "category_id": 19,
-        "display_name": "Pickpocket",
-        "is_main_only": False,
-        "sub_multiplier": None,
-        "t1": {"max_steal_smoltz": 3}
+    "CAT-19": {
+        "name": "Pickpocket",
+        "description": "Mencuri sMoltz dari musuh saat melewatinya. Sub pack menambah biaya pergerakan sebesar +1 EP.",
+        "tiers": {
+            "T1": {"steal_limit": 3},
+            "T2": {"steal_limit": 2},
+            "T3": {"steal_limit": 1}
+        },
+        "sub_attenuation": "move_cost_increase_1_ep",
+        "main_only": False
     }
 }

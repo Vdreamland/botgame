@@ -1,0 +1,125 @@
+/botgame
+├── .env                              # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
+├── requirements.txt                  # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)
+├── rungame.py                        # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
+├── game_data/
+│    ├── __init__.py                  # Penanda paket Python (bisa digunakan untuk mengekspos semua kamus data sekaligus)
+│    ├── player_info.py               # Menyimpan statistik dasar pemain (HP, EP, ATK, DEF, Vision, limit inventaris)
+│    ├── monster_info.py              # Kamus data monster biasa (Wolf, Bear, Bandit) dan monster Guardian (Turret) beserta jangkauannya
+│    ├── weapon_info.py               # Kamus data statistik senjata (Fist, Dagger, Sword, Katana, Bow, Pistol, Sniper Rifle)
+│    ├── armour_info.py               # Kamus data jenis armor (grade, bonus defense) yang terdeteksi dari game
+│    ├── item_info.py                 # Kamus data item pemulihan (HP & EP recovery) dan kegunaan item utilitas
+│    ├── action_info.py               # Aturan biaya EP, cooldown aksi, dan konstanta perhitungan Alert Gauge
+│    ├── relic_info.py                # Panduan warna slot relic (R/G/B) dan pemetaan statistik rentang nilai afiks positif/negatif
+│    ├── pack_info.py                 # Ensiklopedia 20 kategori pack (CAT-00 s.d CAT-19) lengkap untuk Tier T1, T2, T3
+│    └── world_info.py                # Aturan modifier terrain, weather, sistem waktu, fasilitas peta, dan batas aman Death Zone
+├── utils/                            # [Tambahan Baru] Folder untuk utilitas sistem dan helper koneksi
+│    ├── __init__.py                  # Penanda paket Python untuk folder utils
+│    ├── ws_client.py                 # Menangani siklus koneksi WebSocket & Join Handshake
+│    ├── logger.py                    # Konfigurasi pusat saluran logging bot
+│    └── api_client.py                # Helper API REST untuk interaksi dengan server (ClawRoyaleAPI)
+├── logs/                             # Folder tempat menyimpan file hasil audit bot
+│   ├── __init__.py                   # Penanda paket Python untuk folder utils
+│   ├── logs_network.py               # Untuuk menampilkan log di cmd/powershell
+│   ├── logs_combat.py                # Untuuk menampilkan log di cmd/powershell
+│   └── logs_behavior.py              # Untuuk menampilkan log di cmd/powershell
+
+
+Link url :
+
+game_data/ 
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/game_data/__init__.py
+player_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/player_info.py
+monster_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/monster_info.py
+weapon_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/weapon_info.py
+armour_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/armour_info.py
+item_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/item_info.py
+action_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/action_info.py
+relic_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/relic_info.py
+pack_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/pack_info.py
+world_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/world_info.py
+
+utils/
+api_client.py
+logger.py
+ws_client.py
+
+logs/
+logs_network.py
+logs_combat.py
+logs_behavior.py
+
+
+
+/botgame
+├── .env                              # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
+├── requirements.txt                  # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)
+├── rungame.py                        # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
+│
+├── connection/                       # Modul komunikasi jaringan (REST API dan WebSockets)
+│   ├── init.py                       # Penanda paket Python untuk folder connection
+│   ├── api_endpoints.py              # Menyimpan konfigurasi URL REST API dan alamat WebSocket server game
+│   ├── http_client.py                # Mengelola permintaan HTTP dasar (pengecekan versi game dan verifikasi akun)
+│   ├── socket_client.py              # Mengelola jabat tangan (handshake) WebSocket awal dan memverifikasi koneksi
+│   ├── loadout.py                    # Mengelola REST API pemakaian pack, sub pack, serta relic ke slot akun
+│   └── bot_manager.py                # Mengorkestrasi seluruh siklus inisiasi bot secara asinkronus dan menyajikan tabel status
+│
+├── tools/                            # Folder peralatan utility pembantu di luar game loop
+│   ├── setup_loadout.py              # Skrip otomatisasi loadout aman untuk semua bot (menyaring & melepas relic berbahaya)
+│   └── #reforge_relic.py             # ini hanya rencana belum ada isinya
+│
+├── utility/                          # Modul pembantu umum dan logika pemrosesan kalkulasi bot
+│   ├── init.py                       # Penanda paket Python untuk folder utility
+│   ├── detector/                     # Sub-modul detektor untuk mengekstrak kondisi status game dari server
+│   │   ├── init.py                   # Penanda paket Python untuk folder detector
+│   │   ├── bot_stats_detector.py     # Mengidentifikasi status HP, EP, ATK, DEF, serta perlengkapan senjata/armor bot
+│   │   ├── inventory_detector.py     # Menghitung jumlah slot terpakai dan memetakan barang dalam inventaris bot
+│   │   ├── zone_detector.py          # Menganalisis kondisi terrain, cuaca, serta visibilitas wilayah bot saat ini
+│   │   └── layer_detector.py         # Mengalkulasi lapisan jarak (BFS) posisi unit lain (P/M/A) di sekitar wilayah bot
+│   │
+│   └── strategy/                     # Folder rancangan modul taktik pergerakan dan pertempuran (AI Engine)
+│       ├── init.py                   # Penanda paket Python untuk folder strategy # ini hanya rencana belum ada isinya
+│       ├── movement_solver.py        # Algoritma perencanaan rute wilayah aman (menghindari Death Zone dan ancaman)
+│       ├── combat_solver.py          # Evaluasi efektivitas serangan terhadap musuh atau pemain di sekitar wilayah jangkauan
+│       ├── loot_solver.py            # Pemecah taktis jarahan (Need, Risk, EV, & Inventory Priority)
+│       └── decision_engine.py        # Otak utama pengambil keputusan aksi (move, attack, rest, dll.) di setiap turn
+│
+├── game_data/                        # Kamus data statis (ensiklopedia game berbasis wiki/dokumentasi resmi)
+│   ├── init.py                       # Penanda paket Python untuk folder game_data
+│   ├── player_info.py                # Menyimpan data statistik dasar bawaan bot (HP, EP, ATK, DEF, Vision)
+│   ├── monster_info.py               # Ensiklopedia statistik musuh (Wolf, Bear, Bandit, Guardian)
+│   ├── weapon_info.py                # Ensiklopedia statistik senjata tipe Melee dan Ranged
+│   ├── armour_info.py                # Ensiklopedia statistik armour [baru]
+│   ├── item_info.py                  # Ensiklopedia data item pemulihan (Recovery) dan utilitas (Utility)
+│   ├── action_info.py                # Konfigurasi aksi game beserta konsumsi EP, cooldown, dan aturan Alert Gauge
+│   ├── relic_info.py                 # Panduan warna slot relic serta seluruh rentang nilai afiks positif/negatif
+│   ├── pack_info.py                  # Ensiklopedia 20 kategori pack dari T1 sampai T3 beserta persentase attenuasi Sub-slot
+│   └── world_info.py                 # Aturan modifikasi medan (Terrain), cuaca (Weather), sistem waktu, dan fasilitas peta
+│
+└── ui/                               # Modul Antarmuka / Logging Visual
+    ├── init.py                       # Penanda paket Python untuk folder ui
+    ├── log_system.py                 # Log status sistem global
+    ├── damage_logs.py                # Log deteksi terkena damage oleh musuh
+    ├── #combat_logs.py               # Memproses dan memformat log "Combat" (HP, EP, ATK, DEF, detail Equipped, & visual Layer BFS)
+    ├── #zone_logs.py                 # Memproses dan memformat log "Wilayah" (Location, Terrain, Weather, Warning, & Active Death Zones)
+    ├── #loot_logs.py                 # Memproses dan memformat log "Penjarahan" (Inventaris slot, daftar koin sMoltz, & item lantai)
+    ├── log_connection.py             # Log detail koneksi (dipertahankan)
+    ├── log_game.py                   # Format visual turn-by-turn stats, darah, energi, & status sinkronisasi
+    │
+    └── web/                          # Modul antarmuka web dashboard berbasis browser (Tambahan Baru)  # ini hanya rencana belum ada isinya
+        ├── __init__.py               # Penanda paket Python untuk sub-modul web  # ini hanya rencana belum ada isinya
+        ├── server.py                 # Logika web server lokal (aiohttp.web) & pengirim data log ke browser via WS
+        └── templates/                # Folder penyimpanan berkas template frontend  # ini hanya rencana belum ada isinya
+            ├── index.html            # Halaman dashboard utama (HTML) yang dibuka oleh pengguna di browser  # ini hanya rencana belum ada isinya 
+            └── style.css             # Berkas gaya tampilan (CSS) untuk merapikan dashboard agar modern  # ini hanya rencana belum ada isinya
+
+
+--Link url file github--
+
+#Dokumentasi
+Docs.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/Docs.txt
+GameGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/GameGuide.txt
+PlayGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PlayGuide.txt
+PreaSeasonGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PreaSeasonGuide1.txt
+skill.md https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/skill-1.12.0.md
+StrukturWebsite.txt : https://github.com/Vdreamland/botgame/blob/master/StrukturWeb.txt

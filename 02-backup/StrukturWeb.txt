@@ -1,3 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /botgame
 ├── .env                              # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
 ├── requirements.txt                  # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)

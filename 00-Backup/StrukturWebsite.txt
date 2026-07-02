@@ -1,4 +1,11 @@
 botgame/
+
+
+
+
+
+
+botgame/
 │
 ├── config/
 │   ├── __init__.py

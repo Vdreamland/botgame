@@ -14,8 +14,8 @@
 │    │    ├── dead_zone_detector.py   # Deteksi deadzone
 │    │    ├── ground_detector.py      # Deteksi apa aja loot yang ada di ground/zone bot/agent berada
 │    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/stats musuh/stats monster
-│    │    ├── item_detector.py        # deteksi list item
-│    │    └──               
+│    │    ├── self_detector.py        # mengevaluasi kekuatan diri kita sendiri sebelum bertarung
+│    │    └── ruin_detector.py        # Reruntuhan (ruin) merupakan objek penting untuk mendapatkan Relic dan Pack [1.12.0]       
 │    ├── decision/                    # Sub-folder penentu keputusan akhir tindakan bot berdasarkan analisis situasi
 │    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
 │    │    ├──                             
@@ -74,6 +74,8 @@ zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector
 dead_zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/dead_zone_detector.py
 ground_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/ground_detector.py
 enemy_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/enemy_detector.py
+ruin_detector.py :
+self_detector.py :
 
 ai/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/__init__.py

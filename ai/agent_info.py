@@ -30,15 +30,18 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
         inventory = []
 
     inv_slots_used = len(inventory)
-    inv_items = []
+    
+    item_counts = {}
     for item in inventory:
         if isinstance(item, dict):
             name = item.get("name") or item.get("itemKey") or "Unknown"
             qty = item.get("quantity") or item.get("qty") or 1
-            inv_items.append(f"{name} [{qty}]")
+            item_counts[name] = item_counts.get(name, 0) + qty
         else:
-            inv_items.append(f"{item} [1]")
+            name = str(item)
+            item_counts[name] = item_counts.get(name, 0) + 1
 
+    inv_items = [f"{name} [{total_qty}]" for name, total_qty in item_counts.items()]
     inv_display = ", ".join(inv_items) if inv_items else "Empty"
 
     return (

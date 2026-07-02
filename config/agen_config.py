@@ -46,32 +46,3 @@ async def auto_claim_rewards(api_client, bot_name: str, bots_state: dict, draw_c
         else:
             bots_state[bot_name]["redeem"] = "Failed"
     await draw_callback()
-
-    bots_state[bot_name]["weekly"] = "Checking"
-    await draw_callback()
-
-    weekly_res = await api_client.get_weekly_tracks()
-    if weekly_res.get("success"):
-        data = weekly_res.get("data", {})
-        is_claimed = data.get("claimed", False)
-        if is_claimed:
-            bots_state[bot_name]["weekly"] = "Already"
-            await draw_callback()
-            return
-
-        tracks = data.get("tracks", [])
-        claimed_any = False
-        for track in tracks:
-            if isinstance(track, dict) and track.get("opened") is True:
-                track_index = track.get("track")
-                if track_index is not None:
-                    claim_res = await api_client.claim_weekly_reward(track_index)
-                    if claim_res.get("success"):
-                        bots_state[bot_name]["weekly"] = "Claimed"
-                        claimed_any = True
-                        break
-        if not claimed_any:
-            bots_state[bot_name]["weekly"] = "No tracks"
-    else:
-        bots_state[bot_name]["weekly"] = "Failed"
-    await draw_callback()

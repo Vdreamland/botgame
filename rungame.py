@@ -19,7 +19,6 @@ async def main():
     for bot in bots:
         bots_state[bot["name"]] = {
             "redeem": "Waiting",
-            "weekly": "Waiting",
             "smoltz": "Waiting",
             "target": room_preference.capitalize(),
             "room": "Waiting",

@@ -104,22 +104,15 @@ async function updateStatus() {
       const redeemStatus = state.redeem
         ? state.redeem.toLowerCase()
         : "waiting";
-      const weeklyStatus = state.weekly
-        ? state.weekly.toLowerCase().replace(" ", "-")
-        : "waiting";
       const botStatus = state.status
         ? state.status.toLowerCase().replace(" ", "-")
         : "waiting";
       const rawRoom = state.room_id || state.room;
-      const lifeStatus = state.alive ? "alive" : "dead";
-      const lifeText = state.alive ? "Alive" : "Dead";
 
       tr.innerHTML = `
                 <td class="agent-name">${name}</td>
                 <td><span class="badge badge-${redeemStatus}">${state.redeem}</span></td>
-                <td><span class="badge badge-${weeklyStatus}">${state.weekly}</span></td>
                 <td class="smoltz-value">${state.smoltz}</td>
-                <td><span class="badge badge-${lifeStatus}">${lifeText}</span></td>
                 <td>${state.target}</td>
                 <td class="room-value">
                     <span class="room-clickable" onclick="copyToClipboard('${rawRoom}')" title="Click to copy Room ID">

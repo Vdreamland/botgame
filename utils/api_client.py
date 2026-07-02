@@ -52,13 +52,6 @@ class ClawRoyaleAPI:
     async def get_my_profile(self) -> dict:
         return await self._request("GET", "/accounts/me")
 
-    async def get_weekly_tracks(self) -> dict:
-        return await self._request("GET", "/accounts/me/weekly")
-
-    async def claim_weekly_reward(self, track_index: int) -> dict:
-        payload = {"track": track_index}
-        return await self._request("POST", "/api/weekly/claim", payload)
-
     async def get_preseason_leaderboard(self) -> dict:
         return await self._request("GET", "/api/preseason1/leaderboard")
 

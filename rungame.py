@@ -8,7 +8,6 @@ from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
 from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
 from logs.logs_agent import draw_status_table
-from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
 
 def get_ordinal(n: int) -> str:
     if 11 <= (n % 100) <= 13:
@@ -64,7 +63,6 @@ class LobbyCoordinator:
             self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
             self.bots_state[bot_name]["room_id"] = ""
-            self.bots_state[bot_name]["alive"] = True
         await self.draw_table()
 
     async def get_active_count(self) -> int:
@@ -87,9 +85,6 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
 
     while True:
-        clear_gameplay_log(bot_name)
-        last_logged_turn = -1
-
         await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
 
         await coordinator.enter_lobby(bot_name)
@@ -121,6 +116,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             break
 
                         if isinstance(frame, dict):
+                            if frame.get("type") in ("agent_view", "turn_advanced"):
+                                coordinator.bots_state[bot_name]["view"] = frame.get("view", {})
+                                await coordinator.draw_table()
+
                             self_data = frame.get("view", {}).get("self", {})
                             if isinstance(self_data, dict):
                                 is_alive = self_data.get("isAlive")
@@ -128,11 +127,17 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     if coordinator.bots_state[bot_name]["alive"] != is_alive:
                                         coordinator.bots_state[bot_name]["alive"] = is_alive
                                         await coordinator.draw_table()
+                                    if not is_alive:
+                                        turn = frame.get("turn")
+                                        if turn:
+                                            from logs.logs_gameplay import write_gameplay_log
+                                            write_gameplay_log(bot_name, f"# Turn {turn}", frame.get("view", {}))
+                                        break
 
-                            turn = frame.get("turn")
-                            if turn is not None and turn != last_logged_turn:
-                                write_gameplay_log(bot_name, f"# Turn {turn}")
-                                last_logged_turn = turn
+                            if frame.get("type") == "game_ended":
+                                coordinator.bots_state[bot_name]["alive"] = False
+                                await coordinator.draw_table()
+                                break
 
                             game_id = frame.get("gameId") or frame.get("matchId")
                             if game_id:
@@ -181,6 +186,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         if frame is None:
                             break
                         if isinstance(frame, dict):
+                            if frame.get("type") in ("agent_view", "turn_advanced"):
+                                coordinator.bots_state[bot_name]["view"] = frame.get("view", {})
+                                await coordinator.draw_table()
+
                             self_data = frame.get("view", {}).get("self", {})
                             if isinstance(self_data, dict):
                                 is_alive = self_data.get("isAlive")
@@ -188,11 +197,17 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     if coordinator.bots_state[bot_name]["alive"] != is_alive:
                                         coordinator.bots_state[bot_name]["alive"] = is_alive
                                         await coordinator.draw_table()
+                                    if not is_alive:
+                                        turn = frame.get("turn")
+                                        if turn:
+                                            from logs.logs_gameplay import write_gameplay_log
+                                            write_gameplay_log(bot_name, f"# Turn {turn}", frame.get("view", {}))
+                                        break
 
-                            turn = frame.get("turn")
-                            if turn is not None and turn != last_logged_turn:
-                                write_gameplay_log(bot_name, f"# Turn {turn}")
-                                last_logged_turn = turn
+                            if frame.get("type") == "game_ended":
+                                coordinator.bots_state[bot_name]["alive"] = False
+                                await coordinator.draw_table()
+                                break
 
                             game_id = frame.get("gameId") or frame.get("matchId")
                             if game_id:
@@ -241,6 +256,7 @@ async def main():
             "room_id": "",
             "alive": True,
             "status": "Waiting",
+            "view": {},
         }
 
     coordinator = LobbyCoordinator(len(bots), bots_state)

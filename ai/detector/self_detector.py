@@ -8,6 +8,9 @@ def get_self_vital_status(view: dict) -> dict:
         "max_hp": 100,
         "ep": 10,
         "max_ep": 10,
+        "atk": 25,
+        "def": 5,
+        "vision": 1.0,
         "is_hp_low": False,
         "is_ep_low": False,
         "alert_gauge": 0,
@@ -21,6 +24,9 @@ def get_self_vital_status(view: dict) -> dict:
         status["max_hp"] = self_data.get("max_hp", 100)
         status["ep"] = self_data.get("ep", 10)
         status["max_ep"] = self_data.get("max_ep", 10)
+        status["atk"] = self_data.get("atk", 25)
+        status["def"] = self_data.get("def", 5)
+        status["vision"] = float(self_data.get("vision", 1.0))
         status["is_hp_low"] = status["hp"] <= 30
         status["is_ep_low"] = status["ep"] <= 2
         status["alert_gauge"] = self_data.get("alertGauge", 0)

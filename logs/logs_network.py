@@ -12,18 +12,22 @@ def log_ws_error(error_msg: str):
 
 def log_ws_send(data: dict):
     try:
-        formatted = json.dumps(data)
-        logger.info(f"\033[96m[»] Sent: {formatted}\033[0m")
+        op_type = data.get("type") or data.get("op") or "unknown"
+        logger.info(f"\033[96m[»] Sent {op_type} frame\033[0m")
     except Exception:
-        logger.info(f"\033[96m[»] Sent: {data}\033[0m")
+        logger.info("\033[96m[»] Sent unknown frame\033[0m")
 
 def log_ws_receive(data: str):
     try:
         obj = json.loads(data)
-        formatted = json.dumps(obj)
-        logger.info(f"\033[93m[«] Received: {formatted}\033[0m")
+        msg_type = obj.get("type") or obj.get("op") or "unknown"
+        if msg_type == "welcome":
+            decision = obj.get("decision", "UNKNOWN")
+            logger.info(f"\033[93m[«] Received welcome frame (Decision: {decision})\033[0m")
+        else:
+            logger.info(f"\033[93m[«] Received {msg_type} frame\033[0m")
     except Exception:
-        logger.info(f"\033[93m[«] Received: {data}\033[0m")
+        logger.info("\033[93m[«] Received unknown frame\033[0m")
 
 def log_ws_closed():
     logger.info("\033[91m[-] WebSocket connection closed.\033[0m")

@@ -17,10 +17,7 @@ async def test_connection():
     
     success = await ws_client.connect(ws_url)
     if success:
-        logger.info("Handshake initiation passed. Reading welcome frame...")
-        welcome_frame = await ws_client.receive()
-        if welcome_frame:
-            logger.info("Welcome frame verified successfully.")
+        await ws_client.receive()
         await ws_client.close()
     else:
         logger.error("Failed to connect to the game server.")

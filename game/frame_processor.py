@@ -63,21 +63,27 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         event_name = frame.get("event")
         event_data = frame.get("data", {})
         my_agent_id = coordinator.bots_state[bot_name].get("agent_id")
-        if event_name == "agent_died" and event_data.get("agentId") == my_agent_id:
-            logger.info(f"[-] {bot_name} received agent_died event.")
-            coordinator.bots_state[bot_name]["alive"] = False
-            await coordinator.draw_table()
-            latest_view = coordinator.bots_state[bot_name].get("view", {})
-            if isinstance(latest_view, dict):
-                if "self" not in latest_view:
-                    latest_view["self"] = {}
-                latest_view["self"]["hp"] = 0
-                latest_view["self"]["isAlive"] = False
-            turn = frame.get("turn") or ws_client.last_logged_turn
-            if turn >= 0:
-                write_gameplay_log(bot_name, f"# Turn {turn}", latest_view)
-            write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
-            return False
+        if event_name == "agent_died":
+            if event_data.get("agentId") == my_agent_id:
+                logger.info(f"[-] {bot_name} received agent_died event.")
+                coordinator.bots_state[bot_name]["alive"] = False
+                await coordinator.draw_table()
+                latest_view = coordinator.bots_state[bot_name].get("view", {})
+                if isinstance(latest_view, dict):
+                    if "self" not in latest_view:
+                        latest_view["self"] = {}
+                    latest_view["self"]["hp"] = 0
+                    latest_view["self"]["isAlive"] = False
+                turn = frame.get("turn") or ws_client.last_logged_turn
+                if turn >= 0:
+                    write_gameplay_log(bot_name, f"# Turn {turn}", latest_view)
+                write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
+                return False
+            else:
+                death_region = event_data.get("regionId") or event_data.get("region_id") or event_data.get("region")
+                if death_region:
+                    from ai.Strategy.memory import mark_death_spot
+                    mark_death_spot(death_region)
 
     if msg_type == "game_ended":
         if not coordinator.bots_state[bot_name].get("alive", True):

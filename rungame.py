@@ -94,68 +94,92 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
         if success:
             await coordinator.enter_game(bot_name)
 
-            try:
-                welcome_frame = await ws_client.receive()
-                if welcome_frame and welcome_frame.get("type") == "welcome":
-                    decision = welcome_frame.get("decision")
+        try:
+            welcome_frame = await ws_client.receive()
+            if welcome_frame and welcome_frame.get("type") == "welcome":
+                decision = welcome_frame.get("decision")
 
-                    if decision in ("ASK_ENTRY_TYPE", "FREE_ONLY"):
-                        hello_payload = {
-                            "type": "hello",
-                            "entryType": room_preference,
-                            "version": ws_client.api_version
-                        }
-                        await ws_client.send(hello_payload)
+                if decision in ("ASK_ENTRY_TYPE", "FREE_ONLY"):
+                    hello_payload = {
+                        "type": "hello",
+                        "entryType": room_preference,
+                        "version": ws_client.api_version
+                    }
+                    await ws_client.send(hello_payload)
 
-                        while True:
-                            frame = await ws_client.receive()
-                            if frame is None:
-                                break
+                    while True:
+                        frame = await ws_client.receive()
+                        if frame is None:
+                            break
 
-                            msg_type = frame.get("type")
-                            if msg_type == "queued":
-                                coordinator.bots_state[bot_name]["room"] = "Queue"
-                                coordinator.bots_state[bot_name]["status"] = "Queued"
-                                await coordinator.draw_table()
-                            elif msg_type == "assigned":
-                                match_id = frame.get("matchId") or "Room"
+                        if isinstance(frame, dict):
+                            game_id = frame.get("gameId") or frame.get("matchId")
+                            if game_id:
                                 try:
-                                    m_id = int(match_id)
+                                    m_id = int(game_id)
                                     room_display = get_ordinal(m_id)
                                 except ValueError:
-                                    room_display = str(match_id)
-                                coordinator.bots_state[bot_name]["room"] = room_display[:10]
-                                coordinator.bots_state[bot_name]["status"] = "In Progress"
-                                await coordinator.draw_table()
-                            elif msg_type == "error":
-                                coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                                await coordinator.draw_table()
-                                break
-                    elif decision == "ALREADY_IN_GAME":
-                        coordinator.bots_state[bot_name]["room"] = "Room"
-                        coordinator.bots_state[bot_name]["status"] = "In Progress"
-                        await coordinator.draw_table()
-                        while True:
-                            frame = await ws_client.receive()
-                            if frame is None:
-                                break
-                    else:
-                        coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                        await coordinator.draw_table()
-            except Exception:
-                coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                await coordinator.draw_table()
-            finally:
-                await ws_client.close()
-                await coordinator.leave_game(bot_name)
+                                    room_display = str(game_id)
+                                if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
+                                    coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                                    await coordinator.draw_table()
 
-                active_count = await coordinator.get_active_count()
-                if active_count > 0:
-                    await coordinator.wait_for_cohort(120.0)
+                        msg_type = frame.get("type") if isinstance(frame, dict) else None
+                        if msg_type == "queued":
+                            coordinator.bots_state[bot_name]["room"] = "Queue"
+                            coordinator.bots_state[bot_name]["status"] = "Queued"
+                            await coordinator.draw_table()
+                        elif msg_type in ("assigned", "joined"):
+                            game_id = frame.get("gameId") or frame.get("matchId") or "Room"
+                            try:
+                                m_id = int(game_id)
+                                room_display = get_ordinal(m_id)
+                            except ValueError:
+                                room_display = str(game_id)
+                            coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                            coordinator.bots_state[bot_name]["status"] = "In Progress"
+                            await coordinator.draw_table()
+                        elif msg_type == "error":
+                            coordinator.bots_state[bot_name]["status"] = "Disconnect"
+                            await coordinator.draw_table()
+                            break
+
+                elif decision == "ALREADY_IN_GAME":
+                    coordinator.bots_state[bot_name]["room"] = "Room"
+                    coordinator.bots_state[bot_name]["status"] = "In Progress"
+                    await coordinator.draw_table()
+                    while True:
+                        frame = await ws_client.receive()
+                        if frame is None:
+                            break
+                        if isinstance(frame, dict):
+                            game_id = frame.get("gameId") or frame.get("matchId")
+                            if game_id:
+                                try:
+                                    m_id = int(game_id)
+                                    room_display = get_ordinal(m_id)
+                                except ValueError:
+                                    room_display = str(game_id)
+                                if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
+                                    coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                                    await coordinator.draw_table()
+                else:
+                    coordinator.bots_state[bot_name]["status"] = "Disconnect"
+                    await coordinator.draw_table()
+        except Exception:
+            coordinator.bots_state[bot_name]["status"] = "Disconnect"
+            await coordinator.draw_table()
+        finally:
+            await ws_client.close()
+            await coordinator.leave_game(bot_name)
+
+        active_count = await coordinator.get_active_count()
+        if active_count > 0:
+            await coordinator.wait_for_cohort(120.0)
         else:
             coordinator.bots_state[bot_name]["status"] = "Retrying"
             await coordinator.draw_table()
-            await asyncio.sleep(5.0)
+        await asyncio.sleep(5.0)
 
 async def main():
     bots = get_configured_bots()
@@ -179,10 +203,10 @@ async def main():
     await coordinator.draw_table()
 
     tasks = [run_bot_lifecycle(bot, coordinator, room_preference) for bot in bots]
-    
+
     from web.server import start_web_server
     tasks.append(start_web_server(bots_state))
-    
+
     await asyncio.gather(*tasks)
 
 if __name__ == "__main__":

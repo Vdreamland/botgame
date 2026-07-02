@@ -25,8 +25,11 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
     if isinstance(self_data, dict):
         is_alive = self_data.get("isAlive")
         if is_alive is not None:
+            if coordinator.bots_state[bot_name]["alive"] != is_alive:
+                coordinator.bots_state[bot_name]["alive"] = is_alive
+                await coordinator.draw_table()
             if not is_alive:
-                if not coordinator.bots_state[bot_name].get("alive", True):
+                if not coordinator.bots_state[bot_name]["alive"]:
                     return False
                 coordinator.bots_state[bot_name]["alive"] = False
                 await coordinator.draw_table()
@@ -38,13 +41,9 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 write_gameplay_log(bot_name, f"# Turn {turn}", view_data)
                 write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} has been eliminated (HP: 0). Exiting game loop...")
                 return False
-            else:
-                if not coordinator.bots_state[bot_name].get("alive", True):
-                    coordinator.bots_state[bot_name]["alive"] = True
-                    await coordinator.draw_table()
 
     if msg_type == "game_ended":
-        if not coordinator.bots_state[bot_name].get("alive", True):
+        if not coordinator.bots_state[bot_name]["alive"]:
             return False
         coordinator.bots_state[bot_name]["alive"] = False
         await coordinator.draw_table()
@@ -81,11 +80,12 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     api_client = ClawRoyaleAPI(api_key=api_key)
     ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
+    
+    clear_gameplay_log(bot_name)
+    
     is_first_run = True
 
     while True:
-        clear_gameplay_log(bot_name)
-
         if is_first_run:
             await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
             is_first_run = False
@@ -128,7 +128,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name].get("alive", True):
+                                if coordinator.bots_state[bot_name]["alive"]:
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -154,7 +154,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name].get("alive", True):
+                                if coordinator.bots_state[bot_name]["alive"]:
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -218,7 +218,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name].get("alive", True):
+                                if coordinator.bots_state[bot_name]["alive"]:
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -244,7 +244,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name].get("alive", True):
+                                if coordinator.bots_state[bot_name]["alive"]:
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})

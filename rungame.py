@@ -6,9 +6,15 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
-from utils.logger import logger
 from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
 from logs.logs_agent import draw_status_table
+
+def get_ordinal(n: int) -> str:
+    if 11 <= (n % 100) <= 13:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
 
 class LobbyCoordinator:
     def __init__(self, total_bots: int, bots_state: dict):
@@ -25,7 +31,7 @@ class LobbyCoordinator:
     async def enter_lobby(self, bot_name: str):
         async with self.lock:
             self.lobby.add(bot_name)
-            self.bots_state[bot_name]["status"] = "Lobby"
+            self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
         await self.draw_table()
 
@@ -45,14 +51,14 @@ class LobbyCoordinator:
     async def enter_game(self, bot_name: str):
         async with self.lock:
             self.in_game += 1
-            self.bots_state[bot_name]["status"] = "In Game"
+            self.bots_state[bot_name]["status"] = "In Progress"
         await self.draw_table()
 
     async def leave_game(self, bot_name: str):
         async with self.lock:
             if self.in_game > 0:
                 self.in_game -= 1
-            self.bots_state[bot_name]["status"] = "Lobby"
+            self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
         await self.draw_table()
 
@@ -113,8 +119,13 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                 await coordinator.draw_table()
                             elif msg_type == "assigned":
                                 match_id = frame.get("matchId") or "Room"
-                                coordinator.bots_state[bot_name]["room"] = str(match_id)[:8]
-                                coordinator.bots_state[bot_name]["status"] = "In Game"
+                                try:
+                                    m_id = int(match_id)
+                                    room_display = get_ordinal(m_id)
+                                except ValueError:
+                                    room_display = str(match_id)
+                                coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                                coordinator.bots_state[bot_name]["status"] = "In Progress"
                                 await coordinator.draw_table()
                             elif msg_type == "error":
                                 coordinator.bots_state[bot_name]["status"] = "Disconnect"
@@ -122,7 +133,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                 break
                     elif decision == "ALREADY_IN_GAME":
                         coordinator.bots_state[bot_name]["room"] = "Room"
-                        coordinator.bots_state[bot_name]["status"] = "In Game"
+                        coordinator.bots_state[bot_name]["status"] = "In Progress"
                         await coordinator.draw_table()
                         while True:
                             frame = await ws_client.receive()
@@ -151,7 +162,6 @@ async def main():
     room_preference = get_room_preference()
 
     if not bots:
-        logger.error("No active bots detected in configuration.")
         return
 
     bots_state = {}
@@ -159,9 +169,10 @@ async def main():
         bots_state[bot["name"]] = {
             "redeem": "Waiting",
             "weekly": "Waiting",
+            "smoltz": "Waiting",
             "target": room_preference.capitalize(),
             "room": "Waiting",
-            "status": "Waiting"
+            "status": "Waiting",
         }
 
     coordinator = LobbyCoordinator(len(bots), bots_state)

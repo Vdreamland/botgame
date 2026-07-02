@@ -18,6 +18,11 @@ def get_room_preference() -> str:
     return os.getenv("ROOM_PREFERENCE", "free")
 
 async def auto_claim_rewards(api_client, bot_name: str, bots_state: dict, draw_callback):
+    profile_res = await api_client.get_my_profile()
+    if profile_res.get("success"):
+        data = profile_res.get("data", {})
+        bots_state[bot_name]["smoltz"] = data.get("sMoltz", 0)
+
     bots_state[bot_name]["redeem"] = "Attempt"
     await draw_callback()
 

@@ -40,11 +40,13 @@ pack_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/pack_
 world_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/world_info.py
 
 utils/
+init__.py
 api_client.py
 logger.py
 ws_client.py
 
 logs/
+init__.py
 logs_network.py
 logs_combat.py
 logs_behavior.py

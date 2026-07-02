@@ -16,10 +16,11 @@ function showToast(message) {
 function copyToClipboard(text) {
   if (!text || text === "Waiting" || text === "Room" || text === "Queue")
     return;
+  const fullLink = `https://www.clawroyale.ai/games/${text}`;
   navigator.clipboard
-    .writeText(text)
+    .writeText(fullLink)
     .then(() => {
-      showToast(`Room ID ${text} copied to clipboard!`);
+      showToast(`Spectator link copied to clipboard!`);
     })
     .catch((err) => {
       console.error("Failed to copy: ", err);

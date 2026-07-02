@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
+from utils.logger import logger
 from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
 from logs.logs_agent import draw_status_table
 
@@ -116,7 +117,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                 coordinator.bots_state[bot_name]["status"] = "In Game"
                                 await coordinator.draw_table()
                             elif msg_type == "error":
-                                coordinator.bots_state[bot_name]["status"] = "Offline"
+                                coordinator.bots_state[bot_name]["status"] = "Disconnect"
                                 await coordinator.draw_table()
                                 break
                     elif decision == "ALREADY_IN_GAME":
@@ -128,10 +129,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             if frame is None:
                                 break
                     else:
-                        coordinator.bots_state[bot_name]["status"] = "Offline"
+                        coordinator.bots_state[bot_name]["status"] = "Disconnect"
                         await coordinator.draw_table()
             except Exception:
-                coordinator.bots_state[bot_name]["status"] = "Offline"
+                coordinator.bots_state[bot_name]["status"] = "Disconnect"
                 await coordinator.draw_table()
             finally:
                 await ws_client.close()
@@ -141,7 +142,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                 if active_count > 0:
                     await coordinator.wait_for_cohort(120.0)
         else:
-            coordinator.bots_state[bot_name]["status"] = "Offline"
+            coordinator.bots_state[bot_name]["status"] = "Retrying"
             await coordinator.draw_table()
             await asyncio.sleep(5.0)
 
@@ -150,6 +151,7 @@ async def main():
     room_preference = get_room_preference()
 
     if not bots:
+        logger.error("No active bots detected in configuration.")
         return
 
     bots_state = {}

@@ -72,7 +72,7 @@ Link url :
 
 ai/
 __init__.py
-agent_info.py
+agent_info.py : https://github.com/Vdreamland/botgame/blob/master/ai/agent_info.py
 
 ai/skill/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/__init__.py

@@ -1,8 +1,13 @@
+import sys
+import os
 import asyncio
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
 from utils.logger import logger
-from config.agent_config import get_configured_bots, get_room_preference
+from config.agent_config import get_configured_bots, get_room_preference, auto_claim_rewards
 from logs.logs_network import (
     log_matchmaking_queued,
     log_match_assigned,
@@ -73,7 +78,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
 
     while True:
-        await api_client.auto_claim_rewards()
+        await auto_claim_rewards(api_client)
 
         await coordinator.enter_lobby(bot_name)
         log_bot_lobby_wait(bot_name)

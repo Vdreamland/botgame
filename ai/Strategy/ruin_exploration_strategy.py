@@ -12,9 +12,15 @@ def get_exploration_priorities(view: dict) -> list:
     alert_gauge = safety.get("alert_gauge", 0)
     current_region = view.get("currentRegion", {})
     curr_id = current_region.get("id") if isinstance(current_region, dict) else None
+    ruin_occupant = current_region.get("ruinOccupant") if isinstance(current_region, dict) else None
+    self_data = view.get("self", {}) if isinstance(view, dict) else {}
+    my_agent_id = self_data.get("id") if isinstance(self_data, dict) else None
+    is_occupied = False
+    if ruin_occupant and ruin_occupant != my_agent_id:
+        is_occupied = True
     for r in ruins:
         ruin_id = r.get("ruin_id")
-        if r.get("is_empty"):
+        if r.get("is_empty") or (ruin_id == curr_id and is_occupied):
             continue
         score = 0.0
         if is_safe:

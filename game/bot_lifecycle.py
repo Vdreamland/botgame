@@ -25,11 +25,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
     if isinstance(self_data, dict):
         is_alive = self_data.get("isAlive")
         if is_alive is not None:
-            if coordinator.bots_state[bot_name]["alive"] != is_alive:
-                coordinator.bots_state[bot_name]["alive"] = is_alive
-                await coordinator.draw_table()
             if not is_alive:
-                if not coordinator.bots_state[bot_name]["alive"]:
+                if not coordinator.bots_state[bot_name].get("alive", True):
                     return False
                 coordinator.bots_state[bot_name]["alive"] = False
                 await coordinator.draw_table()
@@ -39,10 +36,15 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                     view_data["self"]["hp"] = 0
                     view_data["self"]["isAlive"] = False
                 write_gameplay_log(bot_name, f"# Turn {turn}", view_data)
+                write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} has been eliminated (HP: 0). Exiting game loop...")
                 return False
+            else:
+                if not coordinator.bots_state[bot_name].get("alive", True):
+                    coordinator.bots_state[bot_name]["alive"] = True
+                    await coordinator.draw_table()
 
     if msg_type == "game_ended":
-        if not coordinator.bots_state[bot_name]["alive"]:
+        if not coordinator.bots_state[bot_name].get("alive", True):
             return False
         coordinator.bots_state[bot_name]["alive"] = False
         await coordinator.draw_table()
@@ -53,6 +55,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             latest_view["self"]["hp"] = 0
             latest_view["self"]["isAlive"] = False
         write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+        write_gameplay_log(bot_name, "[SYSTEM] Match has ended (game_ended received). Exiting game loop...")
         return False
 
     game_id = frame.get("gameId") or frame.get("matchId")
@@ -125,7 +128,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name]["alive"]:
+                                if coordinator.bots_state[bot_name].get("alive", True):
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -135,6 +138,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                         latest_view["self"]["hp"] = 0
                                         latest_view["self"]["isAlive"] = False
                                     write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+                                    write_gameplay_log(bot_name, f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop...")
                                 break
                             continue
 
@@ -150,7 +154,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name]["alive"]:
+                                if coordinator.bots_state[bot_name].get("alive", True):
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -160,6 +164,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                         latest_view["self"]["hp"] = 0
                                         latest_view["self"]["isAlive"] = False
                                     write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+                                    write_gameplay_log(bot_name, "[SYSTEM] Connection closed by server. Exiting game loop...")
                             break
 
                         is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
@@ -213,7 +218,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name]["alive"]:
+                                if coordinator.bots_state[bot_name].get("alive", True):
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -223,6 +228,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                         latest_view["self"]["hp"] = 0
                                         latest_view["self"]["isAlive"] = False
                                     write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+                                    write_gameplay_log(bot_name, f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop...")
                                 break
                             continue
 
@@ -238,7 +244,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                if coordinator.bots_state[bot_name]["alive"]:
+                                if coordinator.bots_state[bot_name].get("alive", True):
                                     coordinator.bots_state[bot_name]["alive"] = False
                                     await coordinator.draw_table()
                                     latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -248,6 +254,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                         latest_view["self"]["hp"] = 0
                                         latest_view["self"]["isAlive"] = False
                                     write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+                                    write_gameplay_log(bot_name, "[SYSTEM] Connection closed by server. Exiting game loop...")
                             break
                         
                         is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
@@ -260,6 +267,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             coordinator.bots_state[bot_name]["status"] = "Disconnect"
             await coordinator.draw_table()
         finally:
+            write_gameplay_log(bot_name, "[SYSTEM] Connection closed. Leaving game room.")
             await ws_client.close()
             await coordinator.leave_game(bot_name)
 

@@ -9,15 +9,15 @@ async def _delayed_print_turn(turn_num: int):
     if turn_num in _turn_data:
         bots_info = _turn_data[turn_num]
         sorted_bots = sorted(bots_info.keys())
-        print(f"#Turn {turn_num}")
+        print(f"#Turn {turn_num}", flush=True)
         border = "-" * 60
-        print(border)
+        print(border, flush=True)
         bot_blocks = []
         for bot in sorted_bots:
             block = f"[{bot}] \n{bots_info[bot]}"
             bot_blocks.append(block)
-        print("\n\n".join(bot_blocks))
-        print(border)
+        print("\n\n".join(bot_blocks), flush=True)
+        print(border, flush=True)
         del _turn_data[turn_num]
         if turn_num in _turn_tasks:
             del _turn_tasks[turn_num]
@@ -55,4 +55,4 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
         except Exception:
             pass
     else:
-        print(f"[{bot_name}] {message}")
+        print(f"[{bot_name}] {message}", flush=True)

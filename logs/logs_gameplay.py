@@ -20,9 +20,13 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
     if is_turn_log:
         border = "-" * 60
         lines = message.strip().split("\n")
-        print(f"\n{border}")
+        
+        if lines[0].endswith(f" [{bot_name}]"):
+            lines[0] = lines[0].replace(f" [{bot_name}]", "")
+            
+        print(border)
         for line in lines:
             print(f"[{bot_name}] {line}")
-        print(f"{border}\n")
+        print(border)
     else:
         print(f"[{bot_name}] {message}")

@@ -78,11 +78,14 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     api_client = ClawRoyaleAPI(api_key=api_key)
     ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
+    is_first_run = True
 
     while True:
         clear_gameplay_log(bot_name)
 
-        await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
+        if is_first_run:
+            await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
+            is_first_run = False
 
         await coordinator.enter_lobby(bot_name)
 

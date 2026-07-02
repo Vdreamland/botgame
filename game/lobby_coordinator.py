@@ -22,11 +22,8 @@ class LobbyCoordinator:
             self.bots_state[bot_name]["alive"] = True
         await self.draw_table()
 
-    async def wait_for_lobby(self, bot_name: str, timeout: float = 10.0) -> bool:
-        start_time = asyncio.get_event_loop().time()
+    async def wait_for_lobby(self, bot_name: str) -> bool:
         while len(self.lobby) < self.total_bots:
-            if asyncio.get_event_loop().time() - start_time > timeout:
-                return False
             await asyncio.sleep(0.5)
         return True
 

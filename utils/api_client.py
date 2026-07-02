@@ -27,7 +27,8 @@ class ClawRoyaleAPI:
         if method.upper() in ("POST", "PUT", "DELETE"):
             headers["Idempotency-Key"] = str(uuid.uuid4())
 
-        async with aiohttp.ClientSession(headers=headers) as session:
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
             for attempt in range(retries):
                 try:
                     async with session.request(method, url, json=json_data) as response:
@@ -48,78 +49,78 @@ class ClawRoyaleAPI:
                         return {"success": False, "error": str(e)}
             return {"success": False, "error": "Max retries exceeded"}
 
-    async def get_my_profile(self) -> dict:
-        return await self._request("GET", "/accounts/me")
+       async def get_my_profile(self) -> dict:
+           return await self._request("GET", "/accounts/me")
 
-    async def get_weekly_tracks(self) -> dict:
-        return await self._request("GET", "/accounts/me/weekly")
+       async def get_weekly_tracks(self) -> dict:
+           return await self._request("GET", "/accounts/me/weekly")
 
-    async def claim_weekly_reward(self, track_index: int) -> dict:
-        payload = {"track": track_index}
-        return await self._request("POST", "/api/weekly/claim", payload)
+       async def claim_weekly_reward(self, track_index: int) -> dict:
+           payload = {"track": track_index}
+           return await self._request("POST", "/api/weekly/claim", payload)
 
-    async def get_preseason_leaderboard(self) -> dict:
-        return await self._request("GET", "/api/preseason1/leaderboard")
+       async def get_preseason_leaderboard(self) -> dict:
+           return await self._request("GET", "/api/preseason1/leaderboard")
 
-    async def redeem_code(self, code: str = "WELCOME") -> dict:
-        payload = {"code": code}
-        return await self._request("POST", "/api/redeem", payload)
+       async def redeem_code(self, code: str = "WELCOME") -> dict:
+           payload = {"code": code}
+           return await self._request("POST", "/api/redeem", payload)
 
-    async def get_loadout(self) -> dict:
-        return await self._request("GET", "/api/loadout")
+       async def get_loadout(self) -> dict:
+           return await self._request("GET", "/api/loadout")
 
-    async def equip_pack(self, pack_id: str, slot: str) -> dict:
-        payload = {"id": pack_id, "slot": slot}
-        return await self._request("PUT", "/api/loadout/pack", payload)
+       async def equip_pack(self, pack_id: str, slot: str) -> dict:
+           payload = {"id": pack_id, "slot": slot}
+           return await self._request("PUT", "/api/loadout/pack", payload)
 
-    async def remove_pack(self, slot: str) -> dict:
-        payload = {"slot": slot}
-        return await self._request("DELETE", "/api/loadout/pack", payload)
+       async def remove_pack(self, slot: str) -> dict:
+           payload = {"slot": slot}
+           return await self._request("DELETE", "/api/loadout/pack", payload)
 
-    async def equip_relic(self, relic_id: str, slot_index: int) -> dict:
-        payload = {"id": relic_id}
-        return await self._request("PUT", f"/api/loadout/slot/{slot_index}", payload)
+       async def equip_relic(self, relic_id: str, slot_index: int) -> dict:
+           payload = {"id": relic_id}
+           return await self._request("PUT", f"/api/loadout/slot/{slot_index}", payload)
 
-    async def remove_relic(self, slot_index: int) -> dict:
-        return await self._request("DELETE", f"/api/loadout/slot/{slot_index}")
+       async def remove_relic(self, slot_index: int) -> dict:
+           return await self._request("DELETE", f"/api/loadout/slot/{slot_index}")
 
-    async def get_inventory_relics(self) -> dict:
-        return await self._request("GET", "/api/inventory/relics")
+       async def get_inventory_relics(self) -> dict:
+           return await self._request("GET", "/api/inventory/relics")
 
-    async def delete_inventory_relic(self, relic_id: str) -> dict:
-        return await self._request("DELETE", f"/api/inventory/relics/{relic_id}")
+       async def delete_inventory_relic(self, relic_id: str) -> dict:
+           return await self._request("DELETE", f"/api/inventory/relics/{relic_id}")
 
-    async def get_inventory_packs(self) -> dict:
-        return await self._request("GET", "/api/inventory/packs")
+       async def get_inventory_packs(self) -> dict:
+           return await self._request("GET", "/api/inventory/packs")
 
-    async def delete_inventory_pack(self, pack_id: str) -> dict:
-        return await self._request("DELETE", f"/api/inventory/packs/{pack_id}")
+       async def delete_inventory_pack(self, pack_id: str) -> dict:
+           return await self._request("DELETE", f"/api/inventory/packs/{pack_id}")
 
-    async def reforge_relic(self, relic_id: str, material_id: str) -> dict:
-        payload = {
-            "relicId": relic_id,
-            "materialId": material_id
-        }
-        return await self._request("POST", "/api/reforge", payload)
+       async def reforge_relic(self, relic_id: str, material_id: str) -> dict:
+           payload = {
+               "relicId": relic_id,
+               "materialId": material_id
+           }
+           return await self._request("POST", "/api/reforge", payload)
 
-    async def get_shop_listings(self) -> dict:
-        return await self._request("GET", "/api/shop/listings")
+       async def get_shop_listings(self) -> dict:
+           return await self._request("GET", "/api/shop/listings")
 
-    async def purchase_item(self, listing_id: str, quantity: int = 1) -> dict:
-        payload = {
-            "listingId": listing_id,
-            "quantity": quantity
-        }
-        return await self._request("POST", "/api/shop/purchase", payload)
+       async def purchase_item(self, listing_id: str, quantity: int = 1) -> dict:
+           payload = {
+               "listingId": listing_id,
+               "quantity": quantity
+           }
+           return await self._request("POST", "/api/shop/purchase", payload)
 
-    async def create_account(self, owner_wallet: str, sc_wallet: str, agent_wallet: str) -> dict:
-        payload = {
-            "ownerWallet": owner_wallet,
-            "scWallet": sc_wallet,
-            "agentWallet": agent_wallet
-        }
-        return await self._request("POST", "/accounts", payload)
+       async def create_account(self, owner_wallet: str, sc_wallet: str, agent_wallet: str) -> dict:
+           payload = {
+               "ownerWallet": owner_wallet,
+               "scWallet": sc_wallet,
+               "agentWallet": agent_wallet
+           }
+           return await self._request("POST", "/accounts", payload)
 
-    async def update_agent_wallet(self, agent_wallet: str) -> dict:
-        payload = {"agentWallet": agent_wallet}
-        return await self._request("PUT", "/accounts/wallet", payload)
+       async def update_agent_wallet(self, agent_wallet: str) -> dict:
+           payload = {"agentWallet": agent_wallet}
+           return await self._request("PUT", "/accounts/wallet", payload)

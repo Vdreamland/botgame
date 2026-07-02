@@ -89,11 +89,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
 
         await coordinator.enter_lobby(bot_name)
 
-        is_ready = await coordinator.wait_for_lobby(bot_name, 15.0)
-        if not is_ready:
-            await coordinator.leave_lobby(bot_name)
-            await asyncio.sleep(2.0)
-            continue
+        await coordinator.wait_for_lobby(bot_name)
 
         await coordinator.leave_lobby(bot_name)
 

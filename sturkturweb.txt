@@ -67,6 +67,13 @@
 http://localhost:8080
 Link url :
 
+ai/
+__init__.py
+
+ai/skill/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/__init__.py
+vision.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/vision.py
+
 web/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/web/__init__.py
 server.py : https://github.com/Vdreamland/botgame/blob/master/web/server.py

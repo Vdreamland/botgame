@@ -15,7 +15,13 @@
 │    │    ├── ground_detector.py      # Deteksi apa aja loot yang ada di ground/zone bot/agent berada
 │    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/stats musuh/stats monster
 │    │    ├── self_detector.py        # mengevaluasi kekuatan diri kita sendiri sebelum bertarung
-│    │    └── ruin_detector.py        # Reruntuhan (ruin) merupakan objek penting untuk mendapatkan Relic dan Pack [1.12.0]       
+│    │    └── ruin_detector.py        # Reruntuhan (ruin) merupakan objek penting untuk mendapatkan Relic dan Pack [1.12.0]   
+│    ├── Strategy/                    
+│    │    ├── __init__.py             
+│    │    ├── ground_loot_priority.py        
+│    │    ├── equipped_priority.py
+
+
 │    ├── decision/                    # Sub-folder penentu keputusan akhir tindakan bot berdasarkan analisis situasi
 │    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
 │    │    ├──                             
@@ -67,6 +73,12 @@ game/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/game/__init__.py
 lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lobby_coordinator.py
 bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
+
+
+ai/strategy/
+ground_loot_priority.py
+equipped_priority.py
+
 
 ai/detector/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/__init__.py

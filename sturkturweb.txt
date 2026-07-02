@@ -4,9 +4,12 @@
 ├── rungame.py                        # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
 ├── ai/                               # Folder pusat logika kecerdasan buatan, pengambilan keputusan, dan taktis bot
 │    ├── __init__.py                  # Penanda paket Python untuk mengekspos modul-modul AI
-│    └── skill/                       
-│        ├──  __init__.py                     
-│        └── vision.py              # jarak pandang agen kita
+│    ├── skill/                       
+│    │    ├──  __init__.py                     
+│    │    └── vision.py               # jarak pandang agen kita
+│    ├── agent_info.py                # untuk menampilkan informasi bot/agent kita di log browser
+
+
 │    ├── detector/                    # tempat untuk mendeteksi awal untuk kumpulkan informasi
 │    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
 │    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
@@ -69,6 +72,7 @@ Link url :
 
 ai/
 __init__.py
+agent_info.py
 
 ai/skill/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/__init__.py

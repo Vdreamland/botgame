@@ -74,11 +74,13 @@ __init__.py : https://github.com/Vdreamland/botgame/blob/master/game/__init__.py
 lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lobby_coordinator.py
 bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
 
+ai/strategy/
+navigation_strategy.py
 
 ai/strategy/priority/
 ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/equipped_priority.py
 equipped_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/ground_loot_priority.py
-recovery_priority.py
+recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/recovery_priority.py
 navigation_strategy.py
 target_priority.py
 ruin_exploration_strategy.py

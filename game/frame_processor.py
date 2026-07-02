@@ -162,6 +162,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             await ws_client.send(wrapped_payload)
 
     if msg_type == "can_act_changed" and (frame.get("canAct") is True or frame.get("can_act") is True):
+        coordinator.bots_state[bot_name]["local_cooldown"] = False
         stored_view = coordinator.bots_state[bot_name].get("view", {})
         if stored_view:
             self_data = stored_view.get("self", {})
@@ -173,7 +174,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             if self_data.get("hp") == 0:
                 is_agent_alive = False
 
-            turn_num = stored_view.get("turn", 0)
+            turn_num = coordinator.bots_state[bot_name].get("turn", 0)
             already_acted = ws_client.last_acted_turn == turn_num
 
             if is_agent_alive and not already_acted:

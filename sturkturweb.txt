@@ -12,6 +12,8 @@
 │    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
 │    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
 │    │    ├── dead_zone_detector.py   # Deteksi deadzone
+│    │    ├── ground_detector.py      # Deteksi apa aja loot yang ada di ground/zone bot/agent berada
+
 │    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/
 │    │    ├── item_detector.py        # deteksi list item
 │    │    └──               
@@ -71,6 +73,7 @@ ai/detector/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/__init__.py
 zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/zone_detector.py
 dead_zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/dead_zone_detector.py
+ground_detector.py : 
 
 ai/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/__init__.py

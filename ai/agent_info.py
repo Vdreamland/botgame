@@ -2,6 +2,7 @@ from ai.skill.vision import get_layered_zones
 from ai.detector.zone_detector import detect_terrain, detect_weather
 from ai.detector.dead_zone_detector import analyze_death_zones
 from ai.detector.ground_detector import detect_ground_loot
+from ai.detector.enemy_detector import get_visible_enemies_by_layer
 from game_data.world_info import TERRAINS
 
 def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
@@ -71,6 +72,15 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     loot_list = detect_ground_loot(view_data)
     ground_loot_display = ", ".join(loot_list) if loot_list else "None"
     
+    layer_summary = get_visible_enemies_by_layer(view_data, bot_name)
+    layer_lines = []
+    if layer_summary:
+        for layer, counts in sorted(layer_summary.items()):
+            layer_lines.append(f"Layer {layer} : P {counts['P']} / M {counts['M']} / A {counts['A']}")
+    else:
+        layer_lines.append("Layer 0 : P 0 / M 0 / A 0")
+    layer_display = "\n".join(layer_lines)
+    
     return (
         f"# Turn {turn} [{bot_name}]\n"
         f"HP: {hp} | EP: {ep} | Atk: {atk} | Def: {defense} | Kills: {kills} | Vision : {vision_zones} Zone\n"
@@ -78,5 +88,6 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
         f"Inventory {inv_slots_used}/10 : {inv_display}\n"
         f"Location : {location_name} | Terrain: {terrain_name} | Weather : {weather_name} | Vision {vision_mod} | Links {links_count}\n"
         f"DeadZone : {dead_zone_display}\n"
-        f"Ground Loot : {ground_loot_display}"
+        f"Ground Loot : {ground_loot_display}\n\n"
+        f"{layer_display}"
     )

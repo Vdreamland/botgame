@@ -15,3 +15,8 @@ from ai.detector.ground_detector import (
     detect_ground_loot,
     has_loot_on_ground
 )
+from ai.detector.enemy_detector import (
+    calculate_region_layers,
+    get_visible_enemies_by_layer,
+    get_detailed_enemy_stats
+)

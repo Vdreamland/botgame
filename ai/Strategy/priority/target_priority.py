@@ -31,7 +31,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
             else:
                 score = 0.70
         else:
-            score = 0.30 - (layer * 0.05)
+            score = 0.0
         priorities.append({
             "type": "player",
             "name": p.get("name"),
@@ -63,10 +63,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                 else:
                     score = 0.80
         else:
-            if is_guardian:
-                score = 0.05 - (layer * 0.01)
-            else:
-                score = 0.50 - (layer * 0.10)
+            score = 0.0
         priorities.append({
             "type": "monster",
             "name": m.get("type"),

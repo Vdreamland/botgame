@@ -4,6 +4,7 @@ from ai.Strategy.priority.ground_loot_priority import get_ground_loot_priorities
 from ai.Strategy.priority.equipped_priority import get_equipment_priorities
 from ai.Strategy.priority.recovery_priority import get_recovery_priorities
 from ai.Strategy.priority.target_priority import get_target_priorities
+from ai.Strategy.priority.interact_priority import get_interact_priorities
 
 def find_target_id(view: dict, target_name: str, target_type: str, region_id: str) -> str:
     if target_type == "player":
@@ -31,19 +32,22 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     target_priorities = get_target_priorities(view, self_bot_name)
     navigation_priorities = get_navigation_priorities(view, self_bot_name)
     exploration_priorities = get_exploration_priorities(view)
+    interact_priorities = get_interact_priorities(view)
     best_recovery = recovery_priorities[0] if recovery_priorities else {"score": 0.0}
     best_equip = equipment_priorities[0] if equipment_priorities else {"score": 0.0}
     best_loot = ground_loot_priorities[0] if ground_loot_priorities else {"score": 0.0}
     best_target = target_priorities[0] if target_priorities else {"score": 0.0}
     best_nav = navigation_priorities[0] if navigation_priorities else {"score": 0.0}
     best_explore = exploration_priorities[0] if exploration_priorities else {"score": 0.0}
+    best_interact = interact_priorities[0] if interact_priorities else {"score": 0.0}
     choices = [
         ("recovery", best_recovery.get("score", 0.0)),
         ("equip", best_equip.get("score", 0.0)),
         ("loot", best_loot.get("score", 0.0)),
         ("target", best_target.get("score", 0.0)),
         ("navigation", best_nav.get("score", 0.0)),
-        ("explore", best_explore.get("score", 0.0))
+        ("explore", best_explore.get("score", 0.0)),
+        ("interact", best_interact.get("score", 0.0))
     ]
     choices.sort(key=lambda x: x[1], reverse=True)
     winner_category, winner_score = choices[0]
@@ -60,6 +64,8 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
         report_lines.append(f"Move: {best_nav['name']} ({best_nav['score']:.2f})")
     if best_explore.get("score", 0.0) >= 0.15:
         report_lines.append(f"Explore: Ruin {best_explore['ruin_id'][:6]} ({best_explore['score']:.2f})")
+    if best_interact.get("score", 0.0) >= 0.15:
+        report_lines.append(f"Interact: {best_interact['name']} ({best_interact['score']:.2f})")
     avoided = [n["name"] for n in navigation_priorities if n["score"] <= 0.05]
     if avoided:
         report_lines.append(f"Avoided: {', '.join(avoided)}")
@@ -147,4 +153,12 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                 "score": winner_score,
                 "strategy_report": strategy_report
             }
+    elif winner_category == "interact":
+        return {
+            "type": "interact",
+            "target": best_interact["target"],
+            "name": best_interact["name"],
+            "score": winner_score,
+            "strategy_report": strategy_report
+        }
     return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}

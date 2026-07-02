@@ -2,3 +2,4 @@ from ai.Strategy.priority.ground_loot_priority import get_ground_loot_priorities
 from ai.Strategy.priority.equipped_priority import get_equipment_priorities
 from ai.Strategy.priority.recovery_priority import get_recovery_priorities
 from ai.Strategy.priority.target_priority import get_target_priorities
+from ai.Strategy.priority.interact_priority import get_interact_priorities

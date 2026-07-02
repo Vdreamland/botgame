@@ -8,16 +8,22 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
     detailed = get_detailed_enemy_stats(view, self_bot_name)
     players = detailed.get("players", [])
     monsters = detailed.get("monsters", [])
-    eq_weapon = view.get("equippedWeapon")
+    self_data = view.get("self", {}) if isinstance(view, dict) else {}
+    curr_ep = self_data.get("ep", 10) if isinstance(self_data, dict) else 10
+    eq_weapon = self_data.get("equippedWeapon") if isinstance(self_data, dict) else None
     curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
     w_range = WEAPONS.get(curr_weapon_name, {}).get("range", 0)
+    w_ep_cost = WEAPONS.get(curr_weapon_name, {}).get("ep_cost", 1)
+    can_attack = curr_ep >= w_ep_cost
     for p in players:
         layer = p.get("layer", -1)
         if layer == -1:
             continue
         score = 0.0
         hp = p.get("hp", 100)
-        if layer <= w_range:
+        if not can_attack:
+            score = 0.0
+        elif layer <= w_range:
             if hp <= 30:
                 score = 0.98
             elif hp <= 60:
@@ -43,7 +49,9 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
         score = 0.0
         hp = m.get("hp", 25)
         is_guardian = m.get("is_guardian", False)
-        if layer <= w_range:
+        if not can_attack:
+            score = 0.0
+        elif layer <= w_range:
             if is_guardian:
                 if hp <= 40:
                     score = 0.70

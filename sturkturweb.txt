@@ -128,7 +128,7 @@ ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Str
 equipped_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/ground_loot_priority.py
 recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/recovery_priority.py
 target_priority.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/target_priority.py
-interact_priority.py :
+interact_priority.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/interact_priority.py
 
 
 ai/detector/

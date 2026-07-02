@@ -78,7 +78,7 @@ init__.py : https://github.com/Vdreamland/botgame/blob/master/logs/__init__.py
 logs_network.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_network.py
 quest_reward_log : https://github.com/Vdreamland/botgame/blob/master/logs/quest_reward_log.py
 logs_agent.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_agent.py
-logs_gameplay.py :
+logs_gameplay.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_gameplay.py
 
 .env : https://github.com/Vdreamland/botgame/blob/master/.env
 requirements.txt : https://github.com/Vdreamland/botgame/blob/master/requirements.txt

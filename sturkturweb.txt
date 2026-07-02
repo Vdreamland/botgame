@@ -114,7 +114,7 @@ game/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/game/__init__.py
 lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lobby_coordinator.py
 bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
-frame_processor.py : 
+frame_processor.py : https://github.com/Vdreamland/botgame/blob/master/game/frame_processor.py
 
 
 ai/strategy/

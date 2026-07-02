@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
 from utils.logger import logger
-from config.agent_config import get_configured_bots, get_room_preference, auto_claim_rewards
+from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
 from logs.logs_network import (
     log_matchmaking_queued,
     log_match_assigned,

@@ -24,10 +24,10 @@ def log_ws_receive(data: str):
         if msg_type == "welcome":
             decision = obj.get("decision", "UNKNOWN")
             logger.info(f"[«] Received welcome frame (Decision: {decision})")
-        else:
+        elif msg_type in ("queued", "assigned", "error"):
             logger.info(f"[«] Received {msg_type} frame")
     except Exception:
-        logger.info("[«] Received unknown frame")
+        pass
 
 def log_ws_closed():
     logger.info("[-] WebSocket connection closed.")

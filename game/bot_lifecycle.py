@@ -191,7 +191,8 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         coordinator.bots_state[bot_name]["room_id"] = g.get("gameId")
                         break
 
-            if not in_active_game:
+            bypass_lobby = getattr(coordinator, "bypass_lobby_on_startup", False)
+            if not in_active_game and not (is_first_run and bypass_lobby):
                 logger.info(f"[*] {bot_name} entering lobby coordinator...")
                 await coordinator.enter_lobby(bot_name)
                 logger.info(f"[*] {bot_name} waiting in lobby for cohort...")
@@ -199,7 +200,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                 logger.info(f"[*] {bot_name} lobby is full, leaving lobby and connecting...")
                 await coordinator.leave_lobby(bot_name)
             else:
-                logger.info(f"[*] {bot_name} detected active game, bypassing lobby...")
+                if in_active_game:
+                    logger.info(f"[*] {bot_name} detected active game, bypassing lobby...")
+                else:
+                    logger.info(f"[*] {bot_name} bypassing lobby due to other active game on startup...")
 
             logger.info(f"[*] {bot_name} connecting to WebSocket: {ws_url}")
             success = await ws_client.connect(ws_url)

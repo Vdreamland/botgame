@@ -20,7 +20,9 @@ def get_exploration_priorities(view: dict) -> list:
         is_occupied = True
     for r in ruins:
         ruin_id = r.get("ruin_id")
-        if r.get("is_empty") or (ruin_id == curr_id and is_occupied):
+        if ruin_id != curr_id:
+            continue
+        if r.get("is_empty") or is_occupied:
             continue
         score = 0.0
         if is_safe:
@@ -29,10 +31,7 @@ def get_exploration_priorities(view: dict) -> list:
             max_gauge = r.get("max_gauge", 3)
             progress = float(gauge) / float(max_gauge) if max_gauge > 0 else 0.0
             score += (progress * 0.15)
-            if ruin_id == curr_id:
-                score += 0.05
-            else:
-                score -= 0.10
+            score += 0.05
         else:
             if alert_gauge >= 8:
                 score = 0.05

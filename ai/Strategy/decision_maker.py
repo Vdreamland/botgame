@@ -174,14 +174,6 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                 "score": winner_score,
                 "strategy_report": strategy_report
             }
-        else:
-            return {
-                "type": "move",
-                "regionId": target_ruin_id,
-                "name": f"Move to Ruin {target_ruin_id}",
-                "score": winner_score,
-                "strategy_report": strategy_report
-            }
     elif winner_category == "interact":
         return {
             "type": "interact",

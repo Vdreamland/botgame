@@ -43,3 +43,9 @@ def log_matchmaking_failed(reason: str):
 
 def log_ws_not_open_error():
     logger.error("WebSocket error: WebSocket connection is not open or has been disconnected.")
+
+def log_missing_api_key():
+    logger.error("API key is not configured in .env file.")
+
+def log_connection_failed():
+    logger.error("Failed to connect to the game server.")

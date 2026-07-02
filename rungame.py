@@ -3,11 +3,12 @@ import os
 from dotenv import load_dotenv
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
-from utils.logger import logger
 from logs.logs_network import (
     log_matchmaking_queued,
     log_match_assigned,
-    log_matchmaking_failed
+    log_matchmaking_failed,
+    log_missing_api_key,
+    log_connection_failed
 )
 
 load_dotenv()
@@ -15,7 +16,7 @@ load_dotenv()
 async def test_connection():
     api_key = os.getenv("BOT1_API_KEY")
     if not api_key:
-        logger.error("API key is not configured in .env file.")
+        log_missing_api_key()
         return
 
     room_preference = os.getenv("ROOM_PREFERENCE", "free")
@@ -60,7 +61,7 @@ async def test_connection():
                 
         await ws_client.close()
     else:
-        logger.error("Failed to connect to the game server.")
+        log_connection_failed()
 
 if __name__ == "__main__":
     asyncio.run(test_connection())

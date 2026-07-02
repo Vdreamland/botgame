@@ -1,7 +1,5 @@
 import asyncio
 import aiohttp
-import logging
-from utils.logger import logger as custom_logger
 from logs.quest_reward_log import (
     log_redeem_attempt,
     log_redeem_success,
@@ -9,10 +7,10 @@ from logs.quest_reward_log import (
     log_weekly_check,
     log_weekly_claim_attempt,
     log_weekly_claim_success,
-    log_weekly_claim_failed
+    log_weekly_claim_failed,
+    log_no_claimable_weekly_tracks,
+    log_weekly_tracks_failed
 )
-
-logger = logging.getLogger("APIClient")
 
 class ClawRoyaleAPI:
     BASE_URL = "https://cdn.clawroyale.ai/api"
@@ -161,6 +159,6 @@ class ClawRoyaleAPI:
                             claim_err = claim_res.get("error") or f"status {claim_res.get('status')}"
                             log_weekly_claim_failed(track_index, claim_err)
             if not claimed_any:
-                custom_logger.info("[*] No claimable weekly reward tracks found.")
+                log_no_claimable_weekly_tracks()
         else:
-            custom_logger.warning(f"[WARN] Failed to retrieve weekly tracks: {weekly_res.get('error')}")
+            log_weekly_tracks_failed(weekly_res.get("error"))

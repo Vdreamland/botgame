@@ -1,6 +1,5 @@
 import aiohttp
 import json
-import logging
 from logs.logs_network import (
     log_ws_connecting,
     log_ws_connected,
@@ -10,8 +9,6 @@ from logs.logs_network import (
     log_ws_closed,
     log_ws_not_open_error
 )
-
-logger = logging.getLogger("WSClient")
 
 class ClawRoyaleWSClient:
     def __init__(self, api_key: str, api_version: str = "1.12.0"):

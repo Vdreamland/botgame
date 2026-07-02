@@ -20,3 +20,9 @@ def log_weekly_claim_success(track_index: int):
 
 def log_weekly_claim_failed(track_index: int, reason: str):
     logger.warning(f"[WARN] Failed to claim weekly reward track index: {track_index} - {reason}")
+
+def log_no_claimable_weekly_tracks():
+    logger.info("[*] No claimable weekly reward tracks found.")
+
+def log_weekly_tracks_failed(reason: str):
+    logger.warning(f"[WARN] Failed to retrieve weekly tracks: {reason}")

@@ -24,7 +24,7 @@ def find_target_id(view: dict, target_name: str, target_type: str, region_id: st
 
 def make_decision(view: dict, self_bot_name: str) -> dict:
     if not isinstance(view, dict):
-        return {"type": "rest", "name": "None", "score": 0.0}
+        return {"type": "rest", "name": "None", "score": 0.0, "strategy_report": "None"}
     recovery_priorities = get_recovery_priorities(view)
     equipment_priorities = get_equipment_priorities(view)
     ground_loot_priorities = get_ground_loot_priorities(view)
@@ -47,28 +47,48 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     ]
     choices.sort(key=lambda x: x[1], reverse=True)
     winner_category, winner_score = choices[0]
+    report_lines = []
+    if best_recovery.get("score", 0.0) >= 0.15:
+        report_lines.append(f"Heal: {best_recovery['name']} ({best_recovery['score']:.2f})")
+    if best_equip.get("score", 0.0) >= 0.15:
+        report_lines.append(f"Equip: {best_equip['name']} ({best_equip['score']:.2f})")
+    if best_loot.get("score", 0.0) >= 0.15:
+        report_lines.append(f"Loot: {best_loot['name']} ({best_loot['score']:.2f})")
+    if best_target.get("score", 0.0) >= 0.15:
+        report_lines.append(f"Attack: {best_target['name']} ({best_target['score']:.2f})")
+    if best_nav.get("score", 0.0) >= 0.15:
+        report_lines.append(f"Move: {best_nav['name']} ({best_nav['score']:.2f})")
+    if best_explore.get("score", 0.0) >= 0.15:
+        report_lines.append(f"Explore: Ruin {best_explore['ruin_id'][:6]} ({best_explore['score']:.2f})")
+    avoided = [n["name"] for n in navigation_priorities if n["score"] <= 0.05]
+    if avoided:
+        report_lines.append(f"Avoided: {', '.join(avoided)}")
+    strategy_report = " | ".join(report_lines) if report_lines else "None"
     if winner_score < 0.15:
-        return {"type": "rest", "name": "None", "score": winner_score}
+        return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
     if winner_category == "recovery":
         return {
             "type": "use_item",
             "itemId": best_recovery["id"],
             "name": best_recovery["name"],
-            "score": winner_score
+            "score": winner_score,
+            "strategy_report": strategy_report
         }
     elif winner_category == "equip":
         return {
             "type": "equip",
             "itemId": best_equip["id"],
             "name": best_equip["name"],
-            "score": winner_score
+            "score": winner_score,
+            "strategy_report": strategy_report
         }
     elif winner_category == "loot":
         return {
             "type": "pickup",
             "itemId": best_loot["id"],
             "name": best_loot["name"],
-            "score": winner_score
+            "score": winner_score,
+            "strategy_report": strategy_report
         }
     elif winner_category == "target":
         t_id = find_target_id(view, best_target["name"], best_target["type"], best_target["region_id"])
@@ -77,16 +97,18 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                 "type": "attack",
                 "targetId": t_id,
                 "name": best_target["name"],
-                "score": winner_score
+                "score": winner_score,
+                "strategy_report": strategy_report
             }
         else:
-            return {"type": "rest", "name": "None", "score": winner_score}
+            return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
     elif winner_category == "navigation":
         return {
             "type": "move",
             "regionId": best_nav["id"],
             "name": best_nav["name"],
-            "score": winner_score
+            "score": winner_score,
+            "strategy_report": strategy_report
         }
     elif winner_category == "explore":
         current_region = view.get("currentRegion", {})
@@ -100,25 +122,29 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                         return {
                             "type": "explore",
                             "name": "Ruin Exploration",
-                            "score": winner_score
+                            "score": winner_score,
+                            "strategy_report": strategy_report
                         }
                     else:
                         return {
                             "type": "interact",
                             "target": "ruin",
                             "name": "Ruin Vault",
-                            "score": winner_score
+                            "score": winner_score,
+                            "strategy_report": strategy_report
                         }
             return {
                 "type": "explore",
                 "name": "Ruin Exploration",
-                "score": winner_score
+                "score": winner_score,
+                "strategy_report": strategy_report
             }
         else:
             return {
                 "type": "move",
                 "regionId": target_ruin_id,
                 "name": f"Move to Ruin {target_ruin_id}",
-                "score": winner_score
+                "score": winner_score,
+                "strategy_report": strategy_report
             }
-    return {"type": "rest", "name": "None", "score": winner_score}
+    return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}

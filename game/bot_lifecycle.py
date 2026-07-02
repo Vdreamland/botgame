@@ -129,8 +129,10 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             act_type = action_payload.get("type", "unknown")
             act_name = action_payload.get("name", "None")
             act_score = action_payload.get("score", 0.0)
+            act_report = action_payload.get("strategy_report", "None")
             logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
-            clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score")}
+            logger.info(f"[~] {bot_name} strategic plan: {act_report}")
+            clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
             wrapped_payload = {
                 "type": "action",
                 "data": clean_payload

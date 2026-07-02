@@ -1,15 +1,22 @@
 from game_data.world_info import DEATH_ZONE
+from ai.Strategy.memory import mark_dead_zone
 
 def is_dead_zone(region: dict) -> bool:
     if not isinstance(region, dict):
         return False
-    return any([
+    active_dz = any([
         region.get("isDeathZone"),
         region.get("is_death_zone"),
         region.get("isDeadZone"),
         region.get("is_dead_zone"),
         region.get("deadzone")
     ])
+    if active_dz:
+        r_id = region.get("id") or region.get("regionId") or region.get("region_id")
+        r_name = region.get("name")
+        if r_id and r_name:
+            mark_dead_zone(r_id, r_name)
+    return active_dz
 
 def is_pending_dead_zone(region_id: str, view: dict) -> bool:
     if not isinstance(view, dict):

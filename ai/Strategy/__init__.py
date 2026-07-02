@@ -6,6 +6,9 @@ from ai.Strategy.memory import (
     get_visit_count,
     mark_death_spot,
     is_death_spot,
+    mark_dead_zone,
+    is_known_dead_zone,
+    get_all_known_dead_zones,
     get_visited_history,
     clear_memory
 )

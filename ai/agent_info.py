@@ -1,8 +1,9 @@
 from ai.skill.vision import get_layered_zones
-from ai.detector.zone_detector import detect_terrain, detect_weather
+from ai.detector.zone_detector import detect_terrain, detect_facility, detect_weather
 from ai.detector.dead_zone_detector import analyze_death_zones
 from ai.detector.ground_detector import detect_ground_loot
 from ai.detector.enemy_detector import get_visible_enemies_by_layer
+from ai.Strategy.memory import get_all_known_dead_zones
 from game_data.world_info import TERRAINS
 
 def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
@@ -53,21 +54,9 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     
     links_count = len(current_region.get("connections", []))
     
-    dead_zone_names = []
-    if current_region.get("isDeathZone"):
-        if location_name and location_name != "Unknown":
-            dead_zone_names.append(location_name)
-            
-    regions = view_data.get("regions", {})
-    for r_id, r_data in regions.items():
-        if r_id == current_region.get("id"):
-            continue
-        if r_data.get("isDeathZone"):
-            name = r_data.get("name")
-            if name:
-                dead_zone_names.append(name)
-                
-    dead_zone_display = ", ".join(dead_zone_names) if dead_zone_names else "None"
+    known_dz = get_all_known_dead_zones()
+    dead_zone_names = list(known_dz.values())
+    dead_zone_display = ", ".join(sorted(dead_zone_names)) if dead_zone_names else "None"
     
     loot_list = detect_ground_loot(view_data)
     ground_loot_display = ", ".join(loot_list) if loot_list else "None"

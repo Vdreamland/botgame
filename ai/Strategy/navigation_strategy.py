@@ -2,7 +2,7 @@ from ai.detector.dead_zone_detector import analyze_death_zones, is_pending_dead_
 from ai.detector.zone_detector import detect_terrain, detect_facility
 from ai.detector.enemy_detector import get_visible_enemies_by_layer
 from ai.detector.ruin_detector import get_visible_ruins_status
-from ai.Strategy.memory import get_visit_count, is_death_spot
+from ai.Strategy.memory import get_visit_count, is_death_spot, is_known_dead_zone
 from game_data.world_info import TERRAINS
 
 def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
@@ -23,7 +23,7 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
         r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
         score = 0.50
         name = r_data.get("name", str(conn_id))
-        is_dz = is_dead_zone(r_data)
+        is_dz = is_dead_zone(r_data) or is_known_dead_zone(conn_id)
         is_pending = is_pending_dead_zone(conn_id, view)
         terrain = detect_terrain(r_data)
         facility = detect_facility(r_data)
@@ -62,6 +62,15 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                     break
             if has_unempty_ruin:
                 score += 0.25
+            conn_connections = r_data.get("connections", [])
+            is_next_to_dz = False
+            if isinstance(conn_connections, list):
+                for cc_id in conn_connections:
+                    if is_known_dead_zone(cc_id):
+                        is_next_to_dz = True
+                        break
+            if is_next_to_dz:
+                score -= 0.40
         visit_count = get_visit_count(conn_id)
         if visit_count > 0:
             score -= (visit_count * 0.15)

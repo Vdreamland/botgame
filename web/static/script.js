@@ -127,7 +127,8 @@ async function updateStatus() {
     const selectedBot = botSelect.value;
     if (selectedBot) {
       const botState = data[selectedBot];
-      const currentTurn = botState && botState.view ? botState.view.turn : null;
+      const currentTurn =
+        botState && typeof botState.turn !== "undefined" ? botState.turn : null;
       const currentAlive = botState ? botState.alive : true;
       const currentStatus = botState ? botState.status : "";
 

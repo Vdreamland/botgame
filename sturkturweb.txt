@@ -2,6 +2,28 @@
 ├── .env                              # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
 ├── requirements.txt                  # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)
 ├── rungame.py                        # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
+├── ai/                               # Folder pusat logika kecerdasan buatan, pengambilan keputusan, dan taktis bot
+│    ├── __init__.py                  # Penanda paket Python untuk mengekspos modul-modul AI
+│    └── skill/                       
+│        ├──  __init__.py                     
+│        └── vision.py              # jarak pandang agen kita
+│    ├── detector/                    # tempat untuk mendeteksi awal untuk kumpulkan informasi
+│    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
+│    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
+│    │    ├── dead_zone_detector.py   # Deteksi deadzone
+│    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/
+│    │    ├── item_detector.py        # deteksi list item
+│    │    ├── 
+
+│    │    └──               
+│    ├── decision/                    # Sub-folder penentu keputusan akhir tindakan bot berdasarkan analisis situasi
+│    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
+│    │    ├──                             
+│    │    └──                             
+│    └── strategy/                            
+│         ├── __init__.py                     
+│         ├── 
+│         └──    
 ├── game_data/
 │    ├── __init__.py                  # Penanda paket Python (bisa digunakan untuk mengekspos semua kamus data sekaligus)
 │    ├── player_info.py               # Menyimpan statistik dasar pemain (HP, EP, ATK, DEF, Vision, limit inventaris)
@@ -102,5 +124,37 @@ StrukturWebsite.txt : https://github.com/Vdreamland/botgame/blob/master/Struktur
 
 
 
+
+
+
+
+
+
+ai/                                                # Pusat kecerdasan buatan untuk analisis real-time, strategi aktif, dan keputusan giliran bot
+├── __init__.py                                    # Penanda paket Python
+
+├── evaluation/                                    # Mengukur dan menilai kondisi lingkungan permainan sebelum strategi dipilih
+│   ├── __init__.py                                # Penanda paket Python
+│   ├── evaluation_engine.py                       # Mengompilasi hasil seluruh sensor evaluasi menjadi data situasi makro
+│   ├── death_zone.py                              # Menilai batas aman wilayah, pergerakan zona badai (Death Zone), dan prediksi daerah aman berikutnya [1.1]
+│   ├── threat_and_aggro.py                        # Menilai ancaman bot lawan, monster (Wolf/Bear/Bandit), serta jarak aman agar tidak memicu deteksi Guardian (Alert Gauge < 10) [1.1, 1.1]
+│   ├── environment.py                             # Mengevaluasi penalti/bonus dari cuaca (fog/storm/rain) dan jenis medan (forest/hills/water/ruins) terhadap vision dan biaya EP [1.1]
+│   └── resources.py                               # Mengevaluasi sisa HP, EP, ketersediaan item pemulihan di tas, serta efektivitas loadout relic/pack aktif [1.1, 1.1]
+
+├── strategy/                                      # Menentukan sikap makro bot untuk beberapa giliran ke depan berdasarkan situasi
+│   ├── __init__.py                                # Penanda paket Python
+│   ├── strategy_engine.py                         # Memilih satu gaya bermain aktif (Active Strategy) yang paling sesuai dengan kondisi evaluasi
+│   ├── ruin_explorer.py                           # Strategi fokus mendatangi Ruins untuk ekspedisi pencarian Relic dan pengumpulan Pack (Ruin Expert) [1.1]
+│   ├── aggressive_hunter.py                       # Strategi memburu bot musuh yang sekarat atau menyerang Guardian demi mendapatkan 40 sMoltz [1.1, 1.1]
+│   └── survival_passive.py                        # Strategi bermain aman (mencari Cave/Hills untuk bersembunyi, menggunakan Medkit/Bandage, atau memicu tindakan 'rest' demi memulihkan EP) [1.1, 1.1]
+
+└── decision/                                      # Menerjemahkan strategi aktif menjadi satu aksi giliran tunggal (Turn Action) dalam batas waktu 30 detik
+    ├── __init__.py                                # Penanda paket Python
+    ├── decision_engine.py                         # Menerima strategi aktif dan memilih satu tindakan utama berbiaya EP (Move/Explore/Attack/Rest) [1.1]
+    ├── movement.py                                # Menghitung arah wilayah tetangga terbaik dan memutuskan aksi 'move' (menghindari wilayah Storm berbiaya 2 EP) [1.1, 1.1]
+    ├── explore.py                                 # Mengatur aksi ekspedisi 'explore' di wilayah Ruins dengan menimbang batas aman Alert Gauge [1.1, 1.1]
+    ├── combat.py                                  # Mengatur keputusan 'attack' musuh terpilih menggunakan jangkauan senjata yang sedang dilengkapi (range 1-3) [1.1]
+    ├── item_usage.py                              # Mengatur keputusan penggunaan item gratis (Bandage/Medkit/Food/Energy Drink) tanpa memakan giliran EP [1.1, 1.1]
+    └── interaction.py                             # Mengatur keputusan 'interact' dengan fasilitas peta (Medical Facility/Cave/Watchtower) selama di luar Death Zone [1.1, 1.1]
 
 

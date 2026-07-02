@@ -11,8 +11,9 @@ def detect_ground_loot(view: dict) -> list:
         for item in items:
             if isinstance(item, dict):
                 name = item.get("name")
+                amount = item.get("amount", item.get("quantity", item.get("count", 1)))
                 if name:
-                    counts[name] = counts.get(name, 0) + 1
+                    counts[name] = counts.get(name, 0) + amount
             elif isinstance(item, str):
                 counts[item] = counts.get(item, 0) + 1
         for name, count in counts.items():

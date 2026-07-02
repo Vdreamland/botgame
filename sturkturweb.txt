@@ -13,8 +13,7 @@
 │    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
 │    │    ├── dead_zone_detector.py   # Deteksi deadzone
 │    │    ├── ground_detector.py      # Deteksi apa aja loot yang ada di ground/zone bot/agent berada
-
-│    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/
+│    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/stats musuh/stats monster
 │    │    ├── item_detector.py        # deteksi list item
 │    │    └──               
 │    ├── decision/                    # Sub-folder penentu keputusan akhir tindakan bot berdasarkan analisis situasi
@@ -74,6 +73,7 @@ __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/__in
 zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/zone_detector.py
 dead_zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/dead_zone_detector.py
 ground_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/ground_detector.py
+enemy_detector.py :
 
 ai/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/__init__.py

@@ -21,7 +21,7 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
     log_file_path = os.path.join(directory, f"{bot_name}.log")
     
     if message.startswith("# Turn "):
-        if not view_data:
+        if view_data is None:
             return
         try:
             parts = message.split()
@@ -30,6 +30,6 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
                 message = format_agent_status_log(bot_name, turn_num, view_data)
         except Exception:
             pass
-            
+    
     with open(log_file_path, "a", encoding="utf-8") as f:
         f.write(message + "\n")

@@ -25,7 +25,7 @@ class LobbyCoordinator:
             if len(self.lobby) == self.total_bots:
                 self.lobby_full = True
                 self.exited_lobby = 0
-        await self.draw_table()
+            await self.draw_table()
 
     async def wait_for_lobby(self, bot_name: str) -> bool:
         while not self.lobby_full:
@@ -36,19 +36,19 @@ class LobbyCoordinator:
             if self.exited_lobby == self.total_bots:
                 self.lobby.clear()
                 self.lobby_full = False
-        return True
+            return True
 
     async def leave_lobby(self, bot_name: str):
         async with self.lock:
             if bot_name in self.lobby:
                 self.lobby.remove(bot_name)
-        await self.draw_table()
+            await self.draw_table()
 
     async def enter_game(self, bot_name: str):
         async with self.lock:
             self.in_game += 1
             self.bots_state[bot_name]["status"] = "In Progress"
-        await self.draw_table()
+            await self.draw_table()
 
     async def leave_game(self, bot_name: str):
         async with self.lock:
@@ -57,13 +57,13 @@ class LobbyCoordinator:
             self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
             self.bots_state[bot_name]["room_id"] = ""
-        await self.draw_table()
+            await self.draw_table()
 
-    async def get_active_count(self) -> int:
+    async def get_active_count(self, bot_name: str = None) -> int:
         async with self.lock:
             return self.in_game
 
-    async def wait_for_cohort(self, timeout: float = 120.0):
+    async def wait_for_cohort(self, bot_name: str = None, timeout: float = 120.0):
         start_time = asyncio.get_event_loop().time()
         while self.in_game > 0:
             if asyncio.get_event_loop().time() - start_time > timeout:

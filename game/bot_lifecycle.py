@@ -4,6 +4,7 @@ from utils.api_client import ClawRoyaleAPI
 from config.agen_config import auto_claim_rewards
 from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
 from game.lobby_coordinator import LobbyCoordinator
+from utils.logger import logger
 
 def get_ordinal(n: int) -> str:
     if 11 <= (n % 100) <= 13:
@@ -19,6 +20,7 @@ async def _check_agent_liveness_and_cleanup(
     ws_client,
     exit_msg: str
 ) -> bool:
+    logger.info(f"[*] {bot_name} connection lost/ended. Checking liveness via REST API...")
     profile_res = await api_client.get_my_profile()
     is_still_alive = False
     if profile_res.get("success"):
@@ -29,6 +31,7 @@ async def _check_agent_liveness_and_cleanup(
                 if g.get("isAlive") is True:
                     is_still_alive = True
                     break
+    logger.info(f"[*] {bot_name} liveness status: is_still_alive={is_still_alive}")
     if not is_still_alive:
         if coordinator.bots_state[bot_name]["alive"]:
             coordinator.bots_state[bot_name]["alive"] = False
@@ -40,6 +43,7 @@ async def _check_agent_liveness_and_cleanup(
             latest_view["self"]["hp"] = 0
             latest_view["self"]["isAlive"] = False
         death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
+        logger.info(f"[-] {bot_name} eliminated. Writing final turn {death_turn} to log.")
         write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
         write_gameplay_log(bot_name, exit_msg)
         return True
@@ -77,6 +81,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                     coordinator.bots_state[bot_name]["alive"] = False
                     await coordinator.draw_table()
                     turn = frame.get("turn") or ws_client.last_logged_turn
+                    logger.info(f"[-] {bot_name} has been eliminated (HP: 0). Logging turn {turn}.")
                     view_data = frame.get("view", {})
                     if isinstance(view_data, dict) and "self" in view_data:
                         view_data["self"]["hp"] = 0
@@ -101,6 +106,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             latest_view["self"]["hp"] = 0
             latest_view["self"]["isAlive"] = False
         death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
+        logger.info(f"[-] {bot_name} match ended (game_ended received). Logging final turn {death_turn}.")
         write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
         write_gameplay_log(bot_name, "[SYSTEM] Match has ended (game_ended received). Exiting game loop...")
         return False
@@ -250,6 +256,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             await coordinator.leave_game(bot_name)
             await asyncio.sleep(5.0)
         finally:
+            logger.info(f"[-] {bot_name} leaving game session.")
             write_gameplay_log(bot_name, "[SYSTEM] Connection closed. Leaving game room.")
             if ws_client:
                 await ws_client.close()

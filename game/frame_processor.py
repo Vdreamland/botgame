@@ -141,7 +141,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         if self_data.get("hp") == 0:
             is_agent_alive = False
 
-        if is_agent_alive and can_act:
+        local_cooldown = bool(coordinator.bots_state[bot_name].get("local_cooldown", False))
+        if is_agent_alive and can_act and not local_cooldown:
             action_payload = make_decision(frame.get("view", {}), bot_name)
             act_type = action_payload.get("type", "unknown")
             act_name = action_payload.get("name", "None")
@@ -149,6 +150,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             act_report = action_payload.get("strategy_report", "None")
             logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
             logger.info(f"[~] {bot_name} strategic plan: {act_report}")
+            if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
+                coordinator.bots_state[bot_name]["local_cooldown"] = True
             clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
             wrapped_payload = {
                 "type": "action",
@@ -157,6 +160,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             await ws_client.send(wrapped_payload)
 
     if msg_type == "can_act_changed" and frame.get("canAct") is True:
+        coordinator.bots_state[bot_name]["local_cooldown"] = False
         stored_view = coordinator.bots_state[bot_name].get("view", {})
         if stored_view:
             self_data = stored_view.get("self", {})
@@ -175,6 +179,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 act_report = action_payload.get("strategy_report", "None")
                 logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
                 logger.info(f"[~] {bot_name} strategic plan: {act_report}")
+                if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
+                    coordinator.bots_state[bot_name]["local_cooldown"] = True
                 clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
                 wrapped_payload = {
                     "type": "action",

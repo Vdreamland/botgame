@@ -142,9 +142,11 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
 
             if is_first_run:
+                logger.info(f"[*] {bot_name} claiming first-run rewards...")
                 await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
                 is_first_run = False
 
+            logger.info(f"[*] {bot_name} checking ongoing game profile...")
             profile_res = await api_client.get_my_profile()
             in_active_game = False
             if profile_res.get("success"):
@@ -156,18 +158,26 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         break
 
             if not in_active_game:
+                logger.info(f"[*] {bot_name} entering lobby coordinator...")
                 await coordinator.enter_lobby(bot_name)
+                logger.info(f"[*] {bot_name} waiting in lobby for cohort...")
                 await coordinator.wait_for_lobby(bot_name)
+                logger.info(f"[*] {bot_name} lobby is full, leaving lobby and connecting...")
                 await coordinator.leave_lobby(bot_name)
+            else:
+                logger.info(f"[*] {bot_name} detected active game, bypassing lobby...")
 
+            logger.info(f"[*] {bot_name} connecting to WebSocket: {ws_url}")
             success = await ws_client.connect(ws_url)
             if success:
+                logger.info(f"[+] {bot_name} WebSocket connected. Entering game...")
                 await coordinator.enter_game(bot_name)
 
                 try:
                     welcome_frame = await ws_client.receive()
                     if welcome_frame and welcome_frame.get("type") == "welcome":
                         decision = welcome_frame.get("decision")
+                        logger.info(f"[*] {bot_name} welcome received. Decision: {decision}")
 
                         if decision in ("ASK_ENTRY_TYPE", "FREE_ONLY"):
                             hello_payload = {
@@ -181,11 +191,13 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                 try:
                                     frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
                                 except asyncio.TimeoutError:
+                                    logger.warning(f"[!] {bot_name} timeout waiting for frame.")
                                     exit_msg = f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop..."
                                     await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
 
                                 if frame is None:
+                                    logger.warning(f"[!] {bot_name} connection closed by server.")
                                     exit_msg = "[SYSTEM] Connection closed by server. Exiting game loop..."
                                     await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
@@ -213,8 +225,9 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     coordinator.bots_state[bot_name]["room_id"] = room_id_str
                                     coordinator.bots_state[bot_name]["status"] = "In Progress"
                                     await coordinator.draw_table()
-                                    print(f"[+] All Setup ready to play for {bot_name} ...")
+                                    logger.info(f"[+] All Setup ready to play for {bot_name} ...")
                                 elif msg_type == "error":
+                                    logger.error(f"[!] {bot_name} received error frame.")
                                     coordinator.bots_state[bot_name]["status"] = "Disconnect"
                                     await coordinator.draw_table()
                                     break
@@ -225,16 +238,18 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             coordinator.bots_state[bot_name]["status"] = "In Progress"
                             coordinator.bots_state[bot_name]["alive"] = True
                             await coordinator.draw_table()
-                            print(f"[+] All Setup ready to play for {bot_name} ...")
+                            logger.info(f"[+] All Setup ready to play for {bot_name} ...")
                             while True:
                                 try:
                                     frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
                                 except asyncio.TimeoutError:
+                                    logger.warning(f"[!] {bot_name} timeout waiting for frame.")
                                     exit_msg = f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop..."
                                     await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
 
                                 if frame is None:
+                                    logger.warning(f"[!] {bot_name} connection closed by server.")
                                     exit_msg = "[SYSTEM] Connection closed by server. Exiting game loop..."
                                     await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
@@ -242,13 +257,16 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                 is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
                                 if not is_alive:
                                     break
-                except Exception:
+                except Exception as inner_e:
+                    logger.error(f"[!] {bot_name} error in inner game loop: {str(inner_e)}")
                     coordinator.bots_state[bot_name]["status"] = "Disconnect"
                     await coordinator.draw_table()
             else:
+                logger.error(f"[!] {bot_name} failed to connect to WebSocket.")
                 coordinator.bots_state[bot_name]["status"] = "Disconnect"
                 await coordinator.draw_table()
         except Exception as e:
+            logger.error(f"[!] {bot_name} error in outer loop: {str(e)}")
             write_gameplay_log(bot_name, f"[SYSTEM] Error occurred in lifecycle: {str(e)}. Retrying in 5 seconds...")
             coordinator.bots_state[bot_name]["status"] = "Retrying"
             await coordinator.draw_table()
@@ -265,8 +283,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
         active_count = await coordinator.get_active_count(bot_name)
         is_bot_alive = coordinator.bots_state[bot_name].get("alive", True)
         if active_count > 0 and not is_bot_alive:
+            logger.info(f"[*] {bot_name} waiting for other active cohort bots to finish...")
             await coordinator.wait_for_cohort(bot_name, 120.0)
         elif not is_bot_alive:
+            logger.info(f"[*] {bot_name} retrying loop in 5 seconds...")
             coordinator.bots_state[bot_name]["status"] = "Retrying"
             await coordinator.draw_table()
             await asyncio.sleep(5.0)

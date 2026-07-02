@@ -10,8 +10,12 @@ def get_ally_names() -> set:
         return set()
 
 def classify_agent(agent_name: str, self_bot_name: str) -> str:
+    if not isinstance(agent_name, str):
+        return "player"
     if agent_name == self_bot_name:
         return "self"
+    if agent_name.startswith("Guardian"):
+        return "guardian"
     allies = get_ally_names()
     if agent_name in allies:
         return "ally"
@@ -64,6 +68,8 @@ def get_visible_enemies_by_layer(view: dict, self_bot_name: str) -> dict:
                 if layer is not None:
                     if classification == "ally":
                         layer_summary[layer]["A"] += 1
+                    elif classification == "guardian":
+                        layer_summary[layer]["M"] += 1
                     else:
                         layer_summary[layer]["P"] += 1
     monsters = view.get("visibleMonsters", [])
@@ -112,6 +118,17 @@ def get_detailed_enemy_stats(view: dict, self_bot_name: str) -> dict:
                 }
                 if classification == "ally":
                     detailed["allies"].append(agent_stats)
+                elif classification == "guardian":
+                    monster_stats = {
+                        "type": "Guardian",
+                        "hp": agent.get("hp", 150),
+                        "atk": agent.get("atk", 20),
+                        "def": agent.get("def", 34),
+                        "is_guardian": True,
+                        "layer": layer,
+                        "region_id": region_id
+                    }
+                    detailed["monsters"].append(monster_stats)
                 else:
                     detailed["players"].append(agent_stats)
     monsters = view.get("visibleMonsters", [])

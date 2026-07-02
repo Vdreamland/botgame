@@ -45,10 +45,10 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
         is_guardian = m.get("is_guardian", False)
         if layer <= w_range:
             if is_guardian:
-                if hp <= 50:
-                    score = 0.75
+                if hp <= 40:
+                    score = 0.70
                 else:
-                    score = 0.40
+                    score = 0.10
             else:
                 if hp <= 15:
                     score = 0.95
@@ -56,7 +56,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                     score = 0.80
         else:
             if is_guardian:
-                score = 0.15 - (layer * 0.03)
+                score = 0.05 - (layer * 0.01)
             else:
                 score = 0.50 - (layer * 0.10)
         priorities.append({

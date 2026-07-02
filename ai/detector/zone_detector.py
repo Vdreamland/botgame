@@ -13,14 +13,18 @@ def detect_facility(region: dict) -> str:
         return None
     facility = region.get("facility")
     if facility in FACILITIES:
-        return facility
+        is_used = bool(region.get("facilityUsed", region.get("isUsed", False)))
+        if not is_used:
+            return facility
     interactables = region.get("interactables", [])
     if isinstance(interactables, list):
         for item in interactables:
             if isinstance(item, dict):
                 name = item.get("name")
                 if name in FACILITIES:
-                    return name
+                    is_used = bool(item.get("isUsed", item.get("used", False)))
+                    if not is_used:
+                        return name
     return None
 
 def detect_weather(view: dict) -> str:

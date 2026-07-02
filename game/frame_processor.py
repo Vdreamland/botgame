@@ -119,6 +119,12 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             coordinator.bots_state[bot_name]["room_id"] = room_id_str
             await coordinator.draw_table()
  
+    if msg_type == "action_result":
+        success = frame.get("success", True)
+        if not success:
+            err = frame.get("error", {})
+            logger.warning(f"[!] Action result warning: {err.get('message', 'Unknown')} (Code: {err.get('code', 'None')})")
+
     if msg_type == "agent_view":
         current_region = frame.get("view", {}).get("currentRegion", {})
         curr_id = current_region.get("id") if isinstance(current_region, dict) else None

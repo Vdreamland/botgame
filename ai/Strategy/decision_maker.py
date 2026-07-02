@@ -97,6 +97,8 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     if avoided:
         report_lines.append(f"Avoided: {', '.join(avoided)}")
     strategy_report = " | ".join(report_lines) if report_lines else "None"
+    if current_is_dz:
+        strategy_report = f"DZ_EMERGENCY! {strategy_report}"
     if winner_score < 0.15:
         return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
     if winner_category == "recovery":
@@ -183,7 +185,6 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     elif winner_category == "interact":
         return {
             "type": "interact",
-            "target": best_interact["target"],
             "name": best_interact["name"],
             "score": winner_score,
             "strategy_report": strategy_report

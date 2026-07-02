@@ -1,24 +1,9 @@
-import os
 from ai.agent_info import format_agent_status_log
 
 def clear_gameplay_log(bot_name: str):
-    directory = os.path.join("logs", "gameplay")
-    if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
-    
-    log_file_path = os.path.join(directory, f"{bot_name}.log")
-    try:
-        with open(log_file_path, "w", encoding="utf-8") as f:
-            f.write("")
-    except Exception:
-        pass
+    pass
 
 def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
-    directory = os.path.join("logs", "gameplay")
-    if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
-    
-    log_file_path = os.path.join(directory, f"{bot_name}.log")
     is_turn_log = message.startswith("# Turn ")
     
     if is_turn_log:
@@ -31,9 +16,6 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
                 message = format_agent_status_log(bot_name, turn_num, view_data)
         except Exception:
             pass
-    
-    with open(log_file_path, "a", encoding="utf-8") as f:
-        f.write(message + "\n")
         
     if is_turn_log:
         border = "-" * 60

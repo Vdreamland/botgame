@@ -8,6 +8,11 @@ git config --global user.email "exterionsx@gmail.com"
 
 save > ctrl + shift + g
 
+cmd
+F:
+cd \Games\botgame
+
+
 cd F:\Games\botgame
 python -m venv venv
 .\venv\Scripts\Activate

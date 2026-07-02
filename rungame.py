@@ -6,35 +6,27 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
-from utils.logger import logger
 from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
-from logs.logs_network import (
-    log_matchmaking_queued,
-    log_match_assigned,
-    log_matchmaking_failed,
-    log_connection_failed
-)
-from logs.logs_agent import (
-    log_orchestrator_start,
-    log_bots_list,
-    log_orchestrator_target,
-    log_bot_lobby_wait,
-    log_bot_lobby_ready,
-    log_bot_game_start,
-    log_bot_game_ended,
-    log_bot_waiting_cohort
-)
+from logs.logs_agent import draw_status_table
 
 class LobbyCoordinator:
-    def __init__(self, total_bots: int):
+    def __init__(self, total_bots: int, bots_state: dict):
         self.total_bots = total_bots
+        self.bots_state = bots_state
         self.lobby = set()
         self.in_game = 0
         self.lock = asyncio.Lock()
 
+    async def draw_table(self):
+        async with self.lock:
+            draw_status_table(self.bots_state, self.total_bots)
+
     async def enter_lobby(self, bot_name: str):
         async with self.lock:
             self.lobby.add(bot_name)
+            self.bots_state[bot_name]["status"] = "Lobby"
+            self.bots_state[bot_name]["room"] = "Waiting"
+        await self.draw_table()
 
     async def wait_for_lobby(self, bot_name: str, timeout: float = 10.0) -> bool:
         start_time = asyncio.get_event_loop().time()
@@ -49,14 +41,19 @@ class LobbyCoordinator:
             if bot_name in self.lobby:
                 self.lobby.remove(bot_name)
 
-    async def enter_game(self):
+    async def enter_game(self, bot_name: str):
         async with self.lock:
             self.in_game += 1
+            self.bots_state[bot_name]["status"] = "In Game"
+        await self.draw_table()
 
-    async def leave_game(self):
+    async def leave_game(self, bot_name: str):
         async with self.lock:
             if self.in_game > 0:
                 self.in_game -= 1
+            self.bots_state[bot_name]["status"] = "Lobby"
+            self.bots_state[bot_name]["room"] = "Waiting"
+        await self.draw_table()
 
     async def get_active_count(self) -> int:
         async with self.lock:
@@ -78,21 +75,17 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
 
     while True:
-        await auto_claim_rewards(api_client, bot_name)
+        await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
 
         await coordinator.enter_lobby(bot_name)
-        log_bot_lobby_wait(bot_name)
 
         is_ready = await coordinator.wait_for_lobby(bot_name, 10.0)
-        if is_ready:
-            log_bot_lobby_ready()
 
         await coordinator.leave_lobby(bot_name)
 
         success = await ws_client.connect(ws_url)
         if success:
-            await coordinator.enter_game()
-            log_bot_game_start(bot_name)
+            await coordinator.enter_game(bot_name)
 
             try:
                 welcome_frame = await ws_client.receive()
@@ -114,34 +107,42 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
 
                             msg_type = frame.get("type")
                             if msg_type == "queued":
-                                log_matchmaking_queued(bot_name)
+                                coordinator.bots_state[bot_name]["room"] = "Queue"
+                                coordinator.bots_state[bot_name]["status"] = "Queued"
+                                await coordinator.draw_table()
                             elif msg_type == "assigned":
-                                log_match_assigned(bot_name)
+                                match_id = frame.get("matchId") or "Room"
+                                coordinator.bots_state[bot_name]["room"] = str(match_id)[:8]
+                                coordinator.bots_state[bot_name]["status"] = "In Game"
+                                await coordinator.draw_table()
                             elif msg_type == "error":
-                                error_msg = frame.get("message") or "Unknown error"
-                                log_matchmaking_failed(bot_name, error_msg)
+                                coordinator.bots_state[bot_name]["status"] = "Offline"
+                                await coordinator.draw_table()
                                 break
                     elif decision == "ALREADY_IN_GAME":
-                        logger.info(f"[{bot_name}] Reconnected successfully to active game session.")
+                        coordinator.bots_state[bot_name]["room"] = "Room"
+                        coordinator.bots_state[bot_name]["status"] = "In Game"
+                        await coordinator.draw_table()
                         while True:
                             frame = await ws_client.receive()
                             if frame is None:
                                 break
                     else:
-                        log_matchmaking_failed(bot_name, f"Server decision: {decision}")
-            except Exception as e:
-                logger.error(f"[{bot_name}] Error in game session: {str(e)}")
+                        coordinator.bots_state[bot_name]["status"] = "Offline"
+                        await coordinator.draw_table()
+            except Exception:
+                coordinator.bots_state[bot_name]["status"] = "Offline"
+                await coordinator.draw_table()
             finally:
                 await ws_client.close()
-                await coordinator.leave_game()
-                log_bot_game_ended(bot_name)
+                await coordinator.leave_game(bot_name)
 
                 active_count = await coordinator.get_active_count()
                 if active_count > 0:
-                    log_bot_waiting_cohort(bot_name, active_count)
                     await coordinator.wait_for_cohort(120.0)
         else:
-            log_connection_failed(bot_name)
+            coordinator.bots_state[bot_name]["status"] = "Offline"
+            await coordinator.draw_table()
             await asyncio.sleep(5.0)
 
 async def main():
@@ -149,15 +150,21 @@ async def main():
     room_preference = get_room_preference()
 
     if not bots:
-        logger.error("No active bots detected in configuration.")
         return
 
-    log_orchestrator_start(len(bots))
-    bot_names = [bot["name"] for bot in bots]
-    log_bots_list(bot_names)
-    log_orchestrator_target(room_preference)
+    bots_state = {}
+    for bot in bots:
+        bots_state[bot["name"]] = {
+            "redeem": "Waiting",
+            "weekly": "Waiting",
+            "target": room_preference.capitalize(),
+            "room": "Waiting",
+            "status": "Waiting"
+        }
 
-    coordinator = LobbyCoordinator(len(bots))
+    coordinator = LobbyCoordinator(len(bots), bots_state)
+    await coordinator.draw_table()
+
     tasks = [run_bot_lifecycle(bot, coordinator, room_preference) for bot in bots]
     await asyncio.gather(*tasks)
 

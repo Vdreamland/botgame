@@ -6,6 +6,8 @@ class LobbyCoordinator:
         self.total_bots = total_bots
         self.bots_state = bots_state
         self.lobby = set()
+        self.lobby_full = False
+        self.exited_lobby = 0
         self.in_game = 0
         self.lock = asyncio.Lock()
 
@@ -20,17 +22,27 @@ class LobbyCoordinator:
             self.bots_state[bot_name]["room"] = "Waiting"
             self.bots_state[bot_name]["room_id"] = ""
             self.bots_state[bot_name]["alive"] = True
+            if len(self.lobby) == self.total_bots:
+                self.lobby_full = True
+                self.exited_lobby = 0
         await self.draw_table()
 
     async def wait_for_lobby(self, bot_name: str) -> bool:
-        while len(self.lobby) < self.total_bots:
+        while not self.lobby_full:
             await asyncio.sleep(0.5)
+        
+        async with self.lock:
+            self.exited_lobby += 1
+            if self.exited_lobby == self.total_bots:
+                self.lobby.clear()
+                self.lobby_full = False
         return True
 
     async def leave_lobby(self, bot_name: str):
         async with self.lock:
             if bot_name in self.lobby:
                 self.lobby.remove(bot_name)
+        await self.draw_table()
 
     async def enter_game(self, bot_name: str):
         async with self.lock:

@@ -36,7 +36,7 @@
 │   └── templates/                   # Sub-folder khusus untuk dokumen HTML
 │       └── index.html               # Struktur utama halaman web dashboard 
 
-
+http://localhost:8080
 Link url :
 
 web/

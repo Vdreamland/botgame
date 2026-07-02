@@ -19,8 +19,9 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
         os.makedirs(directory, exist_ok=True)
     
     log_file_path = os.path.join(directory, f"{bot_name}.log")
+    is_turn_log = message.startswith("# Turn ")
     
-    if message.startswith("# Turn "):
+    if is_turn_log:
         if view_data is None:
             return
         try:
@@ -31,10 +32,15 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
         except Exception:
             pass
     
-    print(message)
-    
-    try:
-        with open(log_file_path, "a", encoding="utf-8") as f:
-            f.write(message + "\n")
-    except Exception:
-        pass
+    with open(log_file_path, "a", encoding="utf-8") as f:
+        f.write(message + "\n")
+        
+    if is_turn_log:
+        border = "-" * 60
+        lines = message.strip().split("\n")
+        print(f"\n{border}")
+        for line in lines:
+            print(f"[{bot_name}] {line}")
+        print(f"{border}\n")
+    else:
+        print(f"[{bot_name}] {message}")

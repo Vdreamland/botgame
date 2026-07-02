@@ -6,18 +6,14 @@
 │    ├── __init__.py                  # Penanda paket Python untuk mengekspos modul-modul AI
 │    ├── skill/                       
 │    │    ├──  __init__.py                     
-│    │    └── vision.py               # jarak pandang agen kita
-│    ├── agent_info.py                # untuk menampilkan informasi bot/agent kita di log browser
-
-
+│    │    └── vision.py               # untuk mengetahui jarak pandang agen kita berapa zone/tiles
+│    ├── agent_info.py                # untuk menampilkan informasi bot/agent kita di log
 │    ├── detector/                    # tempat untuk mendeteksi awal untuk kumpulkan informasi
 │    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
 │    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
 │    │    ├── dead_zone_detector.py   # Deteksi deadzone
 │    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/
 │    │    ├── item_detector.py        # deteksi list item
-│    │    ├── 
-
 │    │    └──               
 │    ├── decision/                    # Sub-folder penentu keputusan akhir tindakan bot berdasarkan analisis situasi
 │    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
@@ -71,6 +67,10 @@ __init__.py : https://github.com/Vdreamland/botgame/blob/master/game/__init__.py
 lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lobby_coordinator.py
 bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
 
+ai/detector/
+__init__.py :
+zone_detector.py :
+dead_zone_detector.py : dead_zone_detector.py
 
 ai/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/__init__.py

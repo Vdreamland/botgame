@@ -73,12 +73,13 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     ground_loot_display = ", ".join(loot_list) if loot_list else "None"
     
     layer_summary = get_visible_enemies_by_layer(view_data, bot_name)
+    for i in (0, 1, 2):
+        if i not in layer_summary:
+            layer_summary[i] = {"P": 0, "M": 0, "A": 0}
+            
     layer_lines = []
-    if layer_summary:
-        for layer, counts in sorted(layer_summary.items()):
-            layer_lines.append(f"Layer {layer} : P {counts['P']} / M {counts['M']} / A {counts['A']}")
-    else:
-        layer_lines.append("Layer 0 : P 0 / M 0 / A 0")
+    for layer, counts in sorted(layer_summary.items()):
+        layer_lines.append(f"Layer {layer} : P {counts['P']} / M {counts['M']} / A {counts['A']}")
     layer_display = "\n".join(layer_lines)
     
     return (

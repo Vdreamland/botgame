@@ -126,7 +126,14 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
 
         if is_agent_alive:
             action_payload = make_decision(frame.get("view", {}), bot_name)
-            await ws_client.send(action_payload)
+            act_type = action_payload.get("type", "unknown")
+            act_target = action_payload.get("itemId") or action_payload.get("targetId") or action_payload.get("regionId") or action_payload.get("target") or "None"
+            logger.info(f"[»] {bot_name} executes action: {act_type} (Target/ID: {act_target})")
+            wrapped_payload = {
+                "type": "action",
+                "data": action_payload
+            }
+            await ws_client.send(wrapped_payload)
 
     return True
 

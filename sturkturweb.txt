@@ -117,7 +117,7 @@ bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_li
 ai/strategy/
 navigation_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/navigation_strategy.py
 ruin_exploration_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/ruin_exploration_strategy.py
-decision_maker.py
+decision_maker.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/decision_maker.py
 
 ai/strategy/priority/
 ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/equipped_priority.py

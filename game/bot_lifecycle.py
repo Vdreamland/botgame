@@ -61,6 +61,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         is_alive = True
         if isinstance(self_data, dict):
             is_alive = self_data.get("isAlive", True)
+            if self_data.get("hp") == 0:
+                is_alive = False
 
         if turn is not None and turn != ws_client.last_logged_turn and is_alive:
             write_gameplay_log(bot_name, f"# Turn {turn}", frame.get("view", {}))
@@ -71,28 +73,58 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         coordinator.bots_state[bot_name]["turn"] = frame.get("turn", 0)
         await coordinator.draw_table()
 
-        self_data = frame.get("view", {}).get("self", {})
-        if isinstance(self_data, dict):
+        view_data = frame.get("view", {})
+        self_data = view_data.get("self")
+        
+        if self_data is None:
+            logger.info(f"[*] {bot_name} self-data missing from view. Verifying status...")
+            from utils.api_client import ClawRoyaleAPI
+            api_client = ClawRoyaleAPI(api_key=ws_client.api_key)
+            is_dead = await _check_agent_liveness_and_cleanup(
+                bot_name, api_client, coordinator, ws_client,
+                f"[SYSTEM] Agent {bot_name} is dead (self-data missing)."
+            )
+            if is_dead:
+                return False
+        elif isinstance(self_data, dict):
             is_alive = self_data.get("isAlive")
-            if is_alive is not None:
-                if not is_alive:
-                    if not coordinator.bots_state[bot_name].get("alive", True):
-                        return False
-                    coordinator.bots_state[bot_name]["alive"] = False
-                    await coordinator.draw_table()
-                    turn = frame.get("turn") or ws_client.last_logged_turn
-                    logger.info(f"[-] {bot_name} has been eliminated (HP: 0). Logging turn {turn}.")
-                    view_data = frame.get("view", {})
-                    if isinstance(view_data, dict) and "self" in view_data:
-                        view_data["self"]["hp"] = 0
-                        view_data["self"]["isAlive"] = False
-                    write_gameplay_log(bot_name, f"# Turn {turn}", view_data)
-                    write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} has been eliminated (HP: 0). Exiting game loop...")
+            hp = self_data.get("hp", 100)
+            if is_alive is False or hp == 0:
+                if not coordinator.bots_state[bot_name].get("alive", True):
                     return False
-                else:
-                    if not coordinator.bots_state[bot_name].get("alive", True):
-                        coordinator.bots_state[bot_name]["alive"] = True
-                        await coordinator.draw_table()
+                coordinator.bots_state[bot_name]["alive"] = False
+                await coordinator.draw_table()
+                turn = frame.get("turn") or ws_client.last_logged_turn
+                logger.info(f"[-] {bot_name} has been eliminated (HP: 0). Logging turn {turn}.")
+                if "self" in view_data:
+                    view_data["self"]["hp"] = 0
+                    view_data["self"]["isAlive"] = False
+                write_gameplay_log(bot_name, f"# Turn {turn}", view_data)
+                write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} has been eliminated (HP: 0). Exiting game loop...")
+                return False
+            else:
+                if not coordinator.bots_state[bot_name].get("alive", True):
+                    coordinator.bots_state[bot_name]["alive"] = True
+                    await coordinator.draw_table()
+
+    if msg_type == "event":
+        event_name = frame.get("event")
+        event_data = frame.get("data", {})
+        my_agent_id = coordinator.bots_state[bot_name].get("agent_id")
+        if event_name == "agent_died" and event_data.get("agentId") == my_agent_id:
+            logger.info(f"[-] {bot_name} received agent_died event. Logging turn.")
+            coordinator.bots_state[bot_name]["alive"] = False
+            await coordinator.draw_table()
+            latest_view = coordinator.bots_state[bot_name].get("view", {})
+            if isinstance(latest_view, dict):
+                if "self" not in latest_view:
+                    latest_view["self"] = {}
+                latest_view["self"]["hp"] = 0
+                latest_view["self"]["isAlive"] = False
+            turn = frame.get("turn") or ws_client.last_logged_turn
+            write_gameplay_log(bot_name, f"# Turn {turn}", latest_view)
+            write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
+            return False
 
     if msg_type == "game_ended":
         if not coordinator.bots_state[bot_name].get("alive", True):
@@ -155,6 +187,8 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                 for g in current_games:
                     if g.get("isAlive") is True:
                         in_active_game = True
+                        coordinator.bots_state[bot_name]["agent_id"] = g.get("agentId")
+                        coordinator.bots_state[bot_name]["room_id"] = g.get("gameId")
                         break
 
             if not in_active_game:
@@ -214,6 +248,9 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     await coordinator.draw_table()
                                 elif msg_type in ("assigned", "joined"):
                                     game_id = frame.get("gameId") or frame.get("matchId") or "Room"
+                                    agent_id = frame.get("agentId")
+                                    if agent_id:
+                                        coordinator.bots_state[bot_name]["agent_id"] = agent_id
                                     try:
                                         m_id = int(game_id)
                                         room_display = get_ordinal(m_id)

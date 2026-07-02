@@ -137,7 +137,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         can_act = True
         if isinstance(self_data, dict):
             is_agent_alive = self_data.get("isAlive", True)
-            can_act = self_data.get("canAct", True)
+            can_act = self_data.get("canAct", self_data.get("can_act", True))
         if self_data.get("hp") == 0:
             is_agent_alive = False
 
@@ -161,7 +161,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             }
             await ws_client.send(wrapped_payload)
 
-    if msg_type == "can_act_changed" and frame.get("canAct") is True:
+    if msg_type == "can_act_changed" and (frame.get("canAct") is True or frame.get("can_act") is True):
         stored_view = coordinator.bots_state[bot_name].get("view", {})
         if stored_view:
             self_data = stored_view.get("self", {})
@@ -169,6 +169,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             if isinstance(self_data, dict):
                 is_agent_alive = self_data.get("isAlive", True)
                 stored_view["self"]["canAct"] = True
+                stored_view["self"]["can_act"] = True
             if self_data.get("hp") == 0:
                 is_agent_alive = False
 

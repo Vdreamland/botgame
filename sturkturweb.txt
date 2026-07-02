@@ -49,6 +49,20 @@ logs_network.py
 logs_combat.py
 logs_behavior.py
 
+.env : https://github.com/Vdreamland/botgame/blob/master/.env
+requirements.txt : https://github.com/Vdreamland/botgame/blob/master/requirements.txt
+rungame.py : https://github.com/Vdreamland/botgame/blob/master/rungame.py
+
+
+
+
+
+
+
+
+
+
+
 
 
 /botgame

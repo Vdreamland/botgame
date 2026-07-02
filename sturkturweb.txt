@@ -68,9 +68,9 @@ lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lo
 bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
 
 ai/detector/
-__init__.py :
-zone_detector.py :
-dead_zone_detector.py : dead_zone_detector.py
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/__init__.py
+zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/zone_detector.py
+dead_zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/dead_zone_detector.py
 
 ai/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/__init__.py

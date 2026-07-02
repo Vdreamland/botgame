@@ -20,14 +20,14 @@
 │    └── api_client.py                # Helper API REST untuk interaksi dengan server (ClawRoyaleAPI)
 ├── logs/                             # Folder tempat menyimpan file hasil audit bot
 │   ├── __init__.py                   # Penanda paket Python untuk folder utils
-│   ├── logs_network.py               
-│   ├── logs_gameplay.py              
-│   ├── logs_combat.py                
+│   ├── logs_network.py               # Menampilkan log aktivitas jaringan WebSocket, siklus koneksi, dan handshake di terminal
+│   ├── logs_gameplay.py              # Mengelola penulisan log aktivitas turn-by-turn jalannya permainan bot ke berkas teks terpisah
+│   ├── logs_combat.py                # Menampilkan log pertempuran bot dan kejadian pertarungan secara asinkronus di terminal
 │   ├── logs_agent.py                 # Menyimpan seluruh fungsi log khusus untuk deteksi konfigurasi, pencatatan daftar nama bot, pelaporan jumlah bot, serta pemantauan status antrean Lobby awal sebelum masuk ke dalam permainan.
-│   └── quest_reward_log.py           
-├── config/                           
-│   ├── __init__.py                   
-│   └── agent_config.py               
+│   └── quest_reward_log.py           # Menampilkan log pelaporan audit klaim kode WELCOME serta penukaran jatah hadiah mingguan
+├── config/                           # Folder tempat menyimpan konfigurasi muatan bot
+│   ├── __init__.py                   # Penanda paket Python untuk folder config
+│   └── agent_config.py               # Memuat seluruh konfigurasi bot dari .env dan menangani logika asinkronus auto_claim_rewards
 ├── web/                             # Folder baru khusus untuk dashboard visualisasi
 │   ├── __init__.py                  # Penanda paket Python kosong
 │   ├── server.py                    # Server web asinkronus untuk menyajikan API data dan file statis
@@ -35,7 +35,12 @@
 │   │   ├── style.css                # Gaya tampilan CSS (warna gelap/merah menyelaraskan dengan web asli)
 │   │   └── script.js                # Logika JavaScript untuk mengambil data secara live dan memperbarui tabel
 │   └── templates/                   # Sub-folder khusus untuk dokumen HTML
-│       └── index.html               # Struktur utama halaman web dashboard 
+│       └── index.html               # Struktur utama halaman web dashboard
+
+
+
+
+
 
 http://localhost:8080
 Link url :

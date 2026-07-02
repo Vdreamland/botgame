@@ -1,189 +1,73 @@
-import sys
-import os
 import asyncio
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from utils.ws_client import ClawRoyaleWSClient
+import os
+import sys
+from dotenv import load_dotenv
+from config.agen_config import load_agent_configs, auto_claim_rewards
 from utils.api_client import ClawRoyaleAPI
-from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
-from logs.logs_agent import draw_status_table
+from utils.ws_client import GameWebSocketClient
+from utils.logger import setup_logger
+from logs.logs_agent import log_agent_status_table
+from logs.quest_reward_log import log_quest_reward_status
+from web.server import start_web_server
 
-def get_ordinal(n: int) -> str:
-    if 11 <= (n % 100) <= 13:
-        suffix = "th"
-    else:
-        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return f"{n}{suffix}"
+# Global list of bots status for dashboard and terminal
+global_bots_status = []
 
-class LobbyCoordinator:
-    def __init__(self, total_bots: int, bots_state: dict):
-        self.total_bots = total_bots
-        self.bots_state = bots_state
-        self.lobby = set()
-        self.in_game = 0
-        self.lock = asyncio.Lock()
+async def log_agent_status_loop(version, total_bots):
+    log_agent_status_table(version, "Successful", global_bots_status)
 
-    async def draw_table(self):
-        async with self.lock:
-            draw_status_table(self.bots_state, self.total_bots)
-
-    async def enter_lobby(self, bot_name: str):
-        async with self.lock:
-            self.lobby.add(bot_name)
-            self.bots_state[bot_name]["status"] = "Waiting"
-            self.bots_state[bot_name]["room"] = "Waiting"
-        await self.draw_table()
-
-    async def wait_for_lobby(self, bot_name: str, timeout: float = 10.0) -> bool:
-        start_time = asyncio.get_event_loop().time()
-        while len(self.lobby) < self.total_bots:
-            if asyncio.get_event_loop().time() - start_time > timeout:
-                return False
-            await asyncio.sleep(0.5)
-        return True
-
-    async def leave_lobby(self, bot_name: str):
-        async with self.lock:
-            if bot_name in self.lobby:
-                self.lobby.remove(bot_name)
-
-    async def enter_game(self, bot_name: str):
-        async with self.lock:
-            self.in_game += 1
-            self.bots_state[bot_name]["status"] = "In Progress"
-        await self.draw_table()
-
-    async def leave_game(self, bot_name: str):
-        async with self.lock:
-            if self.in_game > 0:
-                self.in_game -= 1
-            self.bots_state[bot_name]["status"] = "Waiting"
-            self.bots_state[bot_name]["room"] = "Waiting"
-        await self.draw_table()
-
-    async def get_active_count(self) -> int:
-        async with self.lock:
-            return self.in_game
-
-    async def wait_for_cohort(self, timeout: float = 120.0):
-        start_time = asyncio.get_event_loop().time()
-        while self.in_game > 0:
-            if asyncio.get_event_loop().time() - start_time > timeout:
-                break
-            await asyncio.sleep(1.0)
-
-async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_preference: str):
-    bot_name = bot_info["name"]
-    api_key = bot_info["api_key"]
-
-    api_client = ClawRoyaleAPI(api_key=api_key)
-    ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
-    ws_url = "wss://cdn.clawroyale.ai/ws/join"
-
-    while True:
-        await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
-
-        await coordinator.enter_lobby(bot_name)
-
-        is_ready = await coordinator.wait_for_lobby(bot_name, 10.0)
-
-        await coordinator.leave_lobby(bot_name)
-
-        success = await ws_client.connect(ws_url)
-        if success:
-            await coordinator.enter_game(bot_name)
-
-            try:
-                welcome_frame = await ws_client.receive()
-                if welcome_frame and welcome_frame.get("type") == "welcome":
-                    decision = welcome_frame.get("decision")
-
-                    if decision in ("ASK_ENTRY_TYPE", "FREE_ONLY"):
-                        hello_payload = {
-                            "type": "hello",
-                            "entryType": room_preference,
-                            "version": ws_client.api_version
-                        }
-                        await ws_client.send(hello_payload)
-
-                        while True:
-                            frame = await ws_client.receive()
-                            if frame is None:
-                                break
-
-                            msg_type = frame.get("type")
-                            if msg_type == "queued":
-                                coordinator.bots_state[bot_name]["room"] = "Queue"
-                                coordinator.bots_state[bot_name]["status"] = "Queued"
-                                await coordinator.draw_table()
-                            elif msg_type == "assigned":
-                                match_id = frame.get("matchId") or "Room"
-                                try:
-                                    m_id = int(match_id)
-                                    room_display = get_ordinal(m_id)
-                                except ValueError:
-                                    room_display = str(match_id)
-                                coordinator.bots_state[bot_name]["room"] = room_display[:10]
-                                coordinator.bots_state[bot_name]["status"] = "In Progress"
-                                await coordinator.draw_table()
-                            elif msg_type == "error":
-                                coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                                await coordinator.draw_table()
-                                break
-                    elif decision == "ALREADY_IN_GAME":
-                        coordinator.bots_state[bot_name]["room"] = "Room"
-                        coordinator.bots_state[bot_name]["status"] = "In Progress"
-                        await coordinator.draw_table()
-                        while True:
-                            frame = await ws_client.receive()
-                            if frame is None:
-                                break
-                    else:
-                        coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                        await coordinator.draw_table()
-            except Exception:
-                coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                await coordinator.draw_table()
-            finally:
-                await ws_client.close()
-                await coordinator.leave_game(bot_name)
-
-                active_count = await coordinator.get_active_count()
-                if active_count > 0:
-                    await coordinator.wait_for_cohort(120.0)
-        else:
-            coordinator.bots_state[bot_name]["status"] = "Retrying"
-            await coordinator.draw_table()
-            await asyncio.sleep(5.0)
+async def run_bot(config, api_client, bot_status):
+    api = ClawRoyaleAPI(config["api_key"])
+    bot_status["status"] = "Connecting"
+    
+    # Auto claim reward
+    bot_status["status"] = "Claiming Rewards"
+    await auto_claim_rewards(api, bot_status)
+    
+    # Start websocket client
+    ws_client = GameWebSocketClient(config["api_key"], bot_status)
+    await ws_client.connect()
 
 async def main():
-    bots = get_configured_bots()
-    room_preference = get_room_preference()
-
-    if not bots:
-        return
-
-    bots_state = {}
-    for bot in bots:
-        bots_state[bot["name"]] = {
-            "redeem": "Waiting",
-            "weekly": "Waiting",
-            "smoltz": "Waiting",
-            "target": room_preference.capitalize(),
-            "room": "Waiting",
-            "status": "Waiting",
-        }
-
-    coordinator = LobbyCoordinator(len(bots), bots_state)
-    await coordinator.draw_table()
-
-    tasks = [run_bot_lifecycle(bot, coordinator, room_preference) for bot in bots]
+    load_dotenv()
     
-    from web.server import start_web_server
-    tasks.append(start_web_server(bots_state))
+    VERSION = "1.12.0"
+    
+    # Setup network/quest logger
+    setup_logger()
+    
+    agent_configs = load_agent_configs()
+    total_bots = len(agent_configs)
+    
+    # Initialize global status list
+    for config in agent_configs:
+        global_bots_status.append({
+            "name": config["name"],
+            "redeem": "Checking",
+            "weekly": "Checking",
+            "smoltz": 0,
+            "target": config["room_type"].capitalize(),
+            "room": "Room",
+            "status": "Starting"
+        })
+    
+    # Start dashboard server
+    asyncio.create_task(start_web_server(global_bots_status))
+    
+    # Start terminal log loop
+    asyncio.create_task(log_agent_status_loop(VERSION, total_bots))
+    
+    # Start all bots concurrently
+    tasks = []
+    for i, config in enumerate(agent_configs):
+        tasks.append(run_bot(config, ClawRoyaleAPI(config["api_key"]), global_bots_status[i]))
     
     await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nServer stopped manually.")

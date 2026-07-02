@@ -6,6 +6,7 @@ from ai.Strategy.priority.recovery_priority import get_recovery_priorities
 from ai.Strategy.priority.target_priority import get_target_priorities
 from ai.Strategy.priority.interact_priority import get_interact_priorities
 from ai.detector.dead_zone_detector import is_dead_zone
+from ai.detector.self_detector import get_self_vital_status
 
 def find_target_id(view: dict, target_name: str, target_type: str, region_id: str) -> str:
     if target_type == "player":
@@ -99,7 +100,18 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     strategy_report = " | ".join(report_lines) if report_lines else "None"
     if current_is_dz:
         strategy_report = f"DZ_EMERGENCY! {strategy_report}"
+    vital = get_self_vital_status(view)
+    is_hp_full = vital.get("hp", 100) >= vital.get("max_hp", 100)
+    is_ep_full = vital.get("ep", 10) >= vital.get("max_ep", 10)
     if winner_score < 0.15:
+        if is_hp_full and is_ep_full and best_nav.get("score", 0.0) > 0.0:
+            return {
+                "type": "move",
+                "regionId": best_nav["id"],
+                "name": best_nav["name"],
+                "score": best_nav["score"],
+                "strategy_report": f"FORCED_MOVE! {strategy_report}"
+            }
         return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
     if winner_category == "recovery":
         return {

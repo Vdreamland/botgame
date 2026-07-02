@@ -10,6 +10,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
     monsters = detailed.get("monsters", [])
     self_data = view.get("self", {}) if isinstance(view, dict) else {}
     curr_ep = self_data.get("ep", 10) if isinstance(self_data, dict) else 10
+    curr_atk = self_data.get("atk", 25) if isinstance(self_data, dict) else 25
     eq_weapon = self_data.get("equippedWeapon") if isinstance(self_data, dict) else None
     curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
     w_range = WEAPONS.get(curr_weapon_name, {}).get("range", 0)
@@ -21,6 +22,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
             continue
         score = 0.0
         hp = p.get("hp", 100)
+        target_def = p.get("def", 5)
+        net_atk = curr_atk - target_def
         if not can_attack:
             score = 0.0
         elif layer <= w_range:
@@ -30,6 +33,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                 score = 0.85
             else:
                 score = 0.70
+            if net_atk <= 5:
+                score *= 0.20
         else:
             score = 0.0
         priorities.append({
@@ -37,7 +42,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
             "name": p.get("name"),
             "hp": hp,
             "atk": p.get("atk", 25),
-            "def": p.get("def", 5),
+            "def": target_def,
             "layer": layer,
             "region_id": p.get("region_id"),
             "score": max(0.0, score)
@@ -49,6 +54,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
         score = 0.0
         hp = m.get("hp", 25)
         is_guardian = m.get("is_guardian", False)
+        target_def = m.get("def", 1)
+        net_atk = curr_atk - target_def
         if not can_attack:
             score = 0.0
         elif layer <= w_range:
@@ -62,6 +69,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                     score = 0.95
                 else:
                     score = 0.80
+            if net_atk <= 5:
+                score *= 0.20
         else:
             score = 0.0
         priorities.append({
@@ -69,7 +78,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
             "name": m.get("type"),
             "hp": hp,
             "atk": m.get("atk", 15),
-            "def": m.get("def", 1),
+            "def": target_def,
             "layer": layer,
             "region_id": m.get("region_id"),
             "score": max(0.0, score)

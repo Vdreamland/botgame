@@ -1,8 +1,16 @@
-# utils/api_client.py
-
 import asyncio
 import aiohttp
 import logging
+from utils.logger import logger as custom_logger
+from logs.quest_reward_log import (
+    log_redeem_attempt,
+    log_redeem_success,
+    log_redeem_failed,
+    log_weekly_check,
+    log_weekly_claim_attempt,
+    log_weekly_claim_success,
+    log_weekly_claim_failed
+)
 
 logger = logging.getLogger("APIClient")
 
@@ -123,3 +131,36 @@ class ClawRoyaleAPI:
     async def update_agent_wallet(self, agent_wallet: str) -> dict:
         payload = {"agentWallet": agent_wallet}
         return await self._request("PUT", "/accounts/wallet", payload)
+
+    async def auto_claim_rewards(self):
+        log_redeem_attempt("WELCOME")
+        redeem_res = await self.redeem_code("WELCOME")
+        if redeem_res.get("success"):
+            log_redeem_success("WELCOME")
+        else:
+            error_text = redeem_res.get("error") or f"status {redeem_res.get('status')}"
+            log_redeem_failed("WELCOME", error_text)
+
+        log_weekly_check()
+        weekly_res = await self.get_weekly_tracks()
+        if weekly_res.get("success"):
+            data = weekly_res.get("data", {})
+            tracks = data.get("tracks", [])
+            claimed_any = False
+            for track in tracks:
+                if isinstance(track, dict) and track.get("opened") is True and track.get("claimed") is False:
+                    track_index = track.get("trackIndex")
+                    if track_index is not None:
+                        log_weekly_claim_attempt(track_index)
+                        claim_res = await self.claim_weekly_reward(track_index)
+                        if claim_res.get("success"):
+                            log_weekly_claim_success(track_index)
+                            claimed_any = True
+                            break
+                        else:
+                            claim_err = claim_res.get("error") or f"status {claim_res.get('status')}"
+                            log_weekly_claim_failed(track_index, claim_err)
+            if not claimed_any:
+                custom_logger.info("[*] No claimable weekly reward tracks found.")
+        else:
+            custom_logger.warning(f"[WARN] Failed to retrieve weekly tracks: {weekly_res.get('error')}")

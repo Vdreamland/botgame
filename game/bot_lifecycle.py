@@ -13,42 +13,6 @@ def get_ordinal(n: int) -> str:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
 
-async def _check_agent_liveness_and_cleanup(
-    bot_name: str,
-    api_client: ClawRoyaleAPI,
-    coordinator: LobbyCoordinator,
-    ws_client,
-    exit_msg: str
-) -> bool:
-    logger.info(f"[*] {bot_name} connection lost/ended. Checking liveness via REST API...")
-    profile_res = await api_client.get_my_profile()
-    is_still_alive = False
-    if profile_res.get("success"):
-        data = profile_res.get("data", {})
-        current_games = data.get("currentGames", [])
-        for g in current_games:
-            if g.get("gameId") == coordinator.bots_state[bot_name].get("room_id") or g.get("isAlive") is True:
-                if g.get("isAlive") is True:
-                    is_still_alive = True
-                    break
-    logger.info(f"[*] {bot_name} liveness status: is_still_alive={is_still_alive}")
-    if not is_still_alive:
-        if coordinator.bots_state[bot_name]["alive"]:
-            coordinator.bots_state[bot_name]["alive"] = False
-            await coordinator.draw_table()
-        latest_view = coordinator.bots_state[bot_name].get("view", {})
-        if isinstance(latest_view, dict):
-            if "self" not in latest_view:
-                latest_view["self"] = {}
-            latest_view["self"]["hp"] = 0
-            latest_view["self"]["isAlive"] = False
-        death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
-        logger.info(f"[-] {bot_name} eliminated. Writing final turn {death_turn} to log.")
-        write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
-        write_gameplay_log(bot_name, exit_msg)
-        return True
-    return False
-
 async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoordinator, ws_client) -> bool:
     if not isinstance(frame, dict):
         return True
@@ -76,17 +40,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         view_data = frame.get("view", {})
         self_data = view_data.get("self")
         
-        if self_data is None:
-            logger.info(f"[*] {bot_name} self-data missing from view. Verifying status...")
-            from utils.api_client import ClawRoyaleAPI
-            api_client = ClawRoyaleAPI(api_key=ws_client.api_key)
-            is_dead = await _check_agent_liveness_and_cleanup(
-                bot_name, api_client, coordinator, ws_client,
-                f"[SYSTEM] Agent {bot_name} is dead (self-data missing)."
-            )
-            if is_dead:
-                return False
-        elif isinstance(self_data, dict):
+        if isinstance(self_data, dict):
             is_alive = self_data.get("isAlive")
             hp = self_data.get("hp", 100)
             if is_alive is False or hp == 0:
@@ -112,7 +66,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         event_data = frame.get("data", {})
         my_agent_id = coordinator.bots_state[bot_name].get("agent_id")
         if event_name == "agent_died" and event_data.get("agentId") == my_agent_id:
-            logger.info(f"[-] {bot_name} received agent_died event. Logging turn.")
+            logger.info(f"[-] {bot_name} received agent_died event.")
             coordinator.bots_state[bot_name]["alive"] = False
             await coordinator.draw_table()
             latest_view = coordinator.bots_state[bot_name].get("view", {})
@@ -174,11 +128,9 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
 
             if is_first_run:
-                logger.info(f"[*] {bot_name} claiming first-run rewards...")
                 await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
                 is_first_run = False
 
-            logger.info(f"[*] {bot_name} checking ongoing game profile...")
             profile_res = await api_client.get_my_profile()
             in_active_game = False
             if profile_res.get("success"):
@@ -191,31 +143,37 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         coordinator.bots_state[bot_name]["room_id"] = g.get("gameId")
                         break
 
-            bypass_lobby = getattr(coordinator, "bypass_lobby_on_startup", False)
-            if not in_active_game and not (is_first_run and bypass_lobby):
-                logger.info(f"[*] {bot_name} entering lobby coordinator...")
-                await coordinator.enter_lobby(bot_name)
-                logger.info(f"[*] {bot_name} waiting in lobby for cohort...")
-                await coordinator.wait_for_lobby(bot_name)
-                logger.info(f"[*] {bot_name} lobby is full, leaving lobby and connecting...")
-                await coordinator.leave_lobby(bot_name)
-            else:
-                if in_active_game:
-                    logger.info(f"[*] {bot_name} detected active game, bypassing lobby...")
-                else:
-                    logger.info(f"[*] {bot_name} bypassing lobby due to other active game on startup...")
+            if not in_active_game:
+                if coordinator.bots_state[bot_name].get("alive", True):
+                    coordinator.bots_state[bot_name]["alive"] = False
+                    await coordinator.draw_table()
+                    latest_view = coordinator.bots_state[bot_name].get("view", {})
+                    if isinstance(latest_view, dict):
+                        if "self" not in latest_view:
+                            latest_view["self"] = {}
+                        latest_view["self"]["hp"] = 0
+                        latest_view["self"]["isAlive"] = False
+                    death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
+                    logger.info(f"[-] {bot_name} confirmed dead. Logging final turn {death_turn}.")
+                    write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+                    write_gameplay_log(bot_name, "[SYSTEM] Agent has been eliminated.")
 
-            logger.info(f"[*] {bot_name} connecting to WebSocket: {ws_url}")
+                bypass_lobby = getattr(coordinator, "bypass_lobby_on_startup", False)
+                if not (is_first_run and bypass_lobby):
+                    await coordinator.enter_lobby(bot_name)
+                    await coordinator.wait_for_lobby(bot_name)
+                    await coordinator.leave_lobby(bot_name)
+            else:
+                coordinator.bots_state[bot_name]["alive"] = True
+
             success = await ws_client.connect(ws_url)
             if success:
-                logger.info(f"[+] {bot_name} WebSocket connected. Entering game...")
                 await coordinator.enter_game(bot_name)
 
                 try:
                     welcome_frame = await ws_client.receive()
                     if welcome_frame and welcome_frame.get("type") == "welcome":
                         decision = welcome_frame.get("decision")
-                        logger.info(f"[*] {bot_name} welcome received. Decision: {decision}")
 
                         if decision in ("ASK_ENTRY_TYPE", "FREE_ONLY"):
                             hello_payload = {
@@ -230,14 +188,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
                                 except asyncio.TimeoutError:
                                     logger.warning(f"[!] {bot_name} timeout waiting for frame.")
-                                    exit_msg = f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop..."
-                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
 
                                 if frame is None:
                                     logger.warning(f"[!] {bot_name} connection closed by server.")
-                                    exit_msg = "[SYSTEM] Connection closed by server. Exiting game loop..."
-                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
 
                                 is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
@@ -268,7 +222,6 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     await coordinator.draw_table()
                                     logger.info(f"[+] All Setup ready to play for {bot_name} ...")
                                 elif msg_type == "error":
-                                    logger.error(f"[!] {bot_name} received error frame.")
                                     coordinator.bots_state[bot_name]["status"] = "Disconnect"
                                     await coordinator.draw_table()
                                     break
@@ -285,29 +238,22 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
                                 except asyncio.TimeoutError:
                                     logger.warning(f"[!] {bot_name} timeout waiting for frame.")
-                                    exit_msg = f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop..."
-                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
 
                                 if frame is None:
                                     logger.warning(f"[!] {bot_name} connection closed by server.")
-                                    exit_msg = "[SYSTEM] Connection closed by server. Exiting game loop..."
-                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
                                     break
                                 
                                 is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
                                 if not is_alive:
                                     break
-                except Exception as inner_e:
-                    logger.error(f"[!] {bot_name} error in inner game loop: {str(inner_e)}")
+                except Exception:
                     coordinator.bots_state[bot_name]["status"] = "Disconnect"
                     await coordinator.draw_table()
             else:
-                logger.error(f"[!] {bot_name} failed to connect to WebSocket.")
                 coordinator.bots_state[bot_name]["status"] = "Disconnect"
                 await coordinator.draw_table()
         except Exception as e:
-            logger.error(f"[!] {bot_name} error in outer loop: {str(e)}")
             write_gameplay_log(bot_name, f"[SYSTEM] Error occurred in lifecycle: {str(e)}. Retrying in 5 seconds...")
             coordinator.bots_state[bot_name]["status"] = "Retrying"
             await coordinator.draw_table()
@@ -315,7 +261,6 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             await coordinator.leave_game(bot_name)
             await asyncio.sleep(5.0)
         finally:
-            logger.info(f"[-] {bot_name} leaving game session.")
             write_gameplay_log(bot_name, "[SYSTEM] Connection closed. Leaving game room.")
             if ws_client:
                 await ws_client.close()
@@ -324,10 +269,8 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
         active_count = await coordinator.get_active_count(bot_name)
         is_bot_alive = coordinator.bots_state[bot_name].get("alive", True)
         if active_count > 0 and not is_bot_alive:
-            logger.info(f"[*] {bot_name} waiting for other active cohort bots to finish...")
             await coordinator.wait_for_cohort(bot_name, 120.0)
         elif not is_bot_alive:
-            logger.info(f"[*] {bot_name} retrying loop in 5 seconds...")
             coordinator.bots_state[bot_name]["status"] = "Retrying"
             await coordinator.draw_table()
             await asyncio.sleep(5.0)

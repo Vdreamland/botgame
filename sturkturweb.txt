@@ -20,11 +20,12 @@
 │    └── api_client.py                # Helper API REST untuk interaksi dengan server (ClawRoyaleAPI)
 ├── logs/                             # Folder tempat menyimpan file hasil audit bot
 │   ├── __init__.py                   # Penanda paket Python untuk folder utils
-│   ├── logs_network.py               # Untuuk menampilkan log di cmd/powershell
-│   ├── logs_combat.py                # Untuuk menampilkan log di cmd/powershell
-│   ├── logs_agent.py                  # Menyimpan seluruh fungsi log khusus untuk deteksi konfigurasi, pencatatan daftar nama bot, pelaporan jumlah bot, serta pemantauan status antrean Lobby awal sebelum masuk ke dalam permainan.
-│   └── quest_reward_log.py           # Untuuk menampilkan log di cmd/powershell
-├── config/                           # Folder tempat menyimpan file hasil audit bot
+│   ├── logs_network.py               
+│   ├── logs_gameplay.py              
+│   ├── logs_combat.py                
+│   ├── logs_agent.py                 # Menyimpan seluruh fungsi log khusus untuk deteksi konfigurasi, pencatatan daftar nama bot, pelaporan jumlah bot, serta pemantauan status antrean Lobby awal sebelum masuk ke dalam permainan.
+│   └── quest_reward_log.py           
+├── config/                           
 │   ├── __init__.py                   
 │   └── agent_config.py               
 ├── web/                             # Folder baru khusus untuk dashboard visualisasi
@@ -77,6 +78,7 @@ init__.py : https://github.com/Vdreamland/botgame/blob/master/logs/__init__.py
 logs_network.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_network.py
 quest_reward_log : https://github.com/Vdreamland/botgame/blob/master/logs/quest_reward_log.py
 logs_agent.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_agent.py
+logs_gameplay.py :
 
 .env : https://github.com/Vdreamland/botgame/blob/master/.env
 requirements.txt : https://github.com/Vdreamland/botgame/blob/master/requirements.txt

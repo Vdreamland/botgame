@@ -8,6 +8,9 @@ const logViewer = document.getElementById("log-viewer");
 const autoScrollCheck = document.getElementById("auto-scroll-check");
 const copyLogBtn = document.getElementById("copy-log-btn");
 
+let lastSelectedBot = "";
+let lastFetchedTurn = -1;
+
 function showToast(message) {
   const toast = document.getElementById("toast");
   toast.innerText = message;
@@ -50,6 +53,12 @@ copyLogBtn.addEventListener("click", () => {
     .catch((err) => {
       console.error("Failed to copy: ", err);
     });
+});
+
+botSelect.addEventListener("change", () => {
+  lastSelectedBot = "";
+  lastFetchedTurn = -1;
+  updateStatus();
 });
 
 // Fetch and update bot status
@@ -117,6 +126,26 @@ async function updateStatus() {
             `;
       botTbody.appendChild(tr);
     }
+
+    const selectedBot = botSelect.value;
+    if (selectedBot) {
+      const botState = data[selectedBot];
+      const currentTurn = botState && botState.view ? botState.view.turn : null;
+      if (
+        selectedBot !== lastSelectedBot ||
+        (currentTurn !== null && currentTurn !== lastFetchedTurn)
+      ) {
+        await updateLogs();
+        lastSelectedBot = selectedBot;
+        if (currentTurn !== null) {
+          lastFetchedTurn = currentTurn;
+        }
+      }
+    } else {
+      logViewer.textContent = "Please select a bot to view live logs.";
+      lastSelectedBot = "";
+      lastFetchedTurn = -1;
+    }
   } catch (error) {
     console.error("Failed to update status:", error);
   }
@@ -152,4 +181,3 @@ async function updateLogs() {
 // Update status immediately and then every 2 seconds
 updateStatus();
 setInterval(updateStatus, 2000);
-setInterval(updateLogs, 1000);

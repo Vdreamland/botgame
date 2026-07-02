@@ -66,6 +66,45 @@
 
 
 
+├── ai/                               # Folder pusat logika kecerdasan buatan, pengambilan keputusan, dan taktis bot
+│    ├── __init__.py                  # Penanda paket Python untuk mengekspos modul-modul AI
+│    ├── skill/                       
+│    │    ├──  __init__.py                     
+│    │    └── vision.py               # untuk mengetahui jarak pandang agen kita berapa zone/tiles
+│    ├── agent_info.py                # untuk menampilkan informasi bot/agent kita di log
+│    ├── detector/                    # tempat untuk mendeteksi awal untuk kumpulkan informasi
+│    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
+│    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
+│    │    ├── dead_zone_detector.py   # Deteksi deadzone
+│    │    ├── ground_detector.py      # Deteksi apa aja loot yang ada di ground/zone bot/agent berada
+│    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/stats musuh/stats monster
+│    │    ├── self_detector.py        # mengevaluasi kekuatan diri kita sendiri sebelum bertarung
+│    │    └── ruin_detector.py        # Reruntuhan (ruin) merupakan objek penting untuk mendapatkan Relic dan Pack [1.12.0]   
+│    ├── Strategy/                    
+│    │    ├── priority 
+│    │    │    ├── __init__.py 
+│    │    │    ├── ground_loot_priority
+│    │    │    ├── equipped_priority.py
+│    │    │    ├── recovery_priority.py   
+│    │    │    └── target_priority.py
+│    │    ├── navigation_strategy
+│    │    ├── ruin_exploration_strategy.py
+│    │    └── __init__.py
+
+
+
+
+
+         
+
+
+
+
+
+
+
+
+
 http://localhost:8080
 Link url :
 
@@ -75,8 +114,8 @@ lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lo
 bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
 
 ai/strategy/
-navigation_strategy.py : navigation_strategy.py
-ruin_exploration_strategy.py : 
+navigation_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/navigation_strategy.py
+ruin_exploration_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/ruin_exploration_strategy.py
 
 ai/strategy/priority/
 ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/equipped_priority.py

@@ -185,6 +185,9 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     elif winner_category == "interact":
         return {
             "type": "interact",
+            "interactable": best_interact["id"],
+            "interactableId": best_interact["id"],
+            "target": best_interact["id"],
             "name": best_interact["name"],
             "score": winner_score,
             "strategy_report": strategy_report

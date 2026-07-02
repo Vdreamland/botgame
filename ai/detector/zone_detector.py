@@ -9,13 +9,19 @@ def detect_terrain(region: dict) -> str:
     return terrain
 
 def detect_facility(region: dict) -> str:
+    detail = detect_facility_detail(region)
+    if detail:
+        return detail["name"]
+    return None
+
+def detect_facility_detail(region: dict) -> dict:
     if not isinstance(region, dict):
         return None
     facility = region.get("facility")
     if facility in FACILITIES:
         is_used = bool(region.get("facilityUsed", region.get("isUsed", False)))
         if not is_used:
-            return facility
+            return {"id": region.get("id") or region.get("facilityId") or facility, "name": facility}
     interactables = region.get("interactables", [])
     if isinstance(interactables, list):
         for item in interactables:
@@ -24,7 +30,10 @@ def detect_facility(region: dict) -> str:
                 if name in FACILITIES:
                     is_used = bool(item.get("isUsed", item.get("used", False)))
                     if not is_used:
-                        return name
+                        return {
+                            "id": item.get("id") or item.get("interactableId") or item.get("interactable_id") or name,
+                            "name": name
+                        }
     return None
 
 def detect_weather(view: dict) -> str:

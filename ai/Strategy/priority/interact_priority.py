@@ -1,5 +1,5 @@
 from ai.detector.self_detector import get_self_vital_status
-from ai.detector.zone_detector import detect_facility
+from ai.detector.zone_detector import detect_facility_detail
 
 def get_interact_priorities(view: dict) -> list:
     priorities = []
@@ -8,12 +8,10 @@ def get_interact_priorities(view: dict) -> list:
     current_region = view.get("currentRegion", {})
     if not isinstance(current_region, dict):
         return priorities
-    facility = detect_facility(current_region)
-    if not facility:
+    detail = detect_facility_detail(current_region)
+    if not detail:
         return priorities
-    is_used = bool(current_region.get("facilityUsed", current_region.get("isUsed", False)))
-    if is_used:
-        return priorities
+    facility = detail["name"]
     vital = get_self_vital_status(view)
     hp = vital.get("hp", 100)
     score = 0.0
@@ -32,7 +30,7 @@ def get_interact_priorities(view: dict) -> list:
         score = 0.15
     if score > 0.0:
         priorities.append({
-            "target": facility,
+            "id": detail["id"],
             "name": facility,
             "score": score
         })

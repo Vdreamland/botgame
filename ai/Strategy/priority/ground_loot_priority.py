@@ -25,6 +25,7 @@ def get_ground_loot_priorities(view: dict) -> list:
     curr_weapon_bonus = 0
     curr_armour_name = "None"
     curr_armour_bonus = 0
+    has_binoculars = False
     if isinstance(self_data, dict):
         eq_weapon = self_data.get("equippedWeapon")
         curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
@@ -35,6 +36,12 @@ def get_ground_loot_priorities(view: dict) -> list:
             for grade, spec in ARMOUR_GRADES.items():
                 if grade.lower() in curr_armour_name.lower():
                     curr_armour_bonus = spec.get("estimated_def_bonus", 0)
+                    break
+        inventory = self_data.get("inventory", [])
+        if isinstance(inventory, list):
+            for item in inventory:
+                if isinstance(item, dict) and item.get("name") == "Binoculars":
+                    has_binoculars = True
                     break
     for item in items:
         if not isinstance(item, dict):
@@ -49,6 +56,11 @@ def get_ground_loot_priorities(view: dict) -> list:
             score = 0.99
         elif is_full:
             score = 0.0
+        elif name == "Binoculars":
+            if not has_binoculars:
+                score = 0.88
+            else:
+                score = 0.10
         elif i_type == "weapon" or name in WEAPONS:
             bonus = WEAPONS.get(name, {}).get("atk_bonus", 0)
             if curr_weapon_name == "Fist":

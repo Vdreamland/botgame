@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import uuid
 import json
+from utils.logger import logger as custom_logger
 from logs.quest_reward_log import (
     log_redeem_attempt,
     log_redeem_success,
@@ -163,6 +164,7 @@ class ClawRoyaleAPI:
 
         log_weekly_check()
         weekly_res = await self.get_weekly_tracks()
+        custom_logger.info(f"DEBUG: Weekly tracks raw response: {weekly_res}")
         if weekly_res.get("success"):
             data = weekly_res.get("data", {})
             tracks = data.get("tracks", [])

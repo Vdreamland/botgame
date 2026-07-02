@@ -51,15 +51,6 @@ class ClawRoyaleWSClient:
             msg = await self.ws.receive_str()
             log_ws_receive(self.bot_name, msg)
             frame = json.loads(msg)
-            if isinstance(frame, dict):
-                turn = frame.get("turn")
-                msg_type = frame.get("type")
-                is_alive = frame.get("view", {}).get("self", {}).get("isAlive", True)
-                
-                if (turn is not None and turn != self.last_logged_turn and msg_type in ("agent_view", "turn_advanced") and is_alive):
-                    from logs.logs_gameplay import write_gameplay_log
-                    write_gameplay_log(self.bot_name, f"# Turn {turn}", frame.get("view", {}))
-                    self.last_logged_turn = turn
             return frame
         except Exception as e:
             log_ws_error(self.bot_name, str(e))

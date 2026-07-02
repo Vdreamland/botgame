@@ -8,6 +8,7 @@ from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
 from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
 from logs.logs_agent import draw_status_table
+from logs.logs_gameplay import clear_gameplay_log
 
 def get_ordinal(n: int) -> str:
     if 11 <= (n % 100) <= 13:
@@ -85,6 +86,8 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
 
     while True:
+        clear_gameplay_log(bot_name)
+
         await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
 
         await coordinator.enter_lobby(bot_name)

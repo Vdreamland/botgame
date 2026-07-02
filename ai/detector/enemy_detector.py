@@ -59,6 +59,10 @@ def get_visible_enemies_by_layer(view: dict, self_bot_name: str) -> dict:
     if isinstance(agents, list):
         for agent in agents:
             if isinstance(agent, dict):
+                is_alive = bool(agent.get("isAlive", agent.get("is_alive", True)))
+                hp = agent.get("hp", 100)
+                if not is_alive or hp == 0:
+                    continue
                 name = agent.get("name")
                 classification = classify_agent(name, self_bot_name)
                 if classification == "self":
@@ -76,6 +80,9 @@ def get_visible_enemies_by_layer(view: dict, self_bot_name: str) -> dict:
     if isinstance(monsters, list):
         for monster in monsters:
             if isinstance(monster, dict):
+                hp = monster.get("hp", 25)
+                if hp == 0:
+                    continue
                 region_id = monster.get("regionId") or monster.get("region")
                 layer = layers.get(region_id)
                 if layer is not None:
@@ -95,6 +102,10 @@ def get_detailed_enemy_stats(view: dict, self_bot_name: str) -> dict:
     if isinstance(agents, list):
         for agent in agents:
             if isinstance(agent, dict):
+                is_alive = bool(agent.get("isAlive", agent.get("is_alive", True)))
+                hp = agent.get("hp", 100)
+                if not is_alive or hp == 0:
+                    continue
                 name = agent.get("name")
                 classification = classify_agent(name, self_bot_name)
                 if classification == "self":
@@ -107,7 +118,7 @@ def get_detailed_enemy_stats(view: dict, self_bot_name: str) -> dict:
                 armour_name = eq_armour.get("name", "None") if isinstance(eq_armour, dict) else "None"
                 agent_stats = {
                     "name": name,
-                    "hp": agent.get("hp", 100),
+                    "hp": hp,
                     "ep": agent.get("ep", 10),
                     "atk": agent.get("atk", 25),
                     "def": agent.get("def", 5),
@@ -135,6 +146,9 @@ def get_detailed_enemy_stats(view: dict, self_bot_name: str) -> dict:
     if isinstance(monsters, list):
         for monster in monsters:
             if isinstance(monster, dict):
+                hp = monster.get("hp", 25)
+                if hp == 0:
+                    continue
                 m_type = monster.get("type", "Unknown")
                 is_g = monster.get("is_guardian", monster.get("isGuardian", False))
                 region_id = monster.get("regionId") or monster.get("region")

@@ -22,11 +22,18 @@
 │   ├── __init__.py                   # Penanda paket Python untuk folder utils
 │   ├── logs_network.py               # Untuuk menampilkan log di cmd/powershell
 │   ├── logs_combat.py                # Untuuk menampilkan log di cmd/powershell
-│   ├── quest_reward_log.py           # Untuuk menampilkan log di cmd/powershell
-│   └── logs_behavior.py              # Untuuk menampilkan log di cmd/powershell
+│   ├── logs_agent.py                  # Menyimpan seluruh fungsi log khusus untuk deteksi konfigurasi, pencatatan daftar nama bot, pelaporan jumlah bot, serta pemantauan status antrean Lobby awal sebelum masuk ke dalam permainan.
+│   └── quest_reward_log.py           # Untuuk menampilkan log di cmd/powershell
+├── config/                           # Folder tempat menyimpan file hasil audit bot
+│   ├── __init__.py                   
+│   └── agent_config.py                
 
 
 Link url :
+
+config/
+__init__.py
+agen_config.py
 
 game_data/ 
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/game_data/__init__.py

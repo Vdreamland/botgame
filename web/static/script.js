@@ -10,6 +10,8 @@ const copyLogBtn = document.getElementById("copy-log-btn");
 
 let lastSelectedBot = "";
 let lastFetchedTurn = -1;
+let lastAliveState = true;
+let lastStatusState = "";
 
 function showToast(message) {
   const toast = document.getElementById("toast");
@@ -58,6 +60,8 @@ copyLogBtn.addEventListener("click", () => {
 botSelect.addEventListener("change", () => {
   lastSelectedBot = "";
   lastFetchedTurn = -1;
+  lastAliveState = true;
+  lastStatusState = "";
   updateStatus();
 });
 
@@ -131,12 +135,19 @@ async function updateStatus() {
     if (selectedBot) {
       const botState = data[selectedBot];
       const currentTurn = botState && botState.view ? botState.view.turn : null;
+      const currentAlive = botState ? botState.alive : true;
+      const currentStatus = botState ? botState.status : "";
+
       if (
         selectedBot !== lastSelectedBot ||
-        (currentTurn !== null && currentTurn !== lastFetchedTurn)
+        (currentTurn !== null && currentTurn !== lastFetchedTurn) ||
+        currentAlive !== lastAliveState ||
+        currentStatus !== lastStatusState
       ) {
         await updateLogs();
         lastSelectedBot = selectedBot;
+        lastAliveState = currentAlive;
+        lastStatusState = currentStatus;
         if (currentTurn !== null) {
           lastFetchedTurn = currentTurn;
         }
@@ -145,6 +156,8 @@ async function updateStatus() {
       logViewer.textContent = "Please select a bot to view live logs.";
       lastSelectedBot = "";
       lastFetchedTurn = -1;
+      lastAliveState = true;
+      lastStatusState = "";
     }
   } catch (error) {
     console.error("Failed to update status:", error);

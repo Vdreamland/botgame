@@ -2,7 +2,7 @@ import asyncio
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
 from config.agen_config import auto_claim_rewards
-from logs.logs_gameplay import write_gameplay_log
+from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
 from game.lobby_coordinator import LobbyCoordinator
 
 def get_ordinal(n: int) -> str:
@@ -29,6 +29,10 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 coordinator.bots_state[bot_name]["alive"] = is_alive
                 await coordinator.draw_table()
             if not is_alive:
+                if not coordinator.bots_state[bot_name]["alive"]:
+                    return False
+                coordinator.bots_state[bot_name]["alive"] = False
+                await coordinator.draw_table()
                 turn = frame.get("turn") or ws_client.last_logged_turn
                 view_data = frame.get("view", {})
                 if isinstance(view_data, dict) and "self" in view_data:
@@ -37,33 +41,35 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 write_gameplay_log(bot_name, f"# Turn {turn}", view_data)
                 return False
 
-            if frame.get("type") == "game_ended":
-                coordinator.bots_state[bot_name]["alive"] = False
-                await coordinator.draw_table()
-                latest_view = coordinator.bots_state[bot_name].get("view", {})
-                if isinstance(latest_view, dict):
-                    if "self" not in latest_view:
-                        latest_view["self"] = {}
-                    latest_view["self"]["hp"] = 0
-                    latest_view["self"]["isAlive"] = False
-                write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
-                return False
+    if msg_type == "game_ended":
+        if not coordinator.bots_state[bot_name]["alive"]:
+            return False
+        coordinator.bots_state[bot_name]["alive"] = False
+        await coordinator.draw_table()
+        latest_view = coordinator.bots_state[bot_name].get("view", {})
+        if isinstance(latest_view, dict):
+            if "self" not in latest_view:
+                latest_view["self"] = {}
+            latest_view["self"]["hp"] = 0
+            latest_view["self"]["isAlive"] = False
+        write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+        return False
 
-            game_id = frame.get("gameId") or frame.get("matchId")
-            if game_id:
-                try:
-                    m_id = int(game_id)
-                    room_display = get_ordinal(m_id)
-                    room_id_str = str(game_id)
-                except ValueError:
-                    room_display = str(game_id)
-                    room_id_str = str(game_id)
-                if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
-                    coordinator.bots_state[bot_name]["room"] = room_display[:10]
-                    coordinator.bots_state[bot_name]["room_id"] = room_id_str
-                    await coordinator.draw_table()
-            
-            return True
+    game_id = frame.get("gameId") or frame.get("matchId")
+    if game_id:
+        try:
+            m_id = int(game_id)
+            room_display = get_ordinal(m_id)
+            room_id_str = str(game_id)
+        except ValueError:
+            room_display = str(game_id)
+            room_id_str = str(game_id)
+        if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
+            coordinator.bots_state[bot_name]["room"] = room_display[:10]
+            coordinator.bots_state[bot_name]["room_id"] = room_id_str
+            await coordinator.draw_table()
+    
+    return True
 
 async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_preference: str):
     bot_name = bot_info["name"]
@@ -120,19 +126,41 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                coordinator.bots_state[bot_name]["alive"] = False
-                                await coordinator.draw_table()
-                                latest_view = coordinator.bots_state[bot_name].get("view", {})
-                                if isinstance(latest_view, dict):
-                                    if "self" not in latest_view:
-                                        latest_view["self"] = {}
-                                    latest_view["self"]["hp"] = 0
-                                    latest_view["self"]["isAlive"] = False
-                                write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+                                if coordinator.bots_state[bot_name]["alive"]:
+                                    coordinator.bots_state[bot_name]["alive"] = False
+                                    await coordinator.draw_table()
+                                    latest_view = coordinator.bots_state[bot_name].get("view", {})
+                                    if isinstance(latest_view, dict):
+                                        if "self" not in latest_view:
+                                            latest_view["self"] = {}
+                                        latest_view["self"]["hp"] = 0
+                                        latest_view["self"]["isAlive"] = False
+                                    write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
                                 break
                             continue
 
                         if frame is None:
+                            profile_res = await api_client.get_my_profile()
+                            is_still_alive = False
+                            if profile_res.get("success"):
+                                data = profile_res.get("data", {})
+                                current_games = data.get("currentGames", [])
+                                for g in current_games:
+                                    if g.get("gameId") == coordinator.bots_state[bot_name].get("room_id") or g.get("isAlive") is True:
+                                        if g.get("isAlive") is True:
+                                            is_still_alive = True
+                                            break
+                            if not is_still_alive:
+                                if coordinator.bots_state[bot_name]["alive"]:
+                                    coordinator.bots_state[bot_name]["alive"] = False
+                                    await coordinator.draw_table()
+                                    latest_view = coordinator.bots_state[bot_name].get("view", {})
+                                    if isinstance(latest_view, dict):
+                                        if "self" not in latest_view:
+                                            latest_view["self"] = {}
+                                        latest_view["self"]["hp"] = 0
+                                        latest_view["self"]["isAlive"] = False
+                                    write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
                             break
 
                         is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
@@ -186,19 +214,41 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                             is_still_alive = True
                                             break
                             if not is_still_alive:
-                                coordinator.bots_state[bot_name]["alive"] = False
-                                await coordinator.draw_table()
-                                latest_view = coordinator.bots_state[bot_name].get("view", {})
-                                if isinstance(latest_view, dict):
-                                    if "self" not in latest_view:
-                                        latest_view["self"] = {}
-                                    latest_view["self"]["hp"] = 0
-                                    latest_view["self"]["isAlive"] = False
-                                write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+                                if coordinator.bots_state[bot_name]["alive"]:
+                                    coordinator.bots_state[bot_name]["alive"] = False
+                                    await coordinator.draw_table()
+                                    latest_view = coordinator.bots_state[bot_name].get("view", {})
+                                    if isinstance(latest_view, dict):
+                                        if "self" not in latest_view:
+                                            latest_view["self"] = {}
+                                        latest_view["self"]["hp"] = 0
+                                        latest_view["self"]["isAlive"] = False
+                                    write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
                                 break
                             continue
 
                         if frame is None:
+                            profile_res = await api_client.get_my_profile()
+                            is_still_alive = False
+                            if profile_res.get("success"):
+                                data = profile_res.get("data", {})
+                                current_games = data.get("currentGames", [])
+                                for g in current_games:
+                                    if g.get("gameId") == coordinator.bots_state[bot_name].get("room_id") or g.get("isAlive") is True:
+                                        if g.get("isAlive") is True:
+                                            is_still_alive = True
+                                            break
+                            if not is_still_alive:
+                                if coordinator.bots_state[bot_name]["alive"]:
+                                    coordinator.bots_state[bot_name]["alive"] = False
+                                    await coordinator.draw_table()
+                                    latest_view = coordinator.bots_state[bot_name].get("view", {})
+                                    if isinstance(latest_view, dict):
+                                        if "self" not in latest_view:
+                                            latest_view["self"] = {}
+                                        latest_view["self"]["hp"] = 0
+                                        latest_view["self"]["isAlive"] = False
+                                    write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
                             break
                         
                         is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)

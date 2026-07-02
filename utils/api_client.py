@@ -172,32 +172,21 @@ class ClawRoyaleAPI:
                 return
 
             tracks = data.get("tracks", [])
-            opened_tracks = [t for t in tracks if isinstance(t, dict) and t.get("opened") is True]
-            if not opened_tracks:
-                log_no_claimable_weekly_tracks()
-                return
-
-            selected_track = None
-            priority_keywords = ["goliath", "armour", "sword", "katana", "sniper", "weapon", "shield", "defender"]
-            for track in opened_tracks:
-                name = str(track.get("name", "")).lower()
-                if any(kw in name for kw in priority_keywords):
-                    selected_track = track
-                    break
-
-            if not selected_track:
-                selected_track = opened_tracks[0]
-
-            track_index = selected_track.get("track")
-            if track_index is not None:
-                log_weekly_claim_attempt(track_index)
-                claim_res = await self.claim_weekly_reward(track_index)
-                if claim_res.get("success"):
-                    log_weekly_claim_success(track_index)
-                else:
-                    claim_err = claim_res.get("error") or f"status {claim_res.get('status')}"
-                    log_weekly_claim_failed(track_index, claim_err)
-            else:
+            claimed_any = False
+            for track in tracks:
+                if isinstance(track, dict) and track.get("opened") is True:
+                    track_index = track.get("track")
+                    if track_index is not None:
+                        log_weekly_claim_attempt(track_index)
+                        claim_res = await self.claim_weekly_reward(track_index)
+                        if claim_res.get("success"):
+                            log_weekly_claim_success(track_index)
+                            claimed_any = True
+                            break
+                        else:
+                            claim_err = claim_res.get("error") or f"status {claim_res.get('status')}"
+                            log_weekly_claim_failed(track_index, claim_err)
+            if not claimed_any:
                 log_no_claimable_weekly_tracks()
         else:
             log_weekly_tracks_failed(weekly_res.get("error"))

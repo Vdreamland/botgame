@@ -114,6 +114,12 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             await coordinator.draw_table()
  
     if msg_type == "agent_view":
+        current_region = frame.get("view", {}).get("currentRegion", {})
+        curr_id = current_region.get("id") if isinstance(current_region, dict) else None
+        if curr_id:
+            from ai.Strategy.memory import mark_visited
+            mark_visited(curr_id)
+
         self_data = frame.get("view", {}).get("self", {})
         is_agent_alive = True
         can_act = True

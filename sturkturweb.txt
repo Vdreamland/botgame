@@ -123,7 +123,7 @@ ai/strategy/
 navigation_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/navigation_strategy.py
 ruin_exploration_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/ruin_exploration_strategy.py
 decision_maker.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/decision_maker.py
-memory.py
+memory.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/memory.py
 
 ai/strategy/priority/
 ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/equipped_priority.py

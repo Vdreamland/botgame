@@ -1,6 +1,7 @@
-from ai.detector.dead_zone_detector import analyze_death_zones, is_pending_dead_zone
+from ai.detector.dead_zone_detector import analyze_death_zones, is_pending_dead_zone, is_dead_zone
 from ai.detector.zone_detector import detect_terrain, detect_facility
 from ai.detector.enemy_detector import get_visible_enemies_by_layer
+from ai.Strategy.memory import get_visit_count
 from game_data.world_info import TERRAINS
 
 def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
@@ -20,7 +21,7 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
         r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
         score = 0.50
         name = r_data.get("name", str(conn_id))
-        is_dz = bool(r_data.get("isDeathZone", False))
+        is_dz = is_dead_zone(r_data)
         is_pending = is_pending_dead_zone(conn_id, view)
         terrain = detect_terrain(r_data)
         facility = detect_facility(r_data)
@@ -50,6 +51,9 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                 score -= (p_count * 0.10)
             if m_count > 0:
                 score -= (m_count * 0.05)
+        visit_count = get_visit_count(conn_id)
+        if visit_count > 0:
+            score -= (visit_count * 0.15)
         priorities.append({
             "id": conn_id,
             "name": name,

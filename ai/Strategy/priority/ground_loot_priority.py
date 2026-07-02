@@ -78,16 +78,16 @@ def get_ground_loot_priorities(view: dict) -> list:
                 elif hp <= 60:
                     score = 0.75
                 else:
-                    score = 0.40
+                    score = 0.70
             elif name == "Energy Drink" and ep_diff > 0:
                 if ep <= 2:
                     score = 0.85
                 elif ep <= 5:
                     score = 0.65
                 else:
-                    score = 0.30
+                    score = 0.60
             else:
-                score = 0.25
+                score = 0.70
         else:
             score = 0.15
         priorities.append({

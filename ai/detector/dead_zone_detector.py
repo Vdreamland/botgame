@@ -3,7 +3,13 @@ from game_data.world_info import DEATH_ZONE
 def is_dead_zone(region: dict) -> bool:
     if not isinstance(region, dict):
         return False
-    return bool(region.get("isDeathZone", False))
+    return any([
+        region.get("isDeathZone"),
+        region.get("is_death_zone"),
+        region.get("isDeadZone"),
+        region.get("is_dead_zone"),
+        region.get("deadzone")
+    ])
 
 def is_pending_dead_zone(region_id: str, view: dict) -> bool:
     if not isinstance(view, dict):
@@ -11,8 +17,10 @@ def is_pending_dead_zone(region_id: str, view: dict) -> bool:
     pending = view.get("pendingDeathzones", [])
     if isinstance(pending, list):
         for r in pending:
-            if isinstance(r, dict) and r.get("id") == region_id:
-                return True
+            if isinstance(r, dict):
+                r_id = r.get("id") or r.get("regionId") or r.get("region_id")
+                if r_id == region_id:
+                    return True
             elif isinstance(r, str) and r == region_id:
                 return True
     return False

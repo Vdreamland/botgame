@@ -21,6 +21,7 @@ class ClawRoyaleWSClient:
         }
         self.session = None
         self.ws = None
+        self.last_logged_turn = -1
 
     async def connect(self, url: str) -> bool:
         log_ws_connecting(self.bot_name, url)
@@ -40,8 +41,8 @@ class ClawRoyaleWSClient:
                 log_ws_send(self.bot_name, data)
             except Exception as e:
                 log_ws_error(self.bot_name, str(e))
-        else:
-            log_ws_not_open_error(self.bot_name)
+            else:
+                log_ws_not_open_error(self.bot_name)
 
     async def receive(self):
         if not self.ws:
@@ -49,7 +50,15 @@ class ClawRoyaleWSClient:
         try:
             msg = await self.ws.receive_str()
             log_ws_receive(self.bot_name, msg)
-            return json.loads(msg)
+            frame = json.loads(msg)
+            if isinstance(frame, dict):
+                turn = frame.get("turn")
+                msg_type = frame.get("type")
+                if turn is not None and turn != self.last_logged_turn and msg_type in ("agent_view", "turn_advanced"):
+                    from logs.logs_gameplay import write_gameplay_log
+                    write_gameplay_log(self.bot_name, f"# Turn {turn}", frame.get("view", {}))
+                    self.last_logged_turn = turn
+            return frame
         except Exception as e:
             log_ws_error(self.bot_name, str(e))
             return None

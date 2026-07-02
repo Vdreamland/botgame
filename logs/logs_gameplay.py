@@ -20,7 +20,9 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
     
     log_file_path = os.path.join(directory, f"{bot_name}.log")
     
-    if message.startswith("# Turn ") and view_data:
+    if message.startswith("# Turn "):
+        if not view_data:
+            return
         try:
             parts = message.split()
             if len(parts) >= 3:

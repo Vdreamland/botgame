@@ -1,31 +1,31 @@
 from utils.logger import logger
 
-def log_redeem_attempt(code: str):
-    logger.info(f"[*] Attempting to redeem code: {code}")
+def log_redeem_attempt(bot_name: str, code: str):
+    logger.info(f"[*] {bot_name} attempting to redeem code: {code}")
 
-def log_redeem_success(code: str):
-    logger.info(f"[+] Successfully redeemed code: {code}")
+def log_redeem_success(bot_name: str, code: str):
+    logger.info(f"[+] {bot_name} successfully redeemed code: {code}")
 
-def log_redeem_failed(code: str, reason: str):
-    logger.warning(f"Failed to redeem code {code}: {reason}")
+def log_redeem_failed(bot_name: str, code: str, reason: str):
+    logger.warning(f"{bot_name} failed to redeem code {code}: {reason}")
 
-def log_weekly_check():
-    logger.info("[*] Checking weekly reward tracks...")
+def log_weekly_check(bot_name: str):
+    logger.info(f"[*] {bot_name} checking weekly reward tracks...")
 
-def log_weekly_claim_attempt(track_index: int):
-    logger.info(f"[*] Attempting to claim weekly reward track index: {track_index}")
+def log_weekly_claim_attempt(bot_name: str, track_index: int):
+    logger.info(f"[*] {bot_name} attempting to claim weekly reward track index: {track_index}")
 
-def log_weekly_claim_success(track_index: int):
-    logger.info(f"[+] Successfully claimed weekly reward track index: {track_index}")
+def log_weekly_claim_success(bot_name: str, track_index: int):
+    logger.info(f"[+] {bot_name} successfully claimed weekly reward track index: {track_index}")
 
-def log_weekly_claim_failed(track_index: int, reason: str):
-    logger.warning(f"Failed to claim weekly reward track index: {track_index} - {reason}")
+def log_weekly_claim_failed(bot_name: str, track_index: int, reason: str):
+    logger.warning(f"{bot_name} failed to claim weekly reward track index: {track_index} - {reason}")
 
-def log_no_claimable_weekly_tracks():
-    logger.info("[*] No claimable weekly reward tracks found.")
+def log_no_claimable_weekly_tracks(bot_name: str):
+    logger.info(f"[*] {bot_name}: No claimable weekly reward tracks found.")
 
-def log_weekly_tracks_failed(reason: str):
-    logger.warning(f"Failed to retrieve weekly tracks: {reason}")
+def log_weekly_tracks_failed(bot_name: str, reason: str):
+    logger.warning(f"{bot_name} failed to retrieve weekly tracks: {reason}")
 
-def log_weekly_already_claimed():
-    logger.info("[*] Weekly rewards for this week have already been claimed.")
+def log_weekly_already_claimed(bot_name: str):
+    logger.info(f"[*] {bot_name}: Weekly rewards for this week have already been claimed.")

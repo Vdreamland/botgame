@@ -16,7 +16,7 @@ from logs.logs_network import (
 )
 from logs.logs_agent import (
     log_orchestrator_start,
-    log_bot_detected,
+    log_bots_list,
     log_orchestrator_target,
     log_bot_lobby_wait,
     log_bot_lobby_ready,
@@ -74,11 +74,11 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     api_key = bot_info["api_key"]
 
     api_client = ClawRoyaleAPI(api_key=api_key)
-    ws_client = ClawRoyaleWSClient(api_key=api_key)
+    ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
 
     while True:
-        await auto_claim_rewards(api_client)
+        await auto_claim_rewards(api_client, bot_name)
 
         await coordinator.enter_lobby(bot_name)
         log_bot_lobby_wait(bot_name)
@@ -114,12 +114,12 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
 
                             msg_type = frame.get("type")
                             if msg_type == "queued":
-                                log_matchmaking_queued()
+                                log_matchmaking_queued(bot_name)
                             elif msg_type == "assigned":
-                                log_match_assigned()
+                                log_match_assigned(bot_name)
                             elif msg_type == "error":
                                 error_msg = frame.get("message") or "Unknown error"
-                                log_matchmaking_failed(error_msg)
+                                log_matchmaking_failed(bot_name, error_msg)
                                 break
                     elif decision == "ALREADY_IN_GAME":
                         logger.info(f"[{bot_name}] Reconnected successfully to active game session.")
@@ -128,7 +128,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             if frame is None:
                                 break
                     else:
-                        log_matchmaking_failed(f"Server decision: {decision}")
+                        log_matchmaking_failed(bot_name, f"Server decision: {decision}")
             except Exception as e:
                 logger.error(f"[{bot_name}] Error in game session: {str(e)}")
             finally:
@@ -141,7 +141,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                     log_bot_waiting_cohort(bot_name, active_count)
                     await coordinator.wait_for_cohort(120.0)
         else:
-            log_connection_failed()
+            log_connection_failed(bot_name)
             await asyncio.sleep(5.0)
 
 async def main():
@@ -153,8 +153,8 @@ async def main():
         return
 
     log_orchestrator_start(len(bots))
-    for bot in bots:
-        log_bot_detected(bot["name"])
+    bot_names = [bot["name"] for bot in bots]
+    log_bots_list(bot_names)
     log_orchestrator_target(room_preference)
 
     coordinator = LobbyCoordinator(len(bots))

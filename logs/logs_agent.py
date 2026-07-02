@@ -4,8 +4,9 @@ def log_orchestrator_start(num_bots: int):
     logger.info("[*] Detecting configured bots...")
     logger.info(f"[+] {num_bots} bots detected in configuration:")
 
-def log_bot_detected(name: str):
-    logger.info(f"    - {name}")
+def log_bots_list(names: list):
+    names_str = " | ".join(names)
+    logger.info(f"    - {names_str}")
 
 def log_orchestrator_target(room_preference: str):
     logger.info(f"[*] Target room preference: {room_preference}")

@@ -39,7 +39,8 @@ async def _check_agent_liveness_and_cleanup(
                 latest_view["self"] = {}
             latest_view["self"]["hp"] = 0
             latest_view["self"]["isAlive"] = False
-        write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+        death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
+        write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
         write_gameplay_log(bot_name, exit_msg)
         return True
     return False
@@ -99,7 +100,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 latest_view["self"] = {}
             latest_view["self"]["hp"] = 0
             latest_view["self"]["isAlive"] = False
-        write_gameplay_log(bot_name, f"# Turn {ws_client.last_logged_turn}", latest_view)
+        death_turn = ws_client.last_logged_turn + 1 if ws_client.last_logged_turn >= 0 else 1
+        write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
         write_gameplay_log(bot_name, "[SYSTEM] Match has ended (game_ended received). Exiting game loop...")
         return False
 
@@ -137,9 +139,20 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                 await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
                 is_first_run = False
 
-            await coordinator.enter_lobby(bot_name)
-            await coordinator.wait_for_lobby(bot_name)
-            await coordinator.leave_lobby(bot_name)
+            profile_res = await api_client.get_my_profile()
+            in_active_game = False
+            if profile_res.get("success"):
+                data = profile_res.get("data", {})
+                current_games = data.get("currentGames", [])
+                for g in current_games:
+                    if g.get("isAlive") is True:
+                        in_active_game = True
+                        break
+
+            if not in_active_game:
+                await coordinator.enter_lobby(bot_name)
+                await coordinator.wait_for_lobby(bot_name)
+                await coordinator.leave_lobby(bot_name)
 
             success = await ws_client.connect(ws_url)
             if success:
@@ -163,14 +176,13 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
                                 except asyncio.TimeoutError:
                                     exit_msg = f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop..."
-                                    if await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg):
-                                        break
-                                    continue
+                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
+                                    break
 
                                 if frame is None:
                                     exit_msg = "[SYSTEM] Connection closed by server. Exiting game loop..."
-                                    if await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg):
-                                        break
+                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
+                                    break
 
                                 is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
                                 if not is_alive:
@@ -213,14 +225,13 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
                                 except asyncio.TimeoutError:
                                     exit_msg = f"[SYSTEM] Connection timed out and REST API checks confirm Agent {bot_name} is dead. Exiting game loop..."
-                                    if await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg):
-                                        break
-                                    continue
+                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
+                                    break
 
                                 if frame is None:
                                     exit_msg = "[SYSTEM] Connection closed by server. Exiting game loop..."
-                                    if await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg):
-                                        break
+                                    await _check_agent_liveness_and_cleanup(bot_name, api_client, coordinator, ws_client, exit_msg)
+                                    break
                                 
                                 is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
                                 if not is_alive:
@@ -244,10 +255,11 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                 await ws_client.close()
             await coordinator.leave_game(bot_name)
 
-        active_count = await coordinator.get_active_count()
-        if active_count > 0:
-            await coordinator.wait_for_cohort(120.0)
-        else:
+        active_count = await coordinator.get_active_count(bot_name)
+        is_bot_alive = coordinator.bots_state[bot_name].get("alive", True)
+        if active_count > 0 and not is_bot_alive:
+            await coordinator.wait_for_cohort(bot_name, 120.0)
+        elif not is_bot_alive:
             coordinator.bots_state[bot_name]["status"] = "Retrying"
             await coordinator.draw_table()
             await asyncio.sleep(5.0)

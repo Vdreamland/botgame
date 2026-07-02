@@ -33,6 +33,7 @@ class LobbyCoordinator:
             self.lobby.add(bot_name)
             self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
+            self.bots_state[bot_name]["room_id"] = ""
         await self.draw_table()
 
     async def wait_for_lobby(self, bot_name: str, timeout: float = 10.0) -> bool:
@@ -60,6 +61,7 @@ class LobbyCoordinator:
                 self.in_game -= 1
             self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
+            self.bots_state[bot_name]["room_id"] = ""
         await self.draw_table()
 
     async def get_active_count(self) -> int:
@@ -122,11 +124,13 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     room_display = str(game_id)
                                 if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
                                     coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                                    coordinator.bots_state[bot_name]["room_id"] = str(game_id)
                                     await coordinator.draw_table()
 
                         msg_type = frame.get("type") if isinstance(frame, dict) else None
                         if msg_type == "queued":
                             coordinator.bots_state[bot_name]["room"] = "Queue"
+                            coordinator.bots_state[bot_name]["room_id"] = ""
                             coordinator.bots_state[bot_name]["status"] = "Queued"
                             await coordinator.draw_table()
                         elif msg_type in ("assigned", "joined"):
@@ -137,6 +141,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             except ValueError:
                                 room_display = str(game_id)
                             coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                            coordinator.bots_state[bot_name]["room_id"] = str(game_id)
                             coordinator.bots_state[bot_name]["status"] = "In Progress"
                             await coordinator.draw_table()
                             print(f"[+] All Setup ready to play for {bot_name} ...")
@@ -147,6 +152,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
 
                 elif decision == "ALREADY_IN_GAME":
                     coordinator.bots_state[bot_name]["room"] = "Room"
+                    coordinator.bots_state[bot_name]["room_id"] = ""
                     coordinator.bots_state[bot_name]["status"] = "In Progress"
                     await coordinator.draw_table()
                     print(f"[+] All Setup ready to play for {bot_name} ...")
@@ -164,6 +170,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                                     room_display = str(game_id)
                                 if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
                                     coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                                    coordinator.bots_state[bot_name]["room_id"] = str(game_id)
                                     await coordinator.draw_table()
                 else:
                     coordinator.bots_state[bot_name]["status"] = "Disconnect"
@@ -198,6 +205,7 @@ async def main():
             "smoltz": "Waiting",
             "target": room_preference.capitalize(),
             "room": "Waiting",
+            "room_id": "",
             "status": "Waiting",
         }
 

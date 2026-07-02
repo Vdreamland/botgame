@@ -3,36 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Claw Royale Agent Dashboard</title>
+    <title>Claw Royale - Bot Monitor</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
-    <div class="dashboard-container">
-      <header class="dashboard-header">
+    <div class="container">
+      <header>
         <h1>Claw Royale Agent Dashboard</h1>
-        <div class="server-status">
-          <span class="status-dot online"></span>
-          <span>System Online</span>
+        <div class="system-status">
+          <span class="status-indicator"></span>
+          System Online
         </div>
       </header>
 
-      <section class="meta-section">
-        <div class="meta-card">
-          <h3>Version</h3>
-          <p>Ver 1.12.0</p>
+      <!-- Summary Cards -->
+      <section class="summary-cards">
+        <div class="card">
+          <h3>VERSION</h3>
+          <p id="system-version">Ver 1.12.0</p>
         </div>
-        <div class="meta-card">
-          <h3>Connection</h3>
-          <p class="success-text">Successful</p>
+        <div class="card">
+          <h3>CONNECTION</h3>
+          <p id="connection-status" class="status-success">Successful</p>
         </div>
-        <div class="meta-card">
-          <h3>Active Bots</h3>
-          <p id="active-bots-count">-</p>
+        <div class="card">
+          <h3>ACTIVE BOTS</h3>
+          <p id="active-bots">0</p>
         </div>
       </section>
 
+      <!-- Bot List Table -->
       <section class="table-section">
-        <table class="status-table">
+        <table>
           <thead>
             <tr>
               <th>Agent</th>
@@ -44,14 +46,14 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody id="bots-table-body"></tbody>
+          <tbody id="bot-tbody">
+            <!-- Bot status rows will be inserted here -->
+          </tbody>
         </table>
       </section>
-
-      <footer class="dashboard-footer">
-        <p>All Setup ready to play ...</p>
-      </footer>
     </div>
+
+    <div id="toast" class="toast">Copied to clipboard!</div>
     <script src="/static/script.js"></script>
   </body>
 </html>

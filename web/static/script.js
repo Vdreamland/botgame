@@ -1,51 +1,80 @@
-async function update_dashboard() {
+// Elements
+const systemVersion = document.getElementById("system-version");
+const connectionStatus = document.getElementById("connection-status");
+const activeBots = document.getElementById("active-bots");
+const botTbody = document.getElementById("bot-tbody");
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.innerText = message;
+  toast.className = "toast show";
+  setTimeout(() => {
+    toast.className = toast.className.replace("show", "");
+  }, 2000);
+}
+
+function copyToClipboard(text) {
+  if (!text || text === "Waiting" || text === "Room" || text === "Queue")
+    return;
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      showToast(`Room ID ${text} copied to clipboard!`);
+    })
+    .catch((err) => {
+      console.error("Failed to copy: ", err);
+    });
+}
+window.copyToClipboard = copyToClipboard;
+
+// Fetch and update bot status
+async function updateStatus() {
   try {
     const response = await fetch("/api/status");
-    if (response.ok) {
-      const data = await response.json();
-      const tableBody = document.getElementById("bots-table-body");
-      const activeCountEl = document.getElementById("active-bots-count");
+    const data = await response.json();
 
-      let html = "";
-      let botCount = 0;
+    // Update values
+    systemVersion.textContent = "Ver 1.12.0";
+    connectionStatus.textContent = "Successful";
+    activeBots.textContent = Object.keys(data).length;
 
-      for (const [name, state] of Object.entries(data)) {
-        botCount++;
-        const redeemClass = getBadgeClass(state.redeem);
-        const weeklyClass = getBadgeClass(state.weekly);
-        const statusClass = getBadgeClass(state.status);
+    botTbody.innerHTML = "";
 
-        html += `
-                    <tr>
-                        <td style="font-weight: 600; color: #f8fafc;">${name}</td>
-                        <td><span class="badge ${redeemClass}">${state.redeem || "-"}</span></td>
-                        <td><span class="badge ${weeklyClass}">${state.weekly || "-"}</span></td>
-                        <td style="font-weight: 600; color: #f59e0b;">${state.smoltz || "0"}</td>
-                        <td>${state.target || "-"}</td>
-                        <td style="color: #60a5fa; font-weight: 600;">${state.room || "-"}</td>
-                        <td><span class="badge ${statusClass}">${state.status || "-"}</span></td>
-                    </tr>
-                `;
-      }
+    for (const [name, state] of Object.entries(data)) {
+      const tr = document.createElement("tr");
 
-      tableBody.innerHTML = html;
-      activeCountEl.textContent = botCount;
+      // Map status states to styling classes
+      const redeemStatus = state.redeem
+        ? state.redeem.toLowerCase()
+        : "waiting";
+      const weeklyStatus = state.weekly
+        ? state.weekly.toLowerCase().replace(" ", "-")
+        : "waiting";
+      const botStatus = state.status
+        ? state.status.toLowerCase().replace(" ", "-")
+        : "waiting";
+      const rawRoom = state.room_id || state.room;
+
+      tr.innerHTML = `
+                <td class="agent-name">${name}</td>
+                <td><span class="badge badge-${redeemStatus}">${state.redeem}</span></td>
+                <td><span class="badge badge-${weeklyStatus}">${state.weekly}</span></td>
+                <td class="smoltz-value">${state.smoltz}</td>
+                <td>${state.target}</td>
+                <td class="room-value">
+                    <span class="room-clickable" onclick="copyToClipboard('${rawRoom}')" title="Click to copy Room ID">
+                        ${state.room}
+                    </span>
+                </td>
+                <td><span class="badge status-${botStatus}">${state.status}</span></td>
+            `;
+      botTbody.appendChild(tr);
     }
-  } catch (e) {}
+  } catch (error) {
+    console.error("Failed to update status:", error);
+  }
 }
 
-function getBadgeClass(status) {
-  if (!status) return "";
-  const s = status.toLowerCase();
-  if (s === "already") return "already";
-  if (s === "success" || s === "claimed") return "success";
-  if (s === "failed" || s === "disconnect") return "failed";
-  if (s === "lobby" || s === "waiting") return "lobby";
-  if (s === "queued") return "queued";
-  if (s === "in progress" || s === "in game") return "in-progress";
-  if (s === "retrying") return "retrying";
-  return "";
-}
-
-setInterval(update_dashboard, 2000);
-update_dashboard();
+// Update status immediately and then every 2 seconds
+updateStatus();
+setInterval(updateStatus, 2000);

@@ -53,14 +53,6 @@
 ├── config/                           # Folder tempat menyimpan konfigurasi muatan bot
 │   ├── __init__.py                   # Penanda paket Python untuk folder config
 │   └── agent_config.py               # Memuat seluruh konfigurasi bot dari .env dan menangani logika asinkronus auto_claim_rewards
-├── web/                             # Folder baru khusus untuk dashboard visualisasi
-│   ├── __init__.py                  # Penanda paket Python kosong
-│   ├── server.py                    # Server web asinkronus untuk menyajikan API data dan file statis
-│   ├── static/                      # Sub-folder khusus untuk aset statis
-│   │   ├── style.css                # Gaya tampilan CSS (warna gelap/merah menyelaraskan dengan web asli)
-│   │   └── script.js                # Logika JavaScript untuk mengambil data secara live dan memperbarui tabel
-│   └── templates/                   # Sub-folder khusus untuk dokumen HTML
-│       └── index.html               # Struktur utama halaman web dashboard
 ├── game/                           
 │   ├── __init__.py                   
 │   ├── lobby_coordinator.py              
@@ -87,17 +79,6 @@ agent_info.py : https://github.com/Vdreamland/botgame/blob/master/ai/agent_info.
 ai/skill/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/__init__.py
 vision.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/vision.py
-
-web/
-__init__.py : https://github.com/Vdreamland/botgame/blob/master/web/__init__.py
-server.py : https://github.com/Vdreamland/botgame/blob/master/web/server.py
-
-web/static
-style.css : https://github.com/Vdreamland/botgame/blob/master/web/static/style.css
-script.js : https://github.com/Vdreamland/botgame/blob/master/web/static/script.js
-
-web/templates
-index.html : https://github.com/Vdreamland/botgame/blob/master/web/templates/index.html
 
 config/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/config/__init__.py

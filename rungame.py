@@ -51,9 +51,6 @@ async def main():
 
     tasks = [run_bot_lifecycle(bot, coordinator, room_preference) for bot in bots]
 
-    from web.server import start_web_server
-    tasks.append(start_web_server(bots_state))
-
     await asyncio.gather(*tasks)
 
 if __name__ == "__main__":

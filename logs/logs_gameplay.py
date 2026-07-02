@@ -31,5 +31,10 @@ def write_gameplay_log(bot_name: str, message: str, view_data: dict = None):
         except Exception:
             pass
     
-    with open(log_file_path, "a", encoding="utf-8") as f:
-        f.write(message + "\n")
+    print(message)
+    
+    try:
+        with open(log_file_path, "a", encoding="utf-8") as f:
+            f.write(message + "\n")
+    except Exception:
+        pass

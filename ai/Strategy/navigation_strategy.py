@@ -19,6 +19,8 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     death_analysis = analyze_death_zones(view)
     layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
     visible_ruins = get_visible_ruins_status(view)
+    l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
+    p0_count = l0_counts.get("P", 0)
     for conn_id in connections:
         r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
         score = 0.50
@@ -71,6 +73,12 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                         break
             if is_next_to_dz:
                 score -= 0.40
+            if p0_count > 0:
+                self_data = view.get("self", {})
+                eq_weapon = self_data.get("equippedWeapon")
+                has_weapon = isinstance(eq_weapon, dict) and eq_weapon.get("name") != "None"
+                if not has_weapon or self_data.get("hp", 100) <= 50:
+                    score += 0.25
         visit_count = get_visit_count(conn_id)
         if visit_count > 0:
             score -= (visit_count * 0.15)

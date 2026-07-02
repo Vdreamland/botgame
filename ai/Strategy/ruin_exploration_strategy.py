@@ -1,4 +1,5 @@
 from ai.detector.ruin_detector import get_visible_ruins_status, evaluate_explore_safety
+from ai.detector.enemy_detector import get_visible_enemies_by_layer
 
 def get_exploration_priorities(view: dict) -> list:
     priorities = []
@@ -18,6 +19,9 @@ def get_exploration_priorities(view: dict) -> list:
     is_occupied = False
     if ruin_occupant and ruin_occupant != my_agent_id:
         is_occupied = True
+    self_bot_name = self_data.get("name") if isinstance(self_data, dict) else None
+    layer_summary = get_visible_enemies_by_layer(view, self_bot_name) if self_bot_name else {}
+    p0_count = layer_summary.get(0, {}).get("P", 0) if isinstance(layer_summary, dict) else 0
     for r in ruins:
         ruin_id = r.get("ruin_id")
         if ruin_id != curr_id:
@@ -32,6 +36,8 @@ def get_exploration_priorities(view: dict) -> list:
             progress = float(gauge) / float(max_gauge) if max_gauge > 0 else 0.0
             score += (progress * 0.15)
             score += 0.05
+            if p0_count > 0:
+                score -= 0.60
         else:
             if alert_gauge >= 8:
                 score = 0.05

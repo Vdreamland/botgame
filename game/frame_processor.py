@@ -152,6 +152,23 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             act_report = action_payload.get("strategy_report", "None")
             logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
             logger.info(f"[~] {bot_name} strategic plan: {act_report}")
+            
+            if act_type == "attack":
+                from ai.detector.enemy_detector import get_detailed_enemy_stats
+                detailed = get_detailed_enemy_stats(frame.get("view", {}), bot_name)
+                target_stats = None
+                for p in detailed.get("players", []):
+                    if p.get("name") == act_name:
+                        target_stats = f"HP: {p['hp']} | ATK: {p['atk']} | DEF: {p['def']} | Weapon: {p['weapon']}"
+                        break
+                if not target_stats:
+                    for m in detailed.get("monsters", []):
+                        if m.get("type") == act_name:
+                            target_stats = f"HP: {m['hp']} | ATK: {m['atk']} | DEF: {m['def']} | Guardian: {m['is_guardian']}"
+                            break
+                if target_stats:
+                    logger.info(f"[!] Target Stats -> {act_name} ({target_stats})")
+
             if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
                 ws_client.last_acted_turn = turn_num
             clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
@@ -185,6 +202,23 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 act_report = action_payload.get("strategy_report", "None")
                 logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
                 logger.info(f"[~] {bot_name} strategic plan: {act_report}")
+                
+                if act_type == "attack":
+                    from ai.detector.enemy_detector import get_detailed_enemy_stats
+                    detailed = get_detailed_enemy_stats(stored_view, bot_name)
+                    target_stats = None
+                    for p in detailed.get("players", []):
+                        if p.get("name") == act_name:
+                            target_stats = f"HP: {p['hp']} | ATK: {p['atk']} | DEF: {p['def']} | Weapon: {p['weapon']}"
+                            break
+                    if not target_stats:
+                        for m in detailed.get("monsters", []):
+                            if m.get("type") == act_name:
+                                target_stats = f"HP: {m['hp']} | ATK: {m['atk']} | DEF: {m['def']} | Guardian: {m['is_guardian']}"
+                                break
+                    if target_stats:
+                        logger.info(f"[!] Target Stats -> {act_name} ({target_stats})")
+
                 if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
                     ws_client.last_acted_turn = turn_num
                 clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}

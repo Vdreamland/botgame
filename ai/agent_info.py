@@ -1,4 +1,7 @@
 from ai.skill.vision import get_layered_zones
+from ai.detector.zone_detector import detect_terrain, detect_weather
+from ai.detector.dead_zone_detector import analyze_death_zones
+from game_data.world_info import TERRAINS
 
 def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     if not isinstance(view_data, dict):
@@ -35,9 +38,40 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
             
     inv_display = ", ".join([f"{name} [{count}]" for name, count in inv_counts.items()]) if inv_counts else "None"
     
+    current_region = view_data.get("currentRegion", {})
+    location_name = current_region.get("name", "Unknown")
+    
+    raw_terrain = detect_terrain(current_region)
+    terrain_name = str(raw_terrain).capitalize()
+    
+    weather_name = str(detect_weather(view_data)).capitalize()
+    
+    terrain_key = str(raw_terrain).lower()
+    vision_mod = TERRAINS.get(terrain_key, {}).get("vision_modifier", 0)
+    
+    links_count = len(current_region.get("connections", []))
+    
+    dead_zone_names = []
+    if current_region.get("isDeathZone"):
+        if location_name and location_name != "Unknown":
+            dead_zone_names.append(location_name)
+            
+    regions = view_data.get("regions", {})
+    for r_id, r_data in regions.items():
+        if r_id == current_region.get("id"):
+            continue
+        if r_data.get("isDeathZone"):
+            name = r_data.get("name")
+            if name:
+                dead_zone_names.append(name)
+                
+    dead_zone_display = ", ".join(dead_zone_names) if dead_zone_names else "None"
+    
     return (
         f"# Turn {turn} [{bot_name}]\n"
         f"HP: {hp} | EP: {ep} | Atk: {atk} | Def: {defense} | Kills: {kills} | Vision : {vision_zones} Zone\n"
         f"Equipped : Weapon : {weapon_name} | Armour : {armour_name}\n"
-        f"Inventory {inv_slots_used}/10 : {inv_display}"
+        f"Inventory {inv_slots_used}/10 : {inv_display}\n"
+        f"Location : {location_name} | Terrain: {terrain_name} | Weather : {weather_name} | Vision {vision_mod} | Links {links_count}\n"
+        f"DeadZone : {dead_zone_display}"
     )

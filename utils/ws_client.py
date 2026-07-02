@@ -7,7 +7,8 @@ from logs.logs_network import (
     log_ws_error,
     log_ws_send,
     log_ws_receive,
-    log_ws_closed
+    log_ws_closed,
+    log_ws_not_open_error
 )
 
 logger = logging.getLogger("WSClient")
@@ -41,7 +42,7 @@ class ClawRoyaleWSClient:
             except Exception as e:
                 log_ws_error(str(e))
         else:
-            log_ws_error("WebSocket connection is not open or has been disconnected.")
+            log_ws_not_open_error()
 
     async def receive(self):
         if not self.ws:

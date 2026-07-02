@@ -40,3 +40,6 @@ def log_match_assigned():
 
 def log_matchmaking_failed(reason: str):
     logger.error(f"Matchmaking failed: {reason}")
+
+def log_ws_not_open_error():
+    logger.error("WebSocket error: WebSocket connection is not open or has been disconnected.")

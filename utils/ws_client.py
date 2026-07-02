@@ -18,13 +18,14 @@ class ClawRoyaleWSClient:
             "X-API-Key": self.api_key,
             "X-Version": self.api_version
         }
+        self.session = None
         self.ws = None
 
     async def connect(self, url: str) -> bool:
         log_ws_connecting(url)
         try:
-            session = aiohttp.ClientSession(headers=self.headers)
-            self.ws = await session.ws_connect(url)
+            self.session = aiohttp.ClientSession(headers=self.headers)
+            self.ws = await self.session.ws_connect(url)
             log_ws_connected()
             return True
         except Exception as e:
@@ -56,3 +57,5 @@ class ClawRoyaleWSClient:
         if self.ws:
             await self.ws.close()
             log_ws_closed()
+        if self.session:
+            await self.session.close()

@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
+from utils.logger import logger
 from logs.logs_network import (
     log_matchmaking_queued,
     log_match_assigned,
@@ -56,6 +57,8 @@ async def test_connection():
                         error_msg = frame.get("message") or "Unknown error"
                         log_matchmaking_failed(error_msg)
                         break
+            elif decision == "ALREADY_IN_GAME":
+                logger.info("[+] Reconnected successfully. Sockets routed to active game session.")
             else:
                 log_matchmaking_failed(f"Server decision: {decision}")
                 

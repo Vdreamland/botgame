@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import uuid
 from logs.quest_reward_log import (
     log_redeem_attempt,
     log_redeem_success,
@@ -33,7 +34,11 @@ class ClawRoyaleAPI:
 
     async def _request(self, method: str, path: str, json_data: dict = None, retries: int = 3) -> dict:
         url = self._build_url(path)
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        headers = self.headers.copy()
+        if method.upper() in ("POST", "PUT", "DELETE"):
+            headers["Idempotency-Key"] = str(uuid.uuid4())
+
+        async with aiohttp.ClientSession(headers=headers) as session:
             for attempt in range(retries):
                 try:
                     async with session.request(method, url, json=json_data) as response:

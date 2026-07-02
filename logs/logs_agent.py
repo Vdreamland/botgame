@@ -9,5 +9,4 @@ def draw_status_table(bots_state: dict, num_bots: int):
         print("> Reference Skill.md Ver1.12.0")
         print("> Connection Game Successful")
         print(f"> {num_bots} bots detected in configuration\n")
-        print("All Setup ready to play ...")
         _has_logged_startup = True

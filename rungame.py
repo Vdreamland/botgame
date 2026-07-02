@@ -139,6 +139,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             coordinator.bots_state[bot_name]["room"] = room_display[:10]
                             coordinator.bots_state[bot_name]["status"] = "In Progress"
                             await coordinator.draw_table()
+                            print(f"[+] All Setup ready to play for {bot_name} ...")
                         elif msg_type == "error":
                             coordinator.bots_state[bot_name]["status"] = "Disconnect"
                             await coordinator.draw_table()
@@ -148,6 +149,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                     coordinator.bots_state[bot_name]["room"] = "Room"
                     coordinator.bots_state[bot_name]["status"] = "In Progress"
                     await coordinator.draw_table()
+                    print(f"[+] All Setup ready to play for {bot_name} ...")
                     while True:
                         frame = await ws_client.receive()
                         if frame is None:

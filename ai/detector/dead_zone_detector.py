@@ -5,11 +5,10 @@ def is_dead_zone(region: dict) -> bool:
     if not isinstance(region, dict):
         return False
     active_dz = any([
-        region.get("isDeathZone"),
-        region.get("is_death_zone"),
-        region.get("isDeadZone"),
-        region.get("is_dead_zone"),
-        region.get("deadzone")
+        bool(region.get("isDeathZone")),
+        bool(region.get("is_death_zone")),
+        bool(region.get("isDeadZone")),
+        bool(region.get("is_dead_zone"))
     ])
     if active_dz:
         r_id = region.get("id") or region.get("regionId") or region.get("region_id")
@@ -26,7 +25,10 @@ def is_pending_dead_zone(region_id: str, view: dict) -> bool:
         for r in pending:
             if isinstance(r, dict):
                 r_id = r.get("id") or r.get("regionId") or r.get("region_id")
+                r_name = r.get("name")
                 if r_id == region_id:
+                    if r_id and r_name:
+                        mark_dead_zone(r_id, r_name)
                     return True
             elif isinstance(r, str) and r == region_id:
                 return True

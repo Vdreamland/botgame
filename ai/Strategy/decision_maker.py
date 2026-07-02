@@ -24,7 +24,7 @@ def find_target_id(view: dict, target_name: str, target_type: str, region_id: st
 
 def make_decision(view: dict, self_bot_name: str) -> dict:
     if not isinstance(view, dict):
-        return {"type": "rest"}
+        return {"type": "rest", "name": "None", "score": 0.0}
     recovery_priorities = get_recovery_priorities(view)
     equipment_priorities = get_equipment_priorities(view)
     ground_loot_priorities = get_ground_loot_priorities(view)
@@ -48,35 +48,45 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     choices.sort(key=lambda x: x[1], reverse=True)
     winner_category, winner_score = choices[0]
     if winner_score < 0.15:
-        return {"type": "rest"}
+        return {"type": "rest", "name": "None", "score": winner_score}
     if winner_category == "recovery":
         return {
             "type": "use_item",
-            "itemId": best_recovery["id"]
+            "itemId": best_recovery["id"],
+            "name": best_recovery["name"],
+            "score": winner_score
         }
     elif winner_category == "equip":
         return {
             "type": "equip",
-            "itemId": best_equip["id"]
+            "itemId": best_equip["id"],
+            "name": best_equip["name"],
+            "score": winner_score
         }
     elif winner_category == "loot":
         return {
             "type": "pickup",
-            "itemId": best_loot["id"]
+            "itemId": best_loot["id"],
+            "name": best_loot["name"],
+            "score": winner_score
         }
     elif winner_category == "target":
         t_id = find_target_id(view, best_target["name"], best_target["type"], best_target["region_id"])
         if t_id:
             return {
                 "type": "attack",
-                "targetId": t_id
+                "targetId": t_id,
+                "name": best_target["name"],
+                "score": winner_score
             }
         else:
-            return {"type": "rest"}
+            return {"type": "rest", "name": "None", "score": winner_score}
     elif winner_category == "navigation":
         return {
             "type": "move",
-            "regionId": best_nav["id"]
+            "regionId": best_nav["id"],
+            "name": best_nav["name"],
+            "score": winner_score
         }
     elif winner_category == "explore":
         current_region = view.get("currentRegion", {})
@@ -87,16 +97,28 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             for r in ruins:
                 if isinstance(r, dict) and r.get("ruinId") == target_ruin_id:
                     if r.get("gauge", 0) < r.get("maxGauge", 3):
-                        return {"type": "explore"}
+                        return {
+                            "type": "explore",
+                            "name": "Ruin Exploration",
+                            "score": winner_score
+                        }
                     else:
                         return {
                             "type": "interact",
-                            "target": "ruin"
+                            "target": "ruin",
+                            "name": "Ruin Vault",
+                            "score": winner_score
                         }
-            return {"type": "explore"}
+            return {
+                "type": "explore",
+                "name": "Ruin Exploration",
+                "score": winner_score
+            }
         else:
             return {
                 "type": "move",
-                "regionId": target_ruin_id
+                "regionId": target_ruin_id,
+                "name": f"Move to Ruin {target_ruin_id}",
+                "score": winner_score
             }
-    return {"type": "rest"}
+    return {"type": "rest", "name": "None", "score": winner_score}

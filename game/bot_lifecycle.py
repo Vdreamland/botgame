@@ -127,11 +127,13 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         if is_agent_alive:
             action_payload = make_decision(frame.get("view", {}), bot_name)
             act_type = action_payload.get("type", "unknown")
-            act_target = action_payload.get("itemId") or action_payload.get("targetId") or action_payload.get("regionId") or action_payload.get("target") or "None"
-            logger.info(f"[»] {bot_name} executes action: {act_type} (Target/ID: {act_target})")
+            act_name = action_payload.get("name", "None")
+            act_score = action_payload.get("score", 0.0)
+            logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
+            clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score")}
             wrapped_payload = {
                 "type": "action",
-                "data": action_payload
+                "data": clean_payload
             }
             await ws_client.send(wrapped_payload)
 

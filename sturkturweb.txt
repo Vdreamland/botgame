@@ -61,6 +61,10 @@
 │   │   └── script.js                # Logika JavaScript untuk mengambil data secara live dan memperbarui tabel
 │   └── templates/                   # Sub-folder khusus untuk dokumen HTML
 │       └── index.html               # Struktur utama halaman web dashboard
+├── game/                           
+│   ├── __init__.py                   
+│   ├── bot_lifecycle.py               
+│   └── LobbyCoordinator               
 
 
 

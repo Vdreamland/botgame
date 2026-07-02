@@ -5,7 +5,8 @@ def get_recovery_priorities(view: dict) -> list:
     priorities = []
     if not isinstance(view, dict):
         return priorities
-    inventory = view.get("inventory", [])
+    self_data = view.get("self", {})
+    inventory = self_data.get("inventory", []) if isinstance(self_data, dict) else []
     if not isinstance(inventory, list) or not inventory:
         return priorities
     vital = get_self_vital_status(view)

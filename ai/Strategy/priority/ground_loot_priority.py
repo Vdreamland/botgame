@@ -20,17 +20,22 @@ def get_ground_loot_priorities(view: dict) -> list:
     max_hp = vital.get("max_hp", 100)
     ep = vital.get("ep", 10)
     max_ep = vital.get("max_ep", 10)
-    eq_weapon = view.get("equippedWeapon")
-    curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
-    curr_weapon_bonus = WEAPONS.get(curr_weapon_name, {}).get("atk_bonus", 0)
-    eq_armour = view.get("equippedArmor")
-    curr_armour_name = eq_armour.get("name", "None") if isinstance(eq_armour, dict) else "None"
+    self_data = view.get("self", {})
+    curr_weapon_name = "None"
+    curr_weapon_bonus = 0
+    curr_armour_name = "None"
     curr_armour_bonus = 0
-    if curr_armour_name != "None":
-        for grade, spec in ARMOUR_GRADES.items():
-            if grade.lower() in curr_armour_name.lower():
-                curr_armour_bonus = spec.get("estimated_def_bonus", 0)
-                break
+    if isinstance(self_data, dict):
+        eq_weapon = self_data.get("equippedWeapon")
+        curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
+        curr_weapon_bonus = WEAPONS.get(curr_weapon_name, {}).get("atk_bonus", 0)
+        eq_armour = self_data.get("equippedArmor")
+        curr_armour_name = eq_armour.get("name", "None") if isinstance(eq_armour, dict) else "None"
+        if curr_armour_name != "None":
+            for grade, spec in ARMOUR_GRADES.items():
+                if grade.lower() in curr_armour_name.lower():
+                    curr_armour_bonus = spec.get("estimated_def_bonus", 0)
+                    break
     for item in items:
         if not isinstance(item, dict):
             continue

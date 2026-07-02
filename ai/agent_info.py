@@ -19,17 +19,17 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     vision_info = get_layered_zones(view_data)
     vision_zones = vision_info.get("total_visible_zones", 0)
     
-    eq_weapon = view_data.get("equippedWeapon")
+    eq_weapon = self_data.get("equippedWeapon")
     weapon_name = "None"
     if isinstance(eq_weapon, dict):
         weapon_name = eq_weapon.get("name", "None")
         
-    eq_armour = view_data.get("equippedArmor")
+    eq_armour = self_data.get("equippedArmor")
     armour_name = "None"
     if isinstance(eq_armour, dict):
         armour_name = eq_armour.get("name", "None")
         
-    inventory = view_data.get("inventory", [])
+    inventory = self_data.get("inventory", [])
     inv_slots_used = len(inventory)
     
     inv_counts = {}

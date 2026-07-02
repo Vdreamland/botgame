@@ -17,11 +17,9 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     death_analysis = analyze_death_zones(view)
     layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
     for conn_id in connections:
-        r_data = regions.get(conn_id)
-        if not isinstance(r_data, dict):
-            continue
+        r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
         score = 0.50
-        name = r_data.get("name", "Unknown")
+        name = r_data.get("name", str(conn_id))
         is_dz = bool(r_data.get("isDeathZone", False))
         is_pending = is_pending_dead_zone(conn_id, view)
         terrain = detect_terrain(r_data)

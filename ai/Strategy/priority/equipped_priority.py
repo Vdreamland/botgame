@@ -6,7 +6,8 @@ def get_equipment_priorities(view: dict) -> list:
     priorities = []
     if not isinstance(view, dict):
         return priorities
-    inventory = view.get("inventory", [])
+    self_data = view.get("self", {})
+    inventory = self_data.get("inventory", []) if isinstance(self_data, dict) else []
     if not isinstance(inventory, list) or not inventory:
         return priorities
     better = check_better_equipments_in_inventory(view)

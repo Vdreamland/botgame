@@ -36,7 +36,8 @@ def get_self_vital_status(view: dict) -> dict:
 def check_inventory_full(view: dict) -> bool:
     if not isinstance(view, dict):
         return False
-    inventory = view.get("inventory", [])
+    self_data = view.get("self", {})
+    inventory = self_data.get("inventory", []) if isinstance(self_data, dict) else []
     return len(inventory) >= INVENTORY_LIMIT
 
 def check_better_equipments_in_inventory(view: dict) -> dict:
@@ -48,10 +49,13 @@ def check_better_equipments_in_inventory(view: dict) -> dict:
     }
     if not isinstance(view, dict):
         return result
-    eq_weapon = view.get("equippedWeapon")
+    self_data = view.get("self", {})
+    if not isinstance(self_data, dict):
+        return result
+    eq_weapon = self_data.get("equippedWeapon")
     curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
     curr_weapon_bonus = WEAPONS.get(curr_weapon_name, {}).get("atk_bonus", 0)
-    eq_armour = view.get("equippedArmor")
+    eq_armour = self_data.get("equippedArmor")
     curr_armour_name = eq_armour.get("name", "None") if isinstance(eq_armour, dict) else "None"
     curr_armour_bonus = 0
     if curr_armour_name != "None":
@@ -63,7 +67,7 @@ def check_better_equipments_in_inventory(view: dict) -> dict:
     best_w_bonus = curr_weapon_bonus
     best_a_name = None
     best_a_bonus = curr_armour_bonus
-    inventory = view.get("inventory", [])
+    inventory = self_data.get("inventory", [])
     if isinstance(inventory, list):
         for item in inventory:
             if not isinstance(item, dict):

@@ -12,8 +12,7 @@ class LobbyCoordinator:
         self.lock = asyncio.Lock()
 
     async def draw_table(self):
-        async with self.lock:
-            draw_status_table(self.bots_state, self.total_bots)
+        draw_status_table(self.bots_state, self.total_bots)
 
     async def enter_lobby(self, bot_name: str):
         async with self.lock:

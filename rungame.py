@@ -8,6 +8,7 @@ from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
 from config.agen_config import get_configured_bots, get_room_preference, auto_claim_rewards
 from logs.logs_agent import draw_status_table
+from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
 
 def get_ordinal(n: int) -> str:
     if 11 <= (n % 100) <= 13:
@@ -84,6 +85,9 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
     ws_url = "wss://cdn.clawroyale.ai/ws/join"
 
     while True:
+        clear_gameplay_log(bot_name)
+        last_logged_turn = -1
+
         await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
 
         await coordinator.enter_lobby(bot_name)
@@ -115,6 +119,11 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             break
 
                         if isinstance(frame, dict):
+                            turn = frame.get("turn")
+                            if turn is not None and turn != last_logged_turn:
+                                write_gameplay_log(bot_name, f"# Turn {turn}")
+                                last_logged_turn = turn
+
                             game_id = frame.get("gameId") or frame.get("matchId")
                             if game_id:
                                 try:
@@ -161,6 +170,11 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         if frame is None:
                             break
                         if isinstance(frame, dict):
+                            turn = frame.get("turn")
+                            if turn is not None and turn != last_logged_turn:
+                                write_gameplay_log(bot_name, f"# Turn {turn}")
+                                last_logged_turn = turn
+
                             game_id = frame.get("gameId") or frame.get("matchId")
                             if game_id:
                                 try:

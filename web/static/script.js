@@ -3,6 +3,9 @@ const systemVersion = document.getElementById("system-version");
 const connectionStatus = document.getElementById("connection-status");
 const activeBots = document.getElementById("active-bots");
 const botTbody = document.getElementById("bot-tbody");
+const botSelect = document.getElementById("bot-select");
+const logViewer = document.getElementById("log-viewer");
+const autoScrollCheck = document.getElementById("auto-scroll-check");
 
 function showToast(message) {
   const toast = document.getElementById("toast");
@@ -38,6 +41,25 @@ async function updateStatus() {
     systemVersion.textContent = "Ver 1.12.0";
     connectionStatus.textContent = "Successful";
     activeBots.textContent = Object.keys(data).length;
+
+    const currentSelection = botSelect.value;
+    const botNames = Object.keys(data);
+    const existingOptions = Array.from(botSelect.options)
+      .map((o) => o.value)
+      .filter((v) => v !== "");
+
+    if (JSON.stringify(existingOptions) !== JSON.stringify(botNames)) {
+      botSelect.innerHTML = '<option value="">Select Bot</option>';
+      botNames.forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        botSelect.appendChild(opt);
+      });
+      if (botNames.includes(currentSelection)) {
+        botSelect.value = currentSelection;
+      }
+    }
 
     botTbody.innerHTML = "";
 
@@ -76,6 +98,34 @@ async function updateStatus() {
   }
 }
 
+async function updateLogs() {
+  const selectedBot = botSelect.value;
+  if (!selectedBot) {
+    logViewer.textContent = "Please select a bot to view live logs.";
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/api/logs?bot=${encodeURIComponent(selectedBot)}`,
+    );
+    const logs = await response.text();
+
+    const isAtBottom =
+      logViewer.scrollHeight - logViewer.clientHeight <=
+      logViewer.scrollTop + 50;
+
+    logViewer.textContent = logs || "No logs recorded yet for this session.";
+
+    if (autoScrollCheck.checked && isAtBottom) {
+      logViewer.scrollTop = logViewer.scrollHeight;
+    }
+  } catch (error) {
+    console.error("Failed to update logs:", error);
+  }
+}
+
 // Update status immediately and then every 2 seconds
 updateStatus();
 setInterval(updateStatus, 2000);
+setInterval(updateLogs, 1000);

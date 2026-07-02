@@ -26,10 +26,28 @@
 │   └── quest_reward_log.py           # Untuuk menampilkan log di cmd/powershell
 ├── config/                           # Folder tempat menyimpan file hasil audit bot
 │   ├── __init__.py                   
-│   └── agent_config.py                
+│   └── agent_config.py               
+├── web/                             # Folder baru khusus untuk dashboard visualisasi
+│   ├── __init__.py                  # Penanda paket Python kosong
+│   ├── server.py                    # Server web asinkronus untuk menyajikan API data dan file statis
+│   ├── static/                      # Sub-folder khusus untuk aset statis
+│   │   ├── style.css                # Gaya tampilan CSS (warna gelap/merah menyelaraskan dengan web asli)
+│   │   └── script.js                # Logika JavaScript untuk mengambil data secara live dan memperbarui tabel
+│   └── templates/                   # Sub-folder khusus untuk dokumen HTML
+│       └── index.html               # Struktur utama halaman web dashboard 
 
 
 Link url :
+
+web/
+server.py :
+
+web/static
+style.css :
+script.js :
+
+web/templates
+index.html 
 
 config/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/config/__init__.py

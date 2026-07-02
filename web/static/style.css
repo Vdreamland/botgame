@@ -392,6 +392,22 @@ tr:last-child td {
   accent-color: var(--primary-red);
 }
 
+.copy-btn {
+  background-color: var(--primary-red);
+  color: var(--text-primary);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copy-btn:hover {
+  background-color: var(--primary-red-hover);
+}
+
 .log-viewer {
   background-color: var(--bg-dark);
   border: 1px solid var(--border-color);

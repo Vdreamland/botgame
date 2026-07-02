@@ -6,6 +6,7 @@ const botTbody = document.getElementById("bot-tbody");
 const botSelect = document.getElementById("bot-select");
 const logViewer = document.getElementById("log-viewer");
 const autoScrollCheck = document.getElementById("auto-scroll-check");
+const copyLogBtn = document.getElementById("copy-log-btn");
 
 function showToast(message) {
   const toast = document.getElementById("toast");
@@ -30,6 +31,26 @@ function copyToClipboard(text) {
     });
 }
 window.copyToClipboard = copyToClipboard;
+
+copyLogBtn.addEventListener("click", () => {
+  const logsText = logViewer.textContent;
+  if (
+    !logsText ||
+    logsText === "Please select a bot to view live logs." ||
+    logsText === "No logs recorded yet for this session."
+  ) {
+    showToast("No logs to copy!");
+    return;
+  }
+  navigator.clipboard
+    .writeText(logsText)
+    .then(() => {
+      showToast("Gameplay log copied to clipboard!");
+    })
+    .catch((err) => {
+      console.error("Failed to copy: ", err);
+    });
+});
 
 // Fetch and update bot status
 async function updateStatus() {

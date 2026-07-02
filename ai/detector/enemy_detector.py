@@ -32,19 +32,25 @@ def calculate_region_layers(view: dict) -> dict:
     if not start_id:
         return layers
     regions = view.get("regions", {})
-    if not isinstance(regions, dict):
-        return layers
     queue = collections.deque([(start_id, 0)])
     visited = {start_id}
     while queue:
         region_id, dist = queue.popleft()
         layers[region_id] = dist
-        region_data = regions.get(region_id)
-        if isinstance(region_data, dict):
-            connections = region_data.get("connections", [])
-            if isinstance(connections, list):
-                for conn in connections:
-                    if conn in regions and conn not in visited:
+        connections = []
+        if region_id == start_id:
+            connections = current_region.get("connections", [])
+        else:
+            region_data = regions.get(region_id, {}) if isinstance(regions, dict) else {}
+            if isinstance(region_data, dict):
+                connections = region_data.get("connections", [])
+        if isinstance(connections, list):
+            for conn in connections:
+                if conn not in visited:
+                    if isinstance(regions, dict) and conn in regions:
+                        visited.add(conn)
+                        queue.append((conn, dist + 1))
+                    elif conn in connections:
                         visited.add(conn)
                         queue.append((conn, dist + 1))
     return layers

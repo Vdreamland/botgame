@@ -2,7 +2,6 @@ import asyncio
 import aiohttp
 import uuid
 import json
-from utils.logger import logger as custom_logger
 from logs.quest_reward_log import (
     log_redeem_attempt,
     log_redeem_success,
@@ -12,7 +11,8 @@ from logs.quest_reward_log import (
     log_weekly_claim_success,
     log_weekly_claim_failed,
     log_no_claimable_weekly_tracks,
-    log_weekly_tracks_failed
+    log_weekly_tracks_failed,
+    log_weekly_already_claimed
 )
 
 class ClawRoyaleAPI:
@@ -164,25 +164,40 @@ class ClawRoyaleAPI:
 
         log_weekly_check()
         weekly_res = await self.get_weekly_tracks()
-        custom_logger.info(f"DEBUG: Weekly tracks raw response: {weekly_res}")
         if weekly_res.get("success"):
             data = weekly_res.get("data", {})
+            is_claimed = data.get("claimed", False)
+            if is_claimed:
+                log_weekly_already_claimed()
+                return
+
             tracks = data.get("tracks", [])
-            claimed_any = False
-            for track in tracks:
-                if isinstance(track, dict) and track.get("opened") is True and track.get("claimed") is False:
-                    track_index = track.get("trackIndex")
-                    if track_index is not None:
-                        log_weekly_claim_attempt(track_index)
-                        claim_res = await self.claim_weekly_reward(track_index)
-                        if claim_res.get("success"):
-                            log_weekly_claim_success(track_index)
-                            claimed_any = True
-                            break
-                        else:
-                            claim_err = claim_res.get("error") or f"status {claim_res.get('status')}"
-                            log_weekly_claim_failed(track_index, claim_err)
-            if not claimed_any:
+            opened_tracks = [t for t in tracks if isinstance(t, dict) and t.get("opened") is True]
+            if not opened_tracks:
+                log_no_claimable_weekly_tracks()
+                return
+
+            selected_track = None
+            priority_keywords = ["goliath", "armour", "sword", "katana", "sniper", "weapon", "shield", "defender"]
+            for track in opened_tracks:
+                name = str(track.get("name", "")).lower()
+                if any(kw in name for kw in priority_keywords):
+                    selected_track = track
+                    break
+
+            if not selected_track:
+                selected_track = opened_tracks[0]
+
+            track_index = selected_track.get("track")
+            if track_index is not None:
+                log_weekly_claim_attempt(track_index)
+                claim_res = await self.claim_weekly_reward(track_index)
+                if claim_res.get("success"):
+                    log_weekly_claim_success(track_index)
+                else:
+                    claim_err = claim_res.get("error") or f"status {claim_res.get('status')}"
+                    log_weekly_claim_failed(track_index, claim_err)
+            else:
                 log_no_claimable_weekly_tracks()
         else:
             log_weekly_tracks_failed(weekly_res.get("error"))

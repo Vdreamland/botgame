@@ -26,3 +26,6 @@ def log_no_claimable_weekly_tracks():
 
 def log_weekly_tracks_failed(reason: str):
     logger.warning(f"Failed to retrieve weekly tracks: {reason}")
+
+def log_weekly_already_claimed():
+    logger.info("[*] Weekly rewards for this week have already been claimed.")

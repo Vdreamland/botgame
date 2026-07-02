@@ -40,15 +40,15 @@
 Link url :
 
 web/
-__init__.py : 
-server.py :
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/web/__init__.py
+server.py : https://github.com/Vdreamland/botgame/blob/master/web/server.py
 
 web/static
-style.css :
-script.js :
+style.css : https://github.com/Vdreamland/botgame/blob/master/web/static/style.css
+script.js : https://github.com/Vdreamland/botgame/blob/master/web/static/script.js
 
 web/templates
-index.html 
+index.html : https://github.com/Vdreamland/botgame/blob/master/web/templates/index.html
 
 config/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/config/__init__.py

@@ -40,6 +40,7 @@
 Link url :
 
 web/
+__init__.py : 
 server.py :
 
 web/static

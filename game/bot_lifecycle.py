@@ -5,6 +5,7 @@ from config.agen_config import auto_claim_rewards
 from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
 from game.lobby_coordinator import LobbyCoordinator
 from utils.logger import logger
+from ai.Strategy import make_decision
 
 def get_ordinal(n: int) -> str:
     if 11 <= (n % 100) <= 13:
@@ -115,6 +116,18 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             coordinator.bots_state[bot_name]["room_id"] = room_id_str
             await coordinator.draw_table()
  
+    if msg_type == "agent_view":
+        self_data = frame.get("view", {}).get("self", {})
+        is_agent_alive = True
+        if isinstance(self_data, dict):
+            is_agent_alive = self_data.get("isAlive", True)
+        if self_data.get("hp") == 0:
+            is_agent_alive = False
+
+        if is_agent_alive:
+            action_payload = make_decision(frame.get("view", {}), bot_name)
+            await ws_client.send(action_payload)
+
     return True
 
 async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_preference: str):

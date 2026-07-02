@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import uuid
+import json
 from logs.quest_reward_log import (
     log_redeem_attempt,
     log_redeem_success,
@@ -141,8 +142,24 @@ class ClawRoyaleAPI:
         if redeem_res.get("success"):
             log_redeem_success("WELCOME")
         else:
-            error_text = redeem_res.get("error") or f"status {redeem_res.get('status')}"
-            log_redeem_failed("WELCOME", error_text)
+            error_raw = redeem_res.get("error")
+            status = redeem_res.get("status")
+            error_msg = f"status {status}"
+            if error_raw:
+                try:
+                    err_json = json.loads(error_raw)
+                    if isinstance(err_json, dict) and "error" in err_json:
+                        sub_err = err_json["error"]
+                        if isinstance(sub_err, dict):
+                            code = sub_err.get("code")
+                            msg = sub_err.get("message")
+                            if code == "CONFLICT":
+                                error_msg = "Code already redeemed by this account."
+                            elif msg:
+                                error_msg = msg
+                except Exception:
+                    error_msg = error_raw
+            log_redeem_failed("WELCOME", error_msg)
 
         log_weekly_check()
         weekly_res = await self.get_weekly_tracks()

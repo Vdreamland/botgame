@@ -31,3 +31,12 @@ def log_ws_receive(data: str):
 
 def log_ws_closed():
     logger.info("[-] WebSocket connection closed.")
+
+def log_matchmaking_queued():
+    logger.info("[*] Bot entered matchmaking queue.")
+
+def log_match_assigned():
+    logger.info("[+] Match assigned successfully. Ready for gameplay.")
+
+def log_matchmaking_failed(reason: str):
+    logger.error(f"Matchmaking failed: {reason}")

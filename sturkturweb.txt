@@ -73,7 +73,7 @@ ai/detector/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/__init__.py
 zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/zone_detector.py
 dead_zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/dead_zone_detector.py
-ground_detector.py : 
+ground_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/ground_detector.py
 
 ai/
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/__init__.py

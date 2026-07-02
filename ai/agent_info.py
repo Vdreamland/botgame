@@ -1,6 +1,7 @@
 from ai.skill.vision import get_layered_zones
 from ai.detector.zone_detector import detect_terrain, detect_weather
 from ai.detector.dead_zone_detector import analyze_death_zones
+from ai.detector.ground_detector import detect_ground_loot
 from game_data.world_info import TERRAINS
 
 def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
@@ -67,11 +68,15 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
                 
     dead_zone_display = ", ".join(dead_zone_names) if dead_zone_names else "None"
     
+    loot_list = detect_ground_loot(view_data)
+    ground_loot_display = ", ".join(loot_list) if loot_list else "None"
+    
     return (
         f"# Turn {turn} [{bot_name}]\n"
         f"HP: {hp} | EP: {ep} | Atk: {atk} | Def: {defense} | Kills: {kills} | Vision : {vision_zones} Zone\n"
         f"Equipped : Weapon : {weapon_name} | Armour : {armour_name}\n"
         f"Inventory {inv_slots_used}/10 : {inv_display}\n"
         f"Location : {location_name} | Terrain: {terrain_name} | Weather : {weather_name} | Vision {vision_mod} | Links {links_count}\n"
-        f"DeadZone : {dead_zone_display}"
+        f"DeadZone : {dead_zone_display}\n"
+        f"Ground Loot : {ground_loot_display}"
     )

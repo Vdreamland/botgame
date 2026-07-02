@@ -11,3 +11,7 @@ from ai.detector.dead_zone_detector import (
     get_damage_per_second,
     is_interact_restricted
 )
+from ai.detector.ground_detector import (
+    detect_ground_loot,
+    has_loot_on_ground
+)

@@ -99,10 +99,6 @@ header h1 {
   font-weight: 700;
 }
 
-.status-success {
-  color: var(--success-green);
-}
-
 /* Table styling */
 .table-section {
   background-color: var(--bg-card);
@@ -147,7 +143,7 @@ tr:last-child td {
   font-weight: 700;
 }
 
-/* Badges styling */
+/* Badges & Status States (Unified & Minimalized) */
 .badge {
   display: inline-block;
   padding: 6px 12px;
@@ -156,91 +152,71 @@ tr:last-child td {
   font-weight: 700;
 }
 
-.badge-success {
+/* Success / Alive / Successful */
+.badge-success,
+.badge-alive,
+.status-success {
   background: rgba(0, 230, 118, 0.1);
   color: var(--success-green);
-  border: 1px solid var(--success-green);
 }
 
-.badge-failed {
+/* Failed / Dead / Disconnect */
+.badge-failed,
+.badge-dead,
+.status-disconnect {
   background: rgba(233, 69, 96, 0.1);
   color: var(--primary-red);
   border: 1px solid var(--primary-red);
 }
 
-.badge-waiting {
-  background: rgba(144, 144, 168, 0.1);
-  color: var(--text-secondary);
-  border: 1px solid var(--text-secondary);
-}
-
-.badge-already {
-  background: rgba(255, 179, 0, 0.1);
-  color: #ffb300;
-  border: 1px solid #ffb300;
-}
-
-.badge-attempt {
-  background: rgba(0, 176, 255, 0.1);
-  color: #00b0ff;
-  border: 1px solid #00b0ff;
-}
-
-.badge-checking {
-  background: rgba(224, 64, 251, 0.1);
-  color: #e040fb;
-  border: 1px solid #e040fb;
-}
-
-.badge-no-tracks {
-  background: rgba(144, 144, 168, 0.1);
-  color: var(--text-secondary);
-  border: 1px solid var(--text-secondary);
-}
-
-/* Status state badges */
+/* Waiting / Starting / Default */
+.badge-waiting,
+.badge-no-tracks,
 .status-starting {
   background: rgba(144, 144, 168, 0.1);
   color: var(--text-secondary);
   border: 1px solid var(--text-secondary);
 }
 
-.status-connecting {
-  background: rgba(0, 176, 255, 0.1);
-  color: #00b0ff;
-  border: 1px solid #00b0ff;
-}
-
-.status-claiming-rewards {
-  background: rgba(224, 64, 251, 0.1);
-  color: #e040fb;
-  border: 1px solid #e040fb;
-}
-
+/* Already */
+.badge-already,
 .status-waiting {
   background: rgba(255, 179, 0, 0.1);
   color: #ffb300;
   border: 1px solid #ffb300;
 }
 
+/* Attempt / Connecting */
+.badge-attempt,
+.status-connecting {
+  background: rgba(0, 176, 255, 0.1);
+  color: #00b0ff;
+  border: 1px solid #00b0ff;
+}
+
+/* Checking / Claiming Rewards */
+.badge-checking,
+.status-claiming-rewards {
+  background: rgba(224, 64, 251, 0.1);
+  color: #e040fb;
+  border: 1px solid #e040fb;
+}
+
+/* Queued */
 .status-queued {
   background: rgba(255, 112, 67, 0.1);
   color: #ff7043;
   border: 1px solid #ff7043;
 }
 
+/* In Progress */
 .status-in-progress {
   background: rgba(233, 69, 96, 0.1);
   color: var(--primary-red);
   border: 1px solid var(--primary-red);
 }
 
-.status-disconnect {
-  background: rgba(255, 23, 68, 0.1);
-  color: #ff1744;
-  border: 1px solid #ff1744;
-}
-
+/* Interactive Elements */
 .room-clickable {
   cursor: pointer;
   color: var(--primary-red);
@@ -252,6 +228,7 @@ tr:last-child td {
   color: var(--primary-red-hover);
 }
 
+/* Toast Notifications */
 .toast {
   visibility: hidden;
   min-width: 250px;
@@ -299,43 +276,7 @@ tr:last-child td {
   }
 }
 
-@media (max-width: 768px) {
-  body {
-    padding: 20px 10px;
-  }
-
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .summary-cards {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .table-section {
-    overflow-x: auto;
-  }
-
-  table {
-    min-width: 600px;
-  }
-
-  th,
-  td {
-    padding: 12px 16px;
-    font-size: 14px;
-  }
-
-  .log-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-}
-
+/* Gameplay Log Section */
 .log-section {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -421,4 +362,37 @@ tr:last-child td {
   color: #d1d1e0;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* Responsive Design (Combined Queries) */
+@media (max-width: 768px) {
+  body {
+    padding: 20px 10px;
+  }
+
+  header,
+  .log-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .table-section {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 700px;
+  }
+
+  th,
+  td {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
 }

@@ -35,6 +35,7 @@ class LobbyCoordinator:
             self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
             self.bots_state[bot_name]["room_id"] = ""
+            self.bots_state[bot_name]["alive"] = True
         await self.draw_table()
 
     async def wait_for_lobby(self, bot_name: str, timeout: float = 10.0) -> bool:
@@ -63,6 +64,7 @@ class LobbyCoordinator:
             self.bots_state[bot_name]["status"] = "Waiting"
             self.bots_state[bot_name]["room"] = "Waiting"
             self.bots_state[bot_name]["room_id"] = ""
+            self.bots_state[bot_name]["alive"] = True
         await self.draw_table()
 
     async def get_active_count(self) -> int:
@@ -119,6 +121,14 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             break
 
                         if isinstance(frame, dict):
+                            self_data = frame.get("view", {}).get("self", {})
+                            if isinstance(self_data, dict):
+                                is_alive = self_data.get("isAlive")
+                                if is_alive is not None:
+                                    if coordinator.bots_state[bot_name]["alive"] != is_alive:
+                                        coordinator.bots_state[bot_name]["alive"] = is_alive
+                                        await coordinator.draw_table()
+
                             turn = frame.get("turn")
                             if turn is not None and turn != last_logged_turn:
                                 write_gameplay_log(bot_name, f"# Turn {turn}")
@@ -163,6 +173,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                     coordinator.bots_state[bot_name]["room"] = "Room"
                     coordinator.bots_state[bot_name]["room_id"] = ""
                     coordinator.bots_state[bot_name]["status"] = "In Progress"
+                    coordinator.bots_state[bot_name]["alive"] = True
                     await coordinator.draw_table()
                     print(f"[+] All Setup ready to play for {bot_name} ...")
                     while True:
@@ -170,6 +181,14 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                         if frame is None:
                             break
                         if isinstance(frame, dict):
+                            self_data = frame.get("view", {}).get("self", {})
+                            if isinstance(self_data, dict):
+                                is_alive = self_data.get("isAlive")
+                                if is_alive is not None:
+                                    if coordinator.bots_state[bot_name]["alive"] != is_alive:
+                                        coordinator.bots_state[bot_name]["alive"] = is_alive
+                                        await coordinator.draw_table()
+
                             turn = frame.get("turn")
                             if turn is not None and turn != last_logged_turn:
                                 write_gameplay_log(bot_name, f"# Turn {turn}")
@@ -220,6 +239,7 @@ async def main():
             "target": room_preference.capitalize(),
             "room": "Waiting",
             "room_id": "",
+            "alive": True,
             "status": "Waiting",
         }
 

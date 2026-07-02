@@ -32,8 +32,8 @@
 Link url :
 
 config/
-__init__.py
-agen_config.py
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/config/__init__.py
+agen_config.py : https://github.com/Vdreamland/botgame/blob/master/config/agen_config.py
 
 game_data/ 
 __init__.py : https://github.com/Vdreamland/botgame/blob/master/game_data/__init__.py
@@ -56,8 +56,8 @@ ws_client.py : https://github.com/Vdreamland/botgame/blob/master/utils/ws_client
 logs/
 init__.py : https://github.com/Vdreamland/botgame/blob/master/logs/__init__.py
 logs_network.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_network.py
-logs_combat.py 
-logs_behavior.py
+quest_reward_log : https://github.com/Vdreamland/botgame/blob/master/logs/quest_reward_log.py
+logs_agent.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_agent.py
 
 .env : https://github.com/Vdreamland/botgame/blob/master/.env
 requirements.txt : https://github.com/Vdreamland/botgame/blob/master/requirements.txt

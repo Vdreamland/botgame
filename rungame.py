@@ -1,14 +1,12 @@
 import asyncio
-import os
-from dotenv import load_dotenv
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
 from utils.logger import logger
+from config.agent_config import get_configured_bots, get_room_preference
 from logs.logs_network import (
     log_matchmaking_queued,
     log_match_assigned,
     log_matchmaking_failed,
-    log_missing_api_key,
     log_connection_failed
 )
 from logs.logs_agent import (
@@ -21,8 +19,6 @@ from logs.logs_agent import (
     log_bot_game_ended,
     log_bot_waiting_cohort
 )
-
-load_dotenv()
 
 class LobbyCoordinator:
     def __init__(self, total_bots: int):
@@ -144,15 +140,8 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             await asyncio.sleep(5.0)
 
 async def main():
-    num_bots = int(os.getenv("NUM_BOTS", 1))
-    room_preference = os.getenv("ROOM_PREFERENCE", "free")
-
-    bots = []
-    for i in range(1, num_bots + 1):
-        name = os.getenv(f"BOT{i}_NAME")
-        api_key = os.getenv(f"BOT{i}_API_KEY")
-        if name and api_key:
-            bots.append({"name": name, "api_key": api_key})
+    bots = get_configured_bots()
+    room_preference = get_room_preference()
 
     if not bots:
         logger.error("No active bots detected in configuration.")

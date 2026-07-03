@@ -55,10 +55,17 @@ class GroundLootPriority:
 
         has_any_weapon_in_inv = False
         has_any_armor_in_inv = False
+        owned_item_names = set()
+
+        if equipped_weapon_name != "Fist":
+            owned_item_names.add(equipped_weapon_name)
+        if equipped_armor_name != "None":
+            owned_item_names.add(equipped_armor_name)
 
         for item in inventory:
             if isinstance(item, dict):
                 item_name = item.get("name", "None")
+                owned_item_names.add(item_name)
                 if item_name in MELEE_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_melee_atk:
@@ -95,7 +102,10 @@ class GroundLootPriority:
                 item_name = item.get("name")
                 item_type = str(item.get("type", "")).lower()
                 score = 0.0
-                if item_name == "sMoltz":
+
+                if item_name in owned_item_names and (item_name in MELEE_WEAPONS or item_name in RANGED_WEAPONS or item_name in {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"} or item_type in ("armour", "armor")):
+                    score = 0.0
+                elif item_name == "sMoltz":
                     score = 0.99
                 elif item_name in MELEE_WEAPONS:
                     atk = get_weapon_atk(item_name)

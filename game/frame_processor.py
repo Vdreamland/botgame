@@ -124,7 +124,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
     self_data = view_data.get("self") if isinstance(view_data, dict) else None
     
     is_alive = True
-    if isinstance(self_data, dict):
+    if isinstance(self_data, dict) and self_data:
         is_alive = self_data.get("isAlive", True)
         hp = self_data.get("hp", 100)
         if hp == 0:
@@ -252,13 +252,15 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             mark_visited(curr_id)
             record_map_connections(curr_id, current_region.get("connections", []))
 
-        self_data = frame.get("view", {}).get("self", {})
+        self_data = frame.get("view", {}).get("self")
         is_agent_alive = True
         can_act = True
-        if isinstance(self_data, dict):
+        if isinstance(self_data, dict) and self_data:
             is_agent_alive = self_data.get("isAlive", True)
             can_act = self_data.get("canAct", self_data.get("can_act", True))
-        if self_data.get("hp") == 0:
+            if self_data.get("hp") == 0:
+                is_agent_alive = False
+        else:
             is_agent_alive = False
 
         turn_num = frame.get("turn", 0)
@@ -272,14 +274,17 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         coordinator.bots_state[bot_name]["local_cooldown"] = False
         stored_view = coordinator.bots_state[bot_name].get("view", {})
         if stored_view:
-            self_data = stored_view.get("self", {})
+            self_data = stored_view.get("self")
             is_agent_alive = True
-            if isinstance(self_data, dict):
+            if isinstance(self_data, dict) and self_data:
                 is_agent_alive = self_data.get("isAlive", True)
+                if self_data.get("hp") == 0:
+                    is_agent_alive = False
+            else:
+                is_agent_alive = False
+                
             stored_view["self"]["canAct"] = True
             stored_view["self"]["can_act"] = True
-            if self_data.get("hp") == 0:
-                is_agent_alive = False
 
             turn_num = coordinator.bots_state[bot_name].get("turn", 0)
             already_acted = ws_client.last_acted_turn == turn_num

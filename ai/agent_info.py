@@ -84,10 +84,12 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
             p_name = p.get("name")
             p_hp = p.get("hp")
             p_ep = p.get("ep")
+            p_atk = p.get("atk", 25)
+            p_def = p.get("def", 5)
             p_w = p.get("weapon", "None")
             p_a = p.get("armour", "None")
             p_lay = p.get("layer")
-            enemy_lines.append(f" - Player  : {p_name} | HP: {p_hp} | EP: {p_ep} | Weapon: {p_w} | Armor: {p_a} | Layer: {p_lay}")
+            enemy_lines.append(f" - Player  : {p_name} | HP: {p_hp} | EP: {p_ep} | ATK: {p_atk} | DEF: {p_def} | Weapon: {p_w} | Armor: {p_a} | Layer: {p_lay}")
         for m in monsters:
             m_name = m.get("type") or m.get("name", "Unknown")
             m_hp = m.get("hp")
@@ -101,7 +103,8 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     recent_display = "\n".join([f"- {ev}" for ev in recent_evs]) if recent_evs else "None"
     
     return (
-        f"# Turn {turn} [{bot_name}]\n"
+        f"\n# Turn {turn} [{bot_name}]\n"
+        f"------------------------------------------------------------\n"
         f"HP: {hp} | EP: {ep} | Atk: {atk} | Def: {defense} | Kills: {kills} | Vision : {vision_zones} Zone\n"
         f"Equipped : Weapon : {weapon_name} | Armour : {armour_name}\n"
         f"Inventory {inv_slots_used}/10 : {inv_display}\n"

@@ -129,8 +129,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
 
             if net_atk <= 5:
                 score *= 0.20
-            else:
-                score = 0.0
+        else:
+            score = 0.0
         priorities.append({
             "type": "monster",
             "name": m.get("type"),

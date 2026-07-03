@@ -17,19 +17,18 @@
 │    │    ├── self_detector.py        # mengevaluasi kekuatan diri kita sendiri sebelum bertarung
 │    │    └── ruin_detector.py        # Reruntuhan (ruin) merupakan objek penting untuk mendapatkan Relic dan Pack [1.12.0]   
 │    ├── Strategy/                    
-│    │    ├── __init__.py             
-│    │    ├── ground_loot_priority.py        
-│    │    ├── equipped_priority.py
-
-
-│    ├── decision/                    # Sub-folder penentu keputusan akhir tindakan bot berdasarkan analisis situasi
-│    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
-│    │    ├──                             
-│    │    └──                             
-│    └── strategy/                            
-│         ├── __init__.py                     
-│         ├── 
-│         └──    
+│    │    ├── priority 
+│    │    │    ├── __init__.py 
+│    │    │    ├── decision_maker.py 
+│    │    │    ├── ground_loot_priority
+│    │    │    ├── equipped_priority.py
+│    │    │    ├── interact_priority.py  
+│    │    │    ├── recovery_priority.py   
+│    │    │    └── target_priority.py
+│    │    ├── memory.py
+│    │    ├── navigation_strategy
+│    │    ├── ruin_exploration_strategy.py
+│    │    └── __init__.py   
 ├── game_data/
 │    ├── __init__.py                  # Penanda paket Python (bisa digunakan untuk mengekspos semua kamus data sekaligus)
 │    ├── player_info.py               # Menyimpan statistik dasar pemain (HP, EP, ATK, DEF, Vision, limit inventaris)
@@ -65,50 +64,6 @@
 
 
 
-
-
-├── ai/                               # Folder pusat logika kecerdasan buatan, pengambilan keputusan, dan taktis bot
-│    ├── __init__.py                  # Penanda paket Python untuk mengekspos modul-modul AI
-│    ├── skill/                       
-│    │    ├──  __init__.py                     
-│    │    └── vision.py               # untuk mengetahui jarak pandang agen kita berapa zone/tiles
-│    ├── agent_info.py                # untuk menampilkan informasi bot/agent kita di log
-│    ├── detector/                    # tempat untuk mendeteksi awal untuk kumpulkan informasi
-│    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
-│    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
-│    │    ├── dead_zone_detector.py   # Deteksi deadzone
-│    │    ├── ground_detector.py      # Deteksi apa aja loot yang ada di ground/zone bot/agent berada
-│    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/stats musuh/stats monster
-│    │    ├── self_detector.py        # mengevaluasi kekuatan diri kita sendiri sebelum bertarung
-│    │    └── ruin_detector.py        # Reruntuhan (ruin) merupakan objek penting untuk mendapatkan Relic dan Pack [1.12.0]   
-│    ├── Strategy/                    
-│    │    ├── priority 
-│    │    │    ├── __init__.py 
-│    │    │    ├── decision_maker.py 
-│    │    │    ├── ground_loot_priority
-│    │    │    ├── equipped_priority.py
-│    │    │    ├── interact_priority.py  
-│    │    │    ├── recovery_priority.py   
-│    │    │    └── target_priority.py
-│    │    ├── memory.py
-│    │    ├── navigation_strategy
-│    │    ├── ruin_exploration_strategy.py
-│    │    └── __init__.py
-
-
-
-
-
-         
-
-
-
-
-
-
-
-
-
 http://localhost:8080
 Link url :
 
@@ -126,8 +81,8 @@ decision_maker.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strateg
 memory.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/memory.py
 
 ai/strategy/priority/
-ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/equipped_priority.py
-equipped_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/ground_loot_priority.py
+ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/ground_loot_priority.py
+equipped_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/equipped_priority.py
 recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/recovery_priority.py
 target_priority.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/target_priority.py
 interact_priority.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/interact_priority.py

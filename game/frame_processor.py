@@ -11,6 +11,24 @@ def get_ordinal(n: int) -> str:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
 
+async def _execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, coordinator) -> None:
+    action_payload = make_decision(view, bot_name)
+    act_type = action_payload.get("type", "unknown")
+    act_name = action_payload.get("name", "None")
+    act_score = action_payload.get("score", 0.0)
+    act_report = action_payload.get("strategy_report", "None")
+    logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
+    logger.info(f"[~] {bot_name} strategic plan: {act_report}")
+    if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
+        ws_client.last_acted_turn = turn_num
+        coordinator.bots_state[bot_name]["local_cooldown"] = True
+        clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
+        wrapped_payload = {
+            "type": "action",
+            "data": clean_payload
+        }
+        await ws_client.send(wrapped_payload)
+
 async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoordinator, ws_client) -> bool:
     if not isinstance(frame, dict):
         return True
@@ -127,6 +145,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         if not success:
             err = frame.get("error", {})
             logger.warning(f"[!] Action result warning: {err.get('message', 'Unknown')} (Code: {err.get('code', 'None')})")
+            coordinator.bots_state[bot_name]["local_cooldown"] = False
         res_data = frame.get("data", {})
         if isinstance(res_data, dict):
             if res_data.get("canAct") is True or res_data.get("can_act") is True:
@@ -153,23 +172,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
     already_acted = ws_client.last_acted_turn == turn_num
     is_local_cooldown = coordinator.bots_state[bot_name].get("local_cooldown", False)
 
-    if is_agent_alive and can_act and not already_acted and not is_local_cooldown:
-        action_payload = make_decision(frame.get("view", {}), bot_name)
-        act_type = action_payload.get("type", "unknown")
-        act_name = action_payload.get("name", "None")
-        act_score = action_payload.get("score", 0.0)
-        act_report = action_payload.get("strategy_report", "None")
-        logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
-        logger.info(f"[~] {bot_name} strategic plan: {act_report}")
-        if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
-            ws_client.last_acted_turn = turn_num
-            coordinator.bots_state[bot_name]["local_cooldown"] = True
-            clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
-            wrapped_payload = {
-                "type": "action",
-                "data": clean_payload
-            }
-            await ws_client.send(wrapped_payload)
+    if msg_type in ("agent_view", "turn_advanced") and is_agent_alive and can_act and not already_acted and not is_local_cooldown:
+        await _execute_decision(frame.get("view", {}), bot_name, turn_num, ws_client, coordinator)
 
     if msg_type == "can_act_changed" and (frame.get("canAct") is True or frame.get("can_act") is True):
         coordinator.bots_state[bot_name]["local_cooldown"] = False
@@ -188,21 +192,6 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             already_acted = ws_client.last_acted_turn == turn_num
 
             if is_agent_alive and not already_acted:
-                action_payload = make_decision(stored_view, bot_name)
-                act_type = action_payload.get("type", "unknown")
-                act_name = action_payload.get("name", "None")
-                act_score = action_payload.get("score", 0.0)
-                act_report = action_payload.get("strategy_report", "None")
-                logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
-                logger.info(f"[~] {bot_name} strategic plan: {act_report}")
-                if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
-                    ws_client.last_acted_turn = turn_num
-                    coordinator.bots_state[bot_name]["local_cooldown"] = True
-                    clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
-                    wrapped_payload = {
-                        "type": "action",
-                        "data": clean_payload
-                    }
-                    await ws_client.send(wrapped_payload)
+                await _execute_decision(stored_view, bot_name, turn_num, ws_client, coordinator)
 
     return True

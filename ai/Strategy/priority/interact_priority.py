@@ -1,5 +1,6 @@
 from ai.detector.self_detector import get_self_vital_status
 from ai.detector.zone_detector import detect_facility_detail
+from ai.detector.dead_zone_detector import is_dead_zone
 
 def get_interact_priorities(view: dict) -> list:
     priorities = []
@@ -7,6 +8,8 @@ def get_interact_priorities(view: dict) -> list:
         return priorities
     current_region = view.get("currentRegion", {})
     if not isinstance(current_region, dict):
+        return priorities
+    if is_dead_zone(current_region):
         return priorities
     detail = detect_facility_detail(current_region)
     if not detail:

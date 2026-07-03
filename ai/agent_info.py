@@ -2,7 +2,7 @@ from ai.skill.vision import get_layered_zones
 from ai.detector.zone_detector import detect_terrain, detect_facility, detect_weather
 from ai.detector.dead_zone_detector import analyze_death_zones
 from ai.detector.ground_detector import detect_ground_loot
-from ai.detector.enemy_detector import get_visible_enemies_by_layer
+from ai.detector.enemy_detector import get_visible_enemies_by_layer, get_detailed_enemy_stats
 from ai.Strategy.memory import get_all_known_dead_zones, get_recent_events
 from game_data.world_info import TERRAINS
 
@@ -26,12 +26,12 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     weapon_name = "None"
     if isinstance(eq_weapon, dict):
         weapon_name = eq_weapon.get("name", "None")
-    
+        
     eq_armour = self_data.get("equippedArmor")
     armour_name = "None"
     if isinstance(eq_armour, dict):
         armour_name = eq_armour.get("name", "None")
-    
+        
     inventory = self_data.get("inventory", [])
     inv_slots_used = len(inventory)
     
@@ -73,6 +73,30 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
         layer_lines.append(f"Layer {layer} : P {counts['P']} / M {counts['M']} / A {counts['A']}")
     layer_display = "\n".join(layer_lines)
     
+    detailed = get_detailed_enemy_stats(view_data, bot_name)
+    players = detailed.get("players", [])
+    monsters = detailed.get("monsters", [])
+    
+    enemy_lines = []
+    if players or monsters:
+        enemy_lines.append("[VISIBLE ENEMIES DETAILS]")
+        for p in players:
+            p_name = p.get("name")
+            p_hp = p.get("hp")
+            p_ep = p.get("ep")
+            p_w = p.get("weapon", "None")
+            p_a = p.get("armour", "None")
+            p_lay = p.get("layer")
+            enemy_lines.append(f" - Player  : {p_name} | HP: {p_hp} | EP: {p_ep} | Weapon: {p_w} | Armor: {p_a} | Layer: {p_lay}")
+        for m in monsters:
+            m_name = m.get("type") or m.get("name", "Unknown")
+            m_hp = m.get("hp")
+            m_lay = m.get("layer")
+            enemy_lines.append(f" - Monster : {m_name} | HP: {m_hp} | Layer: {m_lay}")
+        enemy_display = "\n".join(enemy_lines) + "\n\n"
+    else:
+        enemy_display = ""
+        
     recent_evs = get_recent_events()
     recent_display = "\n".join([f"- {ev}" for ev in recent_evs]) if recent_evs else "None"
     
@@ -85,6 +109,7 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
         f"DeadZone : {dead_zone_display}\n"
         f"Ground Loot : {ground_loot_display}\n\n"
         f"{layer_display}\n\n"
+        f"{enemy_display}"
         f"[RECENT EVENTS]\n"
         f"{recent_display}"
     )

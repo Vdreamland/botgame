@@ -11,6 +11,11 @@ def get_interact_priorities(view: dict) -> list:
         return priorities
     if is_dead_zone(current_region):
         return priorities
+    
+    is_used = current_region.get("facilityUsed", current_region.get("isUsed", False))
+    if is_used:
+        return priorities
+
     detail = detect_facility_detail(current_region)
     if not detail:
         return priorities

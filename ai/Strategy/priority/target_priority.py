@@ -1,5 +1,6 @@
 from ai.detector.enemy_detector import get_detailed_enemy_stats
 from game_data.weapon_info import WEAPONS
+from ai.detector.dead_zone_detector import is_dead_zone
 
 def get_target_priorities(view: dict, self_bot_name: str) -> list:
     priorities = []
@@ -9,13 +10,23 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
     players = detailed.get("players", [])
     monsters = detailed.get("monsters", [])
     self_data = view.get("self", {}) if isinstance(view, dict) else {}
+    curr_hp = self_data.get("hp", 100) if isinstance(self_data, dict) else 100
     curr_ep = self_data.get("ep", 10) if isinstance(self_data, dict) else 10
     curr_atk = self_data.get("atk", 25) if isinstance(self_data, dict) else 25
     eq_weapon = self_data.get("equippedWeapon") if isinstance(self_data, dict) else None
     curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
     w_range = WEAPONS.get(curr_weapon_name, {}).get("range", 0)
     w_ep_cost = WEAPONS.get(curr_weapon_name, {}).get("ep_cost", 1)
-    can_attack = curr_ep >= w_ep_cost
+    
+    current_region = view.get("currentRegion", {})
+    current_is_dz = is_dead_zone(current_region)
+    is_emergency = curr_hp <= 30 or current_is_dz
+    
+    if is_emergency:
+        can_attack = curr_ep >= w_ep_cost
+    else:
+        can_attack = curr_ep >= (w_ep_cost + 2)
+        
     for p in players:
         layer = p.get("layer", -1)
         if layer == -1:

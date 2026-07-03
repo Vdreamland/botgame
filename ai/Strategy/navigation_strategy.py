@@ -2,7 +2,7 @@ from ai.detector.dead_zone_detector import analyze_death_zones, is_pending_dead_
 from ai.detector.zone_detector import detect_terrain, detect_facility
 from ai.detector.enemy_detector import get_visible_enemies_by_layer
 from ai.detector.ruin_detector import get_visible_ruins_status
-from ai.Strategy.memory import get_visit_count, is_death_spot, is_known_dead_zone, get_region_connections, get_region_name
+from ai.Strategy.memory import get_visit_count, is_death_spot, is_known_dead_zone, get_region_connections, get_region_name, get_visited_history
 from game_data.world_info import TERRAINS
 
 EDGE_REGIONS = {
@@ -34,6 +34,9 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     visible_ruins = get_visible_ruins_status(view)
     l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
     p0_count = l0_counts.get("P", 0)
+    
+    history = get_visited_history()
+    
     for conn_id in connections:
         r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
         score = 0.50
@@ -52,6 +55,14 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                 score -= 0.15
             elif r_name_lower in CENTER_REGIONS:
                 score += 0.15
+
+            if conn_id in history:
+                if len(history) >= 2 and conn_id == history[-2]:
+                    score += 0.35
+                elif history and conn_id == history[-1]:
+                    score += 0.35
+                else:
+                    score += 0.15
 
             if facility == "Medical Facility":
                 self_data = view.get("self", {})

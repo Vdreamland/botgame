@@ -95,7 +95,7 @@ class GroundLootPriority:
                     score = 0.70
                 elif item_name == "Bandage":
                     score = 0.70
-                elif item_name == "Energy drink":
+                elif item_name in ("Energy Drink", "Energy drink"):
                     score = 0.70
                 elif item_name == "Binoculars":
                     score = 0.30

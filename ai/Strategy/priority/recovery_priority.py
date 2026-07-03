@@ -25,7 +25,9 @@ def get_recovery_priorities(view: dict) -> list:
             continue
         score = 0.0
         if name == "Medkit":
-            if hp <= 30 and hp_diff >= 30:
+            if hp_diff <= 5 and ep_diff <= 1:
+                score = 0.0
+            elif hp <= 30 and hp_diff >= 30:
                 score = 0.98
             elif hp_diff >= 30 and ep_diff >= 5:
                 score = 0.85
@@ -34,21 +36,27 @@ def get_recovery_priorities(view: dict) -> list:
             else:
                 score = 0.10
         elif name == "Emergency Food":
-            if hp <= 40 and hp_diff >= 20:
+            if hp_diff <= 5:
+                score = 0.0
+            elif hp <= 40 and hp_diff >= 20:
                 score = 0.90
             elif hp_diff >= 20:
                 score = 0.75
             else:
                 score = 0.15
         elif name == "Bandage":
-            if hp <= 60 and hp_diff >= 20:
+            if hp_diff <= 5:
+                score = 0.0
+            elif hp <= 60 and hp_diff >= 20:
                 score = 0.80
             elif hp_diff >= 20:
                 score = 0.60
             else:
                 score = 0.10
         elif name == "Energy Drink":
-            if ep <= 2 and ep_diff >= 5:
+            if ep_diff <= 1:
+                score = 0.0
+            elif ep <= 2 and ep_diff >= 5:
                 score = 0.95
             elif ep_diff >= 5:
                 score = 0.80

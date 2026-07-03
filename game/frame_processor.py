@@ -108,7 +108,6 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                         "data": {"type": "drop", "itemId": item_id}
                     }
                     await ws_client.send(wrapped_payload)
-                    break
                 elif item_name in RANGED_WEAPONS and get_weapon_atk(item_name) < best_ranged_atk:
                     from ai.Strategy.memory import add_recent_event
                     add_recent_event(f"Dropped redundant weapon: {item_name}")
@@ -117,7 +116,6 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                         "data": {"type": "drop", "itemId": item_id}
                     }
                     await ws_client.send(wrapped_payload)
-                    break
 
     turn = frame.get("turn")
     view_data = frame.get("view", {})

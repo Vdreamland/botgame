@@ -16,6 +16,15 @@ def get_weapon_atk(w_name: str) -> int:
     return WEAPONS.get(w_name, {}).get("atk_bonus", 0)
 
 async def _execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, coordinator) -> None:
+    from ai.detector.enemy_detector import get_detailed_enemy_stats
+    detailed = get_detailed_enemy_stats(view, bot_name)
+    players = detailed.get("players", [])
+    monsters = detailed.get("monsters", [])
+    for p in players:
+        logger.info(f"[DETECTOR] Enemy Player: {p.get('name')} | HP: {p.get('hp')} | EP: {p.get('ep')} | Weapon: {p.get('weapon')} | Armour: {p.get('armour')} | Layer: {p.get('layer')}")
+    for m in monsters:
+        logger.info(f"[DETECTOR] Enemy Monster: {m.get('type') or m.get('name')} | HP: {m.get('hp')} | Layer: {m.get('layer')}")
+
     action_payload = make_decision(view, bot_name)
     act_type = action_payload.get("type", "unknown")
     act_name = action_payload.get("name", "None")
@@ -166,6 +175,10 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         event_name = frame.get("event")
         event_data = frame.get("data", {})
         my_agent_id = coordinator.bots_state[bot_name].get("agent_id")
+        
+        if event_name not in ("agent_died", "game_settled"):
+            logger.info(f"[RAW EVENT] {bot_name} received event '{event_name}': {event_data}")
+
         if event_name == "agent_died":
             if event_data.get("agentId") == my_agent_id:
                 logger.info(f"[-] {bot_name} received agent_died event.")

@@ -40,6 +40,7 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
                 "data": {"type": "drop", "itemId": discard_item_id}
             }
             await ws_client.send(drop_payload)
+            inventory = [i for i in inventory if isinstance(i, dict) and i.get("id") != discard_item_id]
 
     logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
     logger.info(f"[~] {bot_name} strategic plan: {act_report}")
@@ -55,3 +56,24 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
             "data": clean_payload
         }
         await ws_client.send(wrapped_payload)
+        
+        if act_type == "pickup":
+            MELEE_WEAPONS = {"Katana", "Sword", "Dagger"}
+            RANGED_WEAPONS = {"Sniper rifle", "Bow", "Pistol"}
+            ARMOURS = {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"}
+            
+            is_gear = act_name in MELEE_WEAPONS or act_name in RANGED_WEAPONS or act_name in ARMOURS or any(g in act_name for g in ("Common", "Rare", "Epic", "Legendary"))
+            if is_gear:
+                item_id = clean_payload.get("itemId")
+                if item_id:
+                    logger.info(f"[*] Auto-equipping newly picked up gear '{act_name}' in the same turn.")
+                    from ai.Strategy.memory import add_recent_event
+                    add_recent_event(f"Auto-equipped: {act_name}")
+                    equip_payload = {
+                        "type": "action",
+                        "data": {
+                            "type": "equip",
+                            "itemId": item_id
+                        }
+                    }
+                    await ws_client.send(equip_payload)

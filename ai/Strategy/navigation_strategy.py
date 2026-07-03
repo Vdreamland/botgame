@@ -5,6 +5,19 @@ from ai.detector.ruin_detector import get_visible_ruins_status
 from ai.Strategy.memory import get_visit_count, is_death_spot, is_known_dead_zone, get_region_connections
 from game_data.world_info import TERRAINS
 
+EDGE_REGIONS = {
+    "hideout", "canyon", "mountain", "s:pack", "camp", "swamp", "docks", 
+    "theater", "terminal", "lighthouse", "warehouse", "garage", "valley", 
+    "waterfall", "fort", "cemetery", "observatory", "lake", "grassland", 
+    "s:relic"
+}
+
+CENTER_REGIONS = {
+    "windmill", "library", "outpost", "stream", "beach", "shrine", 
+    "court", "checkpoint", "crossroads", "quarry", "jungle", "pond", 
+    "mine", "station", "market", "suburbs", "bridge", "prison", "stadium"
+}
+
 def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     priorities = []
     if not isinstance(view, dict):
@@ -34,6 +47,12 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
         elif is_pending:
             score = 0.05
         else:
+            r_name_lower = name.lower()
+            if r_name_lower in EDGE_REGIONS:
+                score -= 0.15
+            elif r_name_lower in CENTER_REGIONS:
+                score += 0.15
+
             if facility == "Medical Facility":
                 self_data = view.get("self", {})
                 hp = self_data.get("hp", 100)

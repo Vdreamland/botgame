@@ -1,5 +1,6 @@
 from ai.detector.ground_detector import detect_ground_loot
 from game_data.weapon_info import WEAPONS
+from game_data.armour_info import ARMOUR_GRADES
 
 MELEE_WEAPONS = {"Katana", "Sword", "Dagger"}
 RANGED_WEAPONS = {"Sniper rifle", "Bow", "Pistol"}
@@ -10,10 +11,16 @@ def get_weapon_atk(w_name: str) -> int:
 def get_armour_def(a_name: str) -> int:
     ARMOURS = {
         "Plate Armor": 20,
+        "Chainmail": 10,
         "Iron Armor": 10,
         "Leather Armor": 5
     }
-    return ARMOURS.get(a_name, 0)
+    if a_name in ARMOURS:
+        return ARMOURS[a_name]
+    for grade_name, spec in ARMOUR_GRADES.items():
+        if grade_name.lower() in a_name.lower():
+            return spec.get("estimated_def_bonus", 0)
+    return 0
 
 class GroundLootPriority:
     def get_priorities(self, view: dict) -> list:
@@ -58,16 +65,20 @@ class GroundLootPriority:
         for item in inventory:
             if isinstance(item, dict):
                 item_name = item.get("name", "None")
-                if item_name in {"Plate Armor", "Iron Armor", "Leather Armor"}:
+                if item_name in {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"} or any(g in item_name for g in ARMOUR_GRADES):
                     armor_def = get_armour_def(item_name)
                     if armor_def > best_armor_def:
                         best_armor_def = armor_def
                         best_armor_name = item_name
 
-        for item in items:
+        for raw_item in items:
+            item = raw_item
+            if isinstance(item, str):
+                item = {"id": item, "name": item}
             if isinstance(item, dict):
-                item_id = item.get("id")
+                item_id = item.get("id") or item.get("name")
                 item_name = item.get("name")
+                item_type = str(item.get("type", "")).lower()
                 score = 0.0
                 if item_name == "sMoltz":
                     score = 0.99
@@ -83,7 +94,7 @@ class GroundLootPriority:
                         score = 0.85
                     else:
                         score = 0.15
-                elif item_name in {"Plate Armor", "Iron Armor", "Leather Armor"}:
+                elif item_name in {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"} or item_type in ("armour", "armor") or any(g in item_name for g in ARMOUR_GRADES):
                     armor_def = get_armour_def(item_name)
                     if armor_def > best_armor_def:
                         score = 0.85

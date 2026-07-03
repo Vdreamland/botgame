@@ -53,6 +53,9 @@ class GroundLootPriority:
         best_ranged_name = "Fist"
         best_ranged_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in RANGED_WEAPONS else 0
 
+        has_any_weapon_in_inv = False
+        has_any_armor_in_inv = False
+
         for item in inventory:
             if isinstance(item, dict):
                 item_name = item.get("name", "None")
@@ -61,11 +64,13 @@ class GroundLootPriority:
                     if atk > best_melee_atk:
                         best_melee_atk = atk
                         best_melee_name = item_name
+                    has_any_weapon_in_inv = True
                 elif item_name in RANGED_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_ranged_atk:
                         best_ranged_atk = atk
                         best_ranged_name = item_name
+                    has_any_weapon_in_inv = True
 
         best_armor_name = equipped_armor_name
         best_armor_def = get_armour_def(equipped_armor_name)
@@ -77,6 +82,7 @@ class GroundLootPriority:
                     if armor_def > best_armor_def:
                         best_armor_def = armor_def
                         best_armor_name = item_name
+                    has_any_armor_in_inv = True
 
         is_armed = equipped_weapon_name != "Fist"
 
@@ -94,7 +100,9 @@ class GroundLootPriority:
                 elif item_name in MELEE_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_melee_atk:
-                        if enemies_l0 > 0 and is_armed:
+                        if not is_armed and not has_any_weapon_in_inv:
+                            score = 0.97
+                        elif enemies_l0 > 0 and is_armed:
                             score = 0.40
                         elif curr_hp <= 30 and is_armed:
                             score = 0.20
@@ -105,7 +113,9 @@ class GroundLootPriority:
                 elif item_name in RANGED_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_ranged_atk:
-                        if enemies_l0 > 0 and is_armed:
+                        if not is_armed and not has_any_weapon_in_inv:
+                            score = 0.97
+                        elif enemies_l0 > 0 and is_armed:
                             score = 0.40
                         elif curr_hp <= 30 and is_armed:
                             score = 0.20
@@ -116,7 +126,9 @@ class GroundLootPriority:
                 elif item_name in {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"} or item_type in ("armour", "armor") or any(g in item_name for g in ARMOUR_GRADES):
                     armor_def = get_armour_def(item_name)
                     if armor_def > best_armor_def:
-                        if enemies_l0 > 0 and curr_hp <= 30:
+                        if equipped_armor_name == "None" and not has_any_armor_in_inv:
+                            score = 0.91
+                        elif enemies_l0 > 0 and curr_hp <= 30:
                             score = 0.30
                         else:
                             score = 0.85

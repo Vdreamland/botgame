@@ -41,9 +41,9 @@ def get_recovery_priorities(view: dict) -> list:
             else:
                 score = 0.15
         elif name == "Bandage":
-            if hp <= 60 and hp_diff >= 10:
+            if hp <= 60 and hp_diff >= 20:
                 score = 0.80
-            elif hp_diff >= 10:
+            elif hp_diff >= 20:
                 score = 0.60
             else:
                 score = 0.10

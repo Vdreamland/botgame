@@ -35,38 +35,31 @@ async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
     equipped_armor_name = equipped_armor.get("name", "None") if isinstance(equipped_armor, dict) else "None"
 
     best_melee_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in MELEE_WEAPONS else 0
-    best_melee_id = equipped_weapon.get("id") if isinstance(equipped_weapon, dict) else None
     best_melee_name = equipped_weapon_name if equipped_weapon_name in MELEE_WEAPONS else None
 
     best_ranged_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in RANGED_WEAPONS else 0
-    best_ranged_id = equipped_weapon.get("id") if isinstance(equipped_weapon, dict) else None
     best_ranged_name = equipped_weapon_name if equipped_weapon_name in RANGED_WEAPONS else None
 
     best_armor_def = get_armour_def(equipped_armor_name)
-    best_armor_id = equipped_armor.get("id") if isinstance(equipped_armor, dict) else None
     best_armor_name = equipped_armor_name if equipped_armor_name != "None" else None
 
     for item in inventory:
         if isinstance(item, dict):
             item_name = item.get("name")
-            item_id = item.get("id")
             if item_name in MELEE_WEAPONS:
                 atk = get_weapon_atk(item_name)
                 if atk > best_melee_atk:
                     best_melee_atk = atk
-                    best_melee_id = item_id
                     best_melee_name = item_name
             elif item_name in RANGED_WEAPONS:
                 atk = get_weapon_atk(item_name)
                 if atk > best_ranged_atk:
                     best_ranged_atk = atk
-                    best_ranged_id = item_id
                     best_ranged_name = item_name
             elif item_name in ARMOURS or any(g in item_name for g in ARMOUR_GRADES):
                 def_val = get_armour_def(item_name)
                 if def_val > best_armor_def:
                     best_armor_def = def_val
-                    best_armor_id = item_id
                     best_armor_name = item_name
 
     kept_melee = False
@@ -89,7 +82,7 @@ async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
             is_armor = item_name in ARMOURS or any(g in item_name for g in ARMOUR_GRADES)
 
             if is_melee:
-                if item_name == best_melee_name and item_id == best_melee_id and not kept_melee:
+                if item_name == best_melee_name and not kept_melee:
                     kept_melee = True
                 else:
                     from ai.Strategy.memory import add_recent_event
@@ -100,7 +93,7 @@ async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
                     }
                     await ws_client.send(wrapped_payload)
             elif is_ranged:
-                if item_name == best_ranged_name and item_id == best_ranged_id and not kept_ranged:
+                if item_name == best_ranged_name and not kept_ranged:
                     kept_ranged = True
                 else:
                     from ai.Strategy.memory import add_recent_event
@@ -111,7 +104,7 @@ async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
                     }
                     await ws_client.send(wrapped_payload)
             elif is_armor:
-                if item_name == best_armor_name and item_id == best_armor_id and not kept_armor:
+                if item_name == best_armor_name and not kept_armor:
                     kept_armor = True
                 else:
                     from ai.Strategy.memory import add_recent_event

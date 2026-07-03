@@ -17,16 +17,16 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
     curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
     w_range = WEAPONS.get(curr_weapon_name, {}).get("range", 0)
     w_ep_cost = WEAPONS.get(curr_weapon_name, {}).get("ep_cost", 1)
-    
+
     current_region = view.get("currentRegion", {})
     current_is_dz = is_dead_zone(current_region)
     is_emergency = curr_hp <= 30 or current_is_dz
-    
+
     if is_emergency:
         can_attack = curr_ep >= w_ep_cost
     else:
         can_attack = curr_ep >= (w_ep_cost + 2)
-        
+
     for p in players:
         layer = p.get("layer", -1)
         if layer == -1:
@@ -44,9 +44,9 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                 score = 0.85
             else:
                 score = 0.70
-            
+
             score -= (target_def * 0.005)
-            
+
             if net_atk <= 5:
                 score *= 0.20
         else:
@@ -83,13 +83,13 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                     score = 0.95
                 else:
                     score = 0.80
-            
+
             score -= (target_def * 0.005)
-            
+
             if net_atk <= 5:
                 score *= 0.20
-        else:
-            score = 0.0
+            else:
+                score = 0.0
         priorities.append({
             "type": "monster",
             "name": m.get("type"),

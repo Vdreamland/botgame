@@ -51,10 +51,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             latest_view["self"] = {}
                         latest_view["self"]["hp"] = 0
                         latest_view["self"]["isAlive"] = False
-                    death_turn = ws_client.last_logged_turn + 1
-                    logger.info(f"[-] {bot_name} confirmed dead. Logging final turn {death_turn}.")
-                    write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
-                    write_gameplay_log(bot_name, "[SYSTEM] Agent has been eliminated.")
+                        death_turn = ws_client.last_logged_turn + 1
+                        logger.info(f"[-] {bot_name} confirmed dead. Logging final turn {death_turn}.")
+                        write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+                        write_gameplay_log(bot_name, "[SYSTEM] Agent has been eliminated.")
                 else:
                     coordinator.bots_state[bot_name]["alive"] = True
 
@@ -146,9 +146,10 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
                             is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
                             if not is_alive:
                                 break
-            except Exception:
+            except Exception as e:
                 coordinator.bots_state[bot_name]["status"] = "Disconnect"
                 await coordinator.draw_table()
+                logger.error(f"[!] Error in {bot_name} game execution loop: {str(e)}", exc_info=True)
             else:
                 coordinator.bots_state[bot_name]["status"] = "Disconnect"
                 await coordinator.draw_table()
@@ -162,8 +163,8 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
             if ws_client:
                 await ws_client.close()
 
-            is_bot_alive = coordinator.bots_state[bot_name].get("alive", True)
-            if not is_bot_alive:
-                coordinator.bots_state[bot_name]["status"] = "Retrying"
-                await coordinator.draw_table()
-                await asyncio.sleep(5.0)
+        is_bot_alive = coordinator.bots_state[bot_name].get("alive", True)
+        if not is_bot_alive:
+            coordinator.bots_state[bot_name]["status"] = "Retrying"
+            await coordinator.draw_table()
+            await asyncio.sleep(5.0)

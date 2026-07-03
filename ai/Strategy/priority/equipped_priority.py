@@ -5,7 +5,7 @@ MELEE_WEAPONS = {"Katana", "Sword", "Dagger"}
 RANGED_WEAPONS = {"Sniper rifle", "Bow", "Pistol"}
 
 def get_weapon_atk(w_name: str) -> int:
-    return WEAPONS.get(w_name, {}).get("atk", 0)
+    return WEAPONS.get(w_name, {}).get("atk_bonus", 0)
 
 def get_armour_def(a_name: str) -> int:
     ARMOURS = {

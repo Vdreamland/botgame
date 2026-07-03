@@ -53,8 +53,18 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
         if best_safe_nav:
             best_nav = best_safe_nav
             best_nav["score"] = 1.00
-        choices = [("navigation", 1.00)]
-        winner_category, winner_score = "navigation", 1.00
+            choices = [("navigation", 1.00)]
+            winner_category, winner_score = "navigation", 1.00
+        else:
+            choices = [
+                ("recovery", best_recovery.get("score", 0.0)),
+                ("equip", best_equip.get("score", 0.0)),
+                ("loot", best_loot.get("score", 0.0)),
+                ("target", best_target.get("score", 0.0)),
+                ("navigation", best_nav.get("score", 0.0)),
+                ("explore", best_explore.get("score", 0.0)),
+                ("interact", best_interact.get("score", 0.0))
+            ]
     else:
         choices = [
             ("recovery", best_recovery.get("score", 0.0)),
@@ -65,22 +75,22 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             ("explore", best_explore.get("score", 0.0)),
             ("interact", best_interact.get("score", 0.0))
         ]
-        
-        vital = get_self_vital_status(view)
-        curr_hp = vital.get("hp", 100)
-        curr_ep = vital.get("ep", 10)
-        
-        from ai.detector.enemy_detector import get_visible_enemies_by_layer
-        layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
-        l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
-        enemies_l0 = l0_counts.get("P", 0) + l0_counts.get("M", 0)
-        
-        if curr_ep <= 2 and curr_hp >= 40 and enemies_l0 == 0:
-            choices.append(("rest", 0.88))
-            
-        choices.sort(key=lambda x: x[1], reverse=True)
-        winner_category, winner_score = choices[0]
-        
+    
+    vital = get_self_vital_status(view)
+    curr_hp = vital.get("hp", 100)
+    curr_ep = vital.get("ep", 10)
+    
+    from ai.detector.enemy_detector import get_visible_enemies_by_layer
+    layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
+    l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
+    enemies_l0 = l0_counts.get("P", 0) + l0_counts.get("M", 0)
+    
+    if curr_ep <= 2 and curr_hp >= 40 and enemies_l0 == 0:
+        choices.append(("rest", 0.88))
+    
+    choices.sort(key=lambda x: x[1], reverse=True)
+    winner_category, winner_score = choices[0]
+    
     report_lines = []
     if best_recovery.get("score", 0.0) >= 0.15:
         report_lines.append(f"Heal: {best_recovery['name']} ({best_recovery['score']:.2f})")
@@ -163,10 +173,10 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
         current_region = view.get("currentRegion", {})
         curr_id = current_region.get("id") if isinstance(current_region, dict) else None
         target_ruin_id = best_explore["ruin_id"]
-        if curr_id == target_ruid_id:
+        if curr_id == target_ruin_id:
             ruins = view.get("visibleRuins", [])
             for r in ruins:
-                if isinstance(r, dict) and r.get("ruinId") == target_ruid_id:
+                if isinstance(r, dict) and r.get("ruinId") == target_ruin_id:
                     if r.get("gauge", 0) < r.get("maxGauge", 3):
                         return {
                             "type": "explore",

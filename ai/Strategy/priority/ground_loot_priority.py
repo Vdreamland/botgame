@@ -119,7 +119,7 @@ class GroundLootPriority:
                         else:
                             score = 0.85
                     else:
-                        score = 0.15
+                        score = 0.0
                 elif item_name in RANGED_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_ranged_atk:
@@ -132,7 +132,7 @@ class GroundLootPriority:
                         else:
                             score = 0.85
                     else:
-                        score = 0.15
+                        score = 0.0
                 elif item_name in {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"} or item_type in ("armour", "armor") or any(g in item_name for g in ARMOUR_GRADES):
                     armor_def = get_armour_def(item_name)
                     if armor_def > best_armor_def:
@@ -143,7 +143,7 @@ class GroundLootPriority:
                         else:
                             score = 0.85
                     else:
-                        score = 0.15
+                        score = 0.0
                 elif item_name in ("Medkit", "medkit"):
                     if curr_hp <= 50:
                         score = 0.96

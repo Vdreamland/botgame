@@ -20,6 +20,8 @@ async def _execute_decision(view: dict, bot_name: str, turn_num: int, ws_client,
     logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
     logger.info(f"[~] {bot_name} strategic plan: {act_report}")
     if act_type != "unknown":
+        from ai.Strategy.memory import add_recent_event
+        add_recent_event(f"Executed action: {act_type} -> {act_name}")
         if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
             ws_client.last_acted_turn = turn_num
             coordinator.bots_state[bot_name]["local_cooldown"] = True
@@ -54,6 +56,23 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                         r_name = r_data.get("name")
                         if r_id and r_name:
                             record_region_name(r_id, r_name)
+
+            self_data_temp = view_data_temp.get("self", {})
+            if isinstance(self_data_temp, dict):
+                new_hp = self_data_temp.get("hp")
+                new_kills = self_data_temp.get("kills")
+                prev_view = coordinator.bots_state[bot_name].get("view", {})
+                if isinstance(prev_view, dict):
+                    prev_self = prev_view.get("self", {})
+                    if isinstance(prev_self, dict):
+                        prev_hp = prev_self.get("hp")
+                        prev_kills = prev_self.get("kills")
+                        if prev_hp is not None and new_hp is not None and new_hp < prev_hp:
+                            from ai.Strategy.memory import add_recent_event
+                            add_recent_event(f"Took {prev_hp - new_hp} damage")
+                        if prev_kills is not None and new_kills is not None and new_kills > prev_kills:
+                            from ai.Strategy.memory import add_recent_event
+                            add_recent_event("Killed an enemy!")
 
         turn = frame.get("turn")
         self_data = frame.get("view", {}).get("self", {})
@@ -117,6 +136,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
                 return False
             else:
+                from ai.Strategy.memory import add_recent_event
+                add_recent_event(f"Player {event_data.get('agentId')} was eliminated")
                 death_region = event_data.get("regionId") or event_data.get("region_id") or event_data.get("region")
                 if death_region:
                     from ai.Strategy.memory import mark_death_spot
@@ -165,6 +186,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             err = frame.get("error", {})
             logger.warning(f"[!] Action result warning: {err.get('message', 'Unknown')} (Code: {err.get('code', 'None')})")
             coordinator.bots_state[bot_name]["local_cooldown"] = False
+            from ai.Strategy.memory import add_recent_event
+            add_recent_event(f"Action failed: {err.get('message', 'Unknown error')}")
         res_data = frame.get("data", {})
         if isinstance(res_data, dict):
             if res_data.get("canAct") is True or res_data.get("can_act") is True:

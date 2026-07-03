@@ -33,6 +33,9 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                 score = 0.85
             else:
                 score = 0.70
+            
+            score -= (target_def * 0.005)
+            
             if net_atk <= 5:
                 score *= 0.20
         else:
@@ -69,6 +72,9 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
                     score = 0.95
                 else:
                     score = 0.80
+            
+            score -= (target_def * 0.005)
+            
             if net_atk <= 5:
                 score *= 0.20
         else:

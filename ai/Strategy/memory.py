@@ -3,6 +3,7 @@ _death_spots = set()
 _known_dead_zones = {}
 _map_connections = {}
 _region_names = {}
+_recent_events = []
 
 def mark_visited(region_id: str):
     global _visited_regions, _death_spots
@@ -64,10 +65,22 @@ def get_region_name(region_id: str) -> str:
     global _region_names
     return _region_names.get(region_id, "")
 
+def add_recent_event(event_str: str):
+    global _recent_events
+    if event_str:
+        _recent_events.append(event_str)
+        if len(_recent_events) > 5:
+            _recent_events.pop(0)
+
+def get_recent_events() -> list:
+    global _recent_events
+    return list(_recent_events)
+
 def clear_memory():
-    global _visited_regions, _death_spots, _known_dead_zones, _map_connections, _region_names
+    global _visited_regions, _death_spots, _known_dead_zones, _map_connections, _region_names, _recent_events
     _visited_regions = []
     _death_spots = set()
     _known_dead_zones = {}
     _map_connections = {}
     _region_names = {}
+    _recent_events = []

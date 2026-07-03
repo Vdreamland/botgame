@@ -3,7 +3,7 @@ from ai.detector.zone_detector import detect_terrain, detect_facility, detect_we
 from ai.detector.dead_zone_detector import analyze_death_zones
 from ai.detector.ground_detector import detect_ground_loot
 from ai.detector.enemy_detector import get_visible_enemies_by_layer
-from ai.Strategy.memory import get_all_known_dead_zones
+from ai.Strategy.memory import get_all_known_dead_zones, get_recent_events
 from game_data.world_info import TERRAINS
 
 def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
@@ -73,6 +73,9 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
         layer_lines.append(f"Layer {layer} : P {counts['P']} / M {counts['M']} / A {counts['A']}")
     layer_display = "\n".join(layer_lines)
     
+    recent_evs = get_recent_events()
+    recent_display = "\n".join([f"- {ev}" for ev in recent_evs]) if recent_evs else "None"
+    
     return (
         f"# Turn {turn} [{bot_name}]\n"
         f"HP: {hp} | EP: {ep} | Atk: {atk} | Def: {defense} | Kills: {kills} | Vision : {vision_zones} Zone\n"
@@ -81,5 +84,7 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
         f"Location : {location_name} | Terrain: {terrain_name} | Weather : {weather_name} | Vision {vision_mod} | Links {links_count}\n"
         f"DeadZone : {dead_zone_display}\n"
         f"Ground Loot : {ground_loot_display}\n\n"
-        f"{layer_display}"
+        f"{layer_display}\n\n"
+        f"[RECENT EVENTS]\n"
+        f"{recent_display}"
     )

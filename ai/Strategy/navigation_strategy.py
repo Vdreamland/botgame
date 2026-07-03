@@ -2,7 +2,7 @@ from ai.detector.dead_zone_detector import analyze_death_zones, is_pending_dead_
 from ai.detector.zone_detector import detect_terrain, detect_facility
 from ai.detector.enemy_detector import get_visible_enemies_by_layer
 from ai.detector.ruin_detector import get_visible_ruins_status
-from ai.Strategy.memory import get_visit_count, is_death_spot, is_known_dead_zone, get_region_connections
+from ai.Strategy.memory import get_visit_count, is_death_spot, is_known_dead_zone, get_region_connections, get_region_name
 from game_data.world_info import TERRAINS
 
 EDGE_REGIONS = {
@@ -37,7 +37,7 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     for conn_id in connections:
         r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
         score = 0.50
-        name = r_data.get("name", str(conn_id))
+        name = r_data.get("name") or get_region_name(conn_id) or str(conn_id)
         is_dz = is_dead_zone(r_data) or is_known_dead_zone(conn_id) or (conn_id in death_analysis.get("dead_zones", []))
         is_pending = is_pending_dead_zone(conn_id, view) or (conn_id in death_analysis.get("pending_dead_zones", []))
         terrain = detect_terrain(r_data)

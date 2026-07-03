@@ -37,6 +37,24 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
     msg_type = frame.get("type")
     
     if msg_type in ("agent_view", "turn_advanced"):
+        view_data_temp = frame.get("view", {})
+        if isinstance(view_data_temp, dict):
+            curr_reg_temp = view_data_temp.get("currentRegion", {})
+            if isinstance(curr_reg_temp, dict):
+                curr_id = curr_reg_temp.get("id")
+                curr_name = curr_reg_temp.get("name")
+                if curr_id and curr_name:
+                    from ai.Strategy.memory import record_region_name
+                    record_region_name(curr_id, curr_name)
+            regions_dict_temp = view_data_temp.get("regions", {})
+            if isinstance(regions_dict_temp, dict):
+                from ai.Strategy.memory import record_region_name
+                for r_id, r_data in regions_dict_temp.items():
+                    if isinstance(r_data, dict):
+                        r_name = r_data.get("name")
+                        if r_id and r_name:
+                            record_region_name(r_id, r_name)
+
         turn = frame.get("turn")
         self_data = frame.get("view", {}).get("self", {})
         is_alive = True

@@ -2,6 +2,7 @@ _visited_regions = []
 _death_spots = set()
 _known_dead_zones = {}
 _map_connections = {}
+_region_names = {}
 
 def mark_visited(region_id: str):
     global _visited_regions, _death_spots
@@ -54,9 +55,19 @@ def get_visited_history() -> list:
     global _visited_regions
     return list(_visited_regions)
 
+def record_region_name(region_id: str, region_name: str):
+    global _region_names
+    if region_id and region_name:
+        _region_names[region_id] = region_name
+
+def get_region_name(region_id: str) -> str:
+    global _region_names
+    return _region_names.get(region_id, "")
+
 def clear_memory():
-    global _visited_regions, _death_spots, _known_dead_zones, _map_connections
+    global _visited_regions, _death_spots, _known_dead_zones, _map_connections, _region_names
     _visited_regions = []
     _death_spots = set()
     _known_dead_zones = {}
     _map_connections = {}
+    _region_names = {}

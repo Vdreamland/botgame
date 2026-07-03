@@ -117,7 +117,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     
     candidates = []
     
-    if best_recovery:
+    if best_recovery and best_recovery.get("score", 0.0) > 0.0:
         candidates.append({
             "type": "recovery",
             "name": best_recovery["name"],
@@ -125,7 +125,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             "payload": {"type": "use_item", "itemId": best_recovery["id"]}
         })
         
-    if best_equip and best_equip["score"] > 0.0:
+    if best_equip and best_equip.get("score", 0.0) > 0.0:
         candidates.append({
             "type": "equip",
             "name": best_equip["name"],
@@ -133,7 +133,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             "payload": {"type": "equip", "itemId": best_equip["id"]}
         })
         
-    if best_loot and best_loot["score"] > 0.0:
+    if best_loot and best_loot.get("score", 0.0) > 0.0:
         candidates.append({
             "type": "loot",
             "name": best_loot["name"],
@@ -141,7 +141,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             "payload": {"type": "pickup", "itemId": best_loot["id"]}
         })
         
-    if best_target and best_target["score"] > 0.0:
+    if best_target and best_target.get("score", 0.0) > 0.0:
         candidates.append({
             "type": "target",
             "name": best_target["name"],
@@ -149,7 +149,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             "payload": {}
         })
         
-    if best_nav and best_nav["score"] > 0.0:
+    if best_nav and best_nav.get("score", 0.0) > 0.0:
         candidates.append({
             "type": "navigation",
             "name": best_nav["name"],
@@ -157,7 +157,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             "payload": {"type": "move", "regionId": best_nav["id"]}
         })
         
-    if best_explore and best_explore["score"] > 0.0:
+    if best_explore and best_explore.get("score", 0.0) > 0.0:
         candidates.append({
             "type": "explore",
             "name": "Ruin Exploration",
@@ -165,7 +165,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             "payload": {}
         })
         
-    if best_interact and best_interact["score"] > 0.0:
+    if best_interact and best_interact.get("score", 0.0) > 0.0:
         candidates.append({
             "type": "interact",
             "name": best_interact["name"],
@@ -240,11 +240,11 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     elif best["type"] == "explore":
         current_region = view.get("currentRegion", {})
         curr_id = current_region.get("id") if isinstance(current_region, dict) else None
-        target_ruin_id = best_explore["ruin_id"]
-        if curr_id == target_ruin_id:
+        target_ruid_id = best_explore["ruin_id"]
+        if curr_id == target_ruid_id:
             ruins = view.get("visibleRuins", [])
             for r in ruins:
-                if isinstance(r, dict) and r.get("ruinId") == target_ruin_id:
+                if isinstance(r, dict) and r.get("ruinId") == target_ruid_id:
                     if r.get("gauge", 0) < r.get("maxGauge", 3):
                         return {
                             "type": "explore",

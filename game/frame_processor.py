@@ -11,6 +11,10 @@ def get_ordinal(n: int) -> str:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
 
+def get_weapon_atk(w_name: str) -> int:
+    from game_data.weapon_info import WEAPONS
+    return WEAPONS.get(w_name, {}).get("atk", 0)
+
 async def _execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, coordinator) -> None:
     action_payload = make_decision(view, bot_name)
     act_type = action_payload.get("type", "unknown")
@@ -73,6 +77,47 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                         if prev_kills is not None and new_kills is not None and new_kills > prev_kills:
                             from ai.Strategy.memory import add_recent_event
                             add_recent_event("Killed an enemy!")
+
+                inventory = self_data_temp.get("inventory", [])
+                equipped_weapon = self_data_temp.get("equippedWeapon")
+                equipped_weapon_name = equipped_weapon.get("name", "Fist") if isinstance(equipped_weapon, dict) else "Fist"
+                
+                MELEE_WEAPONS = {"Katana", "Sword", "Dagger"}
+                RANGED_WEAPONS = {"Sniper rifle", "Bow", "Pistol"}
+                
+                best_melee_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in MELEE_WEAPONS else 0
+                best_ranged_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in RANGED_WEAPONS else 0
+                
+                for item in inventory:
+                    if isinstance(item, dict):
+                        item_name = item.get("name")
+                        if item_name in MELEE_WEAPONS:
+                            best_melee_atk = max(best_melee_atk, get_weapon_atk(item_name))
+                        elif item_name in RANGED_WEAPONS:
+                            best_ranged_atk = max(best_ranged_atk, get_weapon_atk(item_name))
+                            
+                for item in inventory:
+                    if isinstance(item, dict):
+                        item_name = item.get("name")
+                        item_id = item.get("id")
+                        if item_name in MELEE_WEAPONS and get_weapon_atk(item_name) < best_melee_atk:
+                            from ai.Strategy.memory import add_recent_event
+                            add_recent_event(f"Dropped redundant weapon: {item_name}")
+                            wrapped_payload = {
+                                "type": "action",
+                                "data": {"type": "drop", "itemId": item_id}
+                            }
+                            await ws_client.send(wrapped_payload)
+                            break
+                        elif item_name in RANGED_WEAPONS and get_weapon_atk(item_name) < best_ranged_atk:
+                            from ai.Strategy.memory import add_recent_event
+                            add_recent_event(f"Dropped redundant weapon: {item_name}")
+                            wrapped_payload = {
+                                "type": "action",
+                                "data": {"type": "drop", "itemId": item_id}
+                            }
+                            await ws_client.send(wrapped_payload)
+                            break
 
         turn = frame.get("turn")
         self_data = frame.get("view", {}).get("self", {})

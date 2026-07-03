@@ -26,7 +26,7 @@ async def _execute_decision(view: dict, bot_name: str, turn_num: int, ws_client,
     if act_type != "unknown":
         from ai.Strategy.memory import add_recent_event
         add_recent_event(f"Executed action: {act_type} -> {act_name}")
-    if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
+    if act_type in ("move", "explore", "attack", "use_item", "interact", "rest", "pickup", "equip"):
         ws_client.last_acted_turn = turn_num
         coordinator.bots_state[bot_name]["local_cooldown"] = True
         clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
@@ -120,12 +120,18 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                     break
 
     turn = frame.get("turn")
-    self_data = frame.get("view", {}).get("self", {})
+    view_data = frame.get("view", {})
+    self_data = view_data.get("self") if isinstance(view_data, dict) else None
+    
     is_alive = True
     if isinstance(self_data, dict):
         is_alive = self_data.get("isAlive", True)
-    if self_data.get("hp") == 0:
-        is_alive = False
+        hp = self_data.get("hp", 100)
+        if hp == 0:
+            is_alive = False
+    else:
+        if view_data:
+            is_alive = False
 
     if turn is not None and turn != ws_client.last_logged_turn and is_alive:
         write_gameplay_log(bot_name, f"# Turn {turn}", frame.get("view", {}))
@@ -136,29 +142,25 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         coordinator.bots_state[bot_name]["turn"] = frame.get("turn", 0)
         await coordinator.draw_table()
 
-    view_data = frame.get("view", {})
-    self_data = view_data.get("self")
-    
-    if isinstance(self_data, dict):
-        is_alive = self_data.get("isAlive")
-        hp = self_data.get("hp", 100)
-        if is_alive is False or hp == 0:
-            if not coordinator.bots_state[bot_name].get("alive", True):
-                return False
-            coordinator.bots_state[bot_name]["alive"] = False
-            await coordinator.draw_table()
-            turn = frame.get("turn") or ws_client.last_logged_turn
-            logger.info(f"[-] {bot_name} has been eliminated (HP: 0). Logging turn {turn}.")
-            if "self" in view_data:
-                view_data["self"]["hp"] = 0
-                view_data["self"]["isAlive"] = False
-            write_gameplay_log(bot_name, f"# Turn {turn}", view_data)
-            write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} has been eliminated (HP: 0). Exiting game loop...")
+    if is_alive is False:
+        if not coordinator.bots_state[bot_name].get("alive", True):
             return False
-        else:
-            if not coordinator.bots_state[bot_name].get("alive", True):
-                coordinator.bots_state[bot_name]["alive"] = True
-                await coordinator.draw_table()
+        coordinator.bots_state[bot_name]["alive"] = False
+        await coordinator.draw_table()
+        turn_num = frame.get("turn") or ws_client.last_logged_turn
+        logger.info(f"[-] {bot_name} has been eliminated. Logging turn {turn_num}.")
+        if isinstance(view_data, dict):
+            if "self" not in view_data:
+                view_data["self"] = {}
+            view_data["self"]["hp"] = 0
+            view_data["self"]["isAlive"] = False
+        write_gameplay_log(bot_name, f"# Turn {turn_num}", view_data)
+        write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} has been eliminated. Exiting game loop...")
+        return False
+    else:
+        if not coordinator.bots_state[bot_name].get("alive", True):
+            coordinator.bots_state[bot_name]["alive"] = True
+            await coordinator.draw_table()
 
     if msg_type == "event":
         event_name = frame.get("event")
@@ -175,9 +177,9 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                         latest_view["self"] = {}
                     latest_view["self"]["hp"] = 0
                     latest_view["self"]["isAlive"] = False
-                turn = frame.get("turn") or ws_client.last_logged_turn
-                if turn >= 0:
-                    write_gameplay_log(bot_name, f"# Turn {turn}", latest_view)
+                turn_num = frame.get("turn") or ws_client.last_logged_turn
+                if turn_num >= 0:
+                    write_gameplay_log(bot_name, f"# Turn {turn_num}", latest_view)
                 write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
                 return False
             else:

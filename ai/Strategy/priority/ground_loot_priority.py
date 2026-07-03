@@ -1,6 +1,7 @@
 from ai.detector.ground_detector import detect_ground_loot
 from game_data.weapon_info import WEAPONS
 from game_data.armour_info import ARMOUR_GRADES
+from ai.detector.enemy_detector import get_visible_enemies_by_layer
 
 MELEE_WEAPONS = {"Katana", "Sword", "Dagger"}
 RANGED_WEAPONS = {"Sniper rifle", "Bow", "Pistol"}
@@ -35,11 +36,17 @@ class GroundLootPriority:
             return priorities
 
         self_data = view.get("self", {})
+        curr_hp = self_data.get("hp", 100)
         inventory = self_data.get("inventory", [])
         equipped_weapon = self_data.get("equippedWeapon")
         equipped_weapon_name = equipped_weapon.get("name", "Fist") if isinstance(equipped_weapon, dict) else "Fist"
         equipped_armor = self_data.get("equippedArmor")
         equipped_armor_name = equipped_armor.get("name", "None") if isinstance(equipped_armor, dict) else "None"
+
+        self_bot_name = self_data.get("name", "self")
+        layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
+        l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
+        enemies_l0 = l0_counts.get("P", 0) + l0_counts.get("M", 0)
 
         best_melee_name = "Fist"
         best_melee_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in MELEE_WEAPONS else 0
@@ -71,6 +78,8 @@ class GroundLootPriority:
                         best_armor_def = armor_def
                         best_armor_name = item_name
 
+        is_armed = equipped_weapon_name != "Fist"
+
         for raw_item in items:
             item = raw_item
             if isinstance(item, str):
@@ -85,29 +94,54 @@ class GroundLootPriority:
                 elif item_name in MELEE_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_melee_atk:
-                        score = 0.85
+                        if enemies_l0 > 0 and is_armed:
+                            score = 0.40
+                        elif curr_hp <= 30 and is_armed:
+                            score = 0.20
+                        else:
+                            score = 0.85
                     else:
                         score = 0.15
                 elif item_name in RANGED_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_ranged_atk:
-                        score = 0.85
+                        if enemies_l0 > 0 and is_armed:
+                            score = 0.40
+                        elif curr_hp <= 30 and is_armed:
+                            score = 0.20
+                        else:
+                            score = 0.85
                     else:
                         score = 0.15
                 elif item_name in {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"} or item_type in ("armour", "armor") or any(g in item_name for g in ARMOUR_GRADES):
                     armor_def = get_armour_def(item_name)
                     if armor_def > best_armor_def:
-                        score = 0.85
+                        if enemies_l0 > 0 and curr_hp <= 30:
+                            score = 0.30
+                        else:
+                            score = 0.85
                     else:
                         score = 0.15
                 elif item_name in ("Medkit", "medkit"):
-                    score = 0.85
+                    if curr_hp <= 50:
+                        score = 0.96
+                    else:
+                        score = 0.85
                 elif item_name == "Emergency Food":
-                    score = 0.70
+                    if curr_hp <= 50:
+                        score = 0.92
+                    else:
+                        score = 0.70
                 elif item_name == "Bandage":
-                    score = 0.70
+                    if curr_hp <= 50:
+                        score = 0.92
+                    else:
+                        score = 0.70
                 elif item_name in ("Energy Drink", "Energy drink"):
-                    score = 0.70
+                    if curr_hp <= 50:
+                        score = 0.90
+                    else:
+                        score = 0.70
                 elif item_name == "Binoculars":
                     score = 0.30
                 else:

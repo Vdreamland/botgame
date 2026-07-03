@@ -1,8 +1,9 @@
 import asyncio
 from logs.logs_gameplay import write_gameplay_log
-from ai.Strategy import make_decision
 from utils.logger import logger
 from game.lobby_coordinator import LobbyCoordinator
+from game.inventory_manager import clean_redundant_items
+from game.action_dispatcher import execute_decision
 
 def get_ordinal(n: int) -> str:
     if 11 <= (n % 100) <= 13:
@@ -10,31 +11,6 @@ def get_ordinal(n: int) -> str:
     else:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
-
-def get_weapon_atk(w_name: str) -> int:
-    from game_data.weapon_info import WEAPONS
-    return WEAPONS.get(w_name, {}).get("atk_bonus", 0)
-
-async def _execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, coordinator) -> None:
-    action_payload = make_decision(view, bot_name)
-    act_type = action_payload.get("type", "unknown")
-    act_name = action_payload.get("name", "None")
-    act_score = action_payload.get("score", 0.0)
-    act_report = action_payload.get("strategy_report", "None")
-    logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
-    logger.info(f"[~] {bot_name} strategic plan: {act_report}")
-    if act_type != "unknown":
-        from ai.Strategy.memory import add_recent_event
-        add_recent_event(f"Executed action: {act_type} -> {act_name}")
-    if act_type in ("move", "explore", "attack", "use_item", "interact", "rest", "pickup", "equip"):
-        ws_client.last_acted_turn = turn_num
-        coordinator.bots_state[bot_name]["local_cooldown"] = True
-        clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
-        wrapped_payload = {
-            "type": "action",
-            "data": clean_payload
-        }
-        await ws_client.send(wrapped_payload)
 
 async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoordinator, ws_client) -> bool:
     if not isinstance(frame, dict):
@@ -78,44 +54,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                     from ai.Strategy.memory import add_recent_event
                     add_recent_event("Killed an enemy!")
 
-        inventory = self_data_temp.get("inventory", [])
-        equipped_weapon = self_data_temp.get("equippedWeapon")
-        equipped_weapon_name = equipped_weapon.get("name", "Fist") if isinstance(equipped_weapon, dict) else "Fist"
-        
-        MELEE_WEAPONS = {"Katana", "Sword", "Dagger"}
-        RANGED_WEAPONS = {"Sniper rifle", "Bow", "Pistol"}
-        
-        best_melee_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in MELEE_WEAPONS else 0
-        best_ranged_atk = get_weapon_atk(equipped_weapon_name) if equipped_weapon_name in RANGED_WEAPONS else 0
-        
-        for item in inventory:
-            if isinstance(item, dict):
-                item_name = item.get("name")
-                if item_name in MELEE_WEAPONS:
-                    best_melee_atk = max(best_melee_atk, get_weapon_atk(item_name))
-                elif item_name in RANGED_WEAPONS:
-                    best_ranged_atk = max(best_ranged_atk, get_weapon_atk(item_name))
-        
-        for item in inventory:
-            if isinstance(item, dict):
-                item_name = item.get("name")
-                item_id = item.get("id")
-                if item_name in MELEE_WEAPONS and get_weapon_atk(item_name) < best_melee_atk:
-                    from ai.Strategy.memory import add_recent_event
-                    add_recent_event(f"Dropped redundant weapon: {item_name}")
-                    wrapped_payload = {
-                        "type": "action",
-                        "data": {"type": "drop", "itemId": item_id}
-                    }
-                    await ws_client.send(wrapped_payload)
-                elif item_name in RANGED_WEAPONS and get_weapon_atk(item_name) < best_ranged_atk:
-                    from ai.Strategy.memory import add_recent_event
-                    add_recent_event(f"Dropped redundant weapon: {item_name}")
-                    wrapped_payload = {
-                        "type": "action",
-                        "data": {"type": "drop", "itemId": item_id}
-                    }
-                    await ws_client.send(wrapped_payload)
+        await clean_redundant_items(self_data_temp, ws_client)
 
     turn = frame.get("turn")
     view_data = frame.get("view", {})
@@ -266,7 +205,7 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         is_local_cooldown = coordinator.bots_state[bot_name].get("local_cooldown", False)
 
         if msg_type in ("agent_view", "turn_advanced") and is_agent_alive and can_act and not already_acted and not is_local_cooldown:
-            await _execute_decision(frame.get("view", {}), bot_name, turn_num, ws_client, coordinator)
+            await execute_decision(frame.get("view", {}), bot_name, turn_num, ws_client, coordinator)
 
     if msg_type == "can_act_changed" and (frame.get("canAct") is True or frame.get("can_act") is True):
         coordinator.bots_state[bot_name]["local_cooldown"] = False
@@ -288,6 +227,6 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             already_acted = ws_client.last_acted_turn == turn_num
 
             if is_agent_alive and not already_acted:
-                await _execute_decision(stored_view, bot_name, turn_num, ws_client, coordinator)
+                await execute_decision(stored_view, bot_name, turn_num, ws_client, coordinator)
 
     return True

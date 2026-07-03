@@ -114,51 +114,130 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                 "strategy_report": f"FORCED_MOVE! {strategy_report}"
             }
         return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
-    if winner_category == "recovery":
+    
+    candidates = []
+    
+    if best_recovery:
+        candidates.append({
+            "type": "recovery",
+            "name": best_recovery["name"],
+            "score": best_recovery["score"],
+            "payload": {"type": "use_item", "itemId": best_recovery["id"]}
+        })
+        
+    if best_equip and best_equip["score"] > 0.0:
+        candidates.append({
+            "type": "equip",
+            "name": best_equip["name"],
+            "score": best_equip["score"],
+            "payload": {"type": "equip", "itemId": best_equip["id"]}
+        })
+        
+    if best_loot and best_loot["score"] > 0.0:
+        candidates.append({
+            "type": "loot",
+            "name": best_loot["name"],
+            "score": best_loot["score"],
+            "payload": {"type": "pickup", "itemId": best_loot["id"]}
+        })
+        
+    if best_target and best_target["score"] > 0.0:
+        candidates.append({
+            "type": "target",
+            "name": best_target["name"],
+            "score": best_target["score"],
+            "payload": {}
+        })
+        
+    if best_nav and best_nav["score"] > 0.0:
+        candidates.append({
+            "type": "navigation",
+            "name": best_nav["name"],
+            "score": best_nav["score"],
+            "payload": {"type": "move", "regionId": best_nav["id"]}
+        })
+        
+    if best_explore and best_explore["score"] > 0.0:
+        candidates.append({
+            "type": "explore",
+            "name": "Ruin Exploration",
+            "score": best_explore["score"],
+            "payload": {}
+        })
+        
+    if best_interact and best_interact["score"] > 0.0:
+        candidates.append({
+            "type": "interact",
+            "name": best_interact["name"],
+            "score": best_interact["score"],
+            "payload": {
+                "type": "interact",
+                "interactable": best_interact["id"],
+                "interactableId": best_interact["id"],
+                "target": best_interact["id"]
+            }
+        })
+        
+    if curr_ep <= 2 and curr_hp >= 40 and enemies_l0 == 0:
+        candidates.append({
+            "type": "rest",
+            "name": "None",
+            "score": 0.88,
+            "payload": {"type": "rest"}
+        })
+        
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+    
+    if not candidates:
+        return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
+        
+    best = candidates[0]
+    
+    if best["type"] == "recovery":
         return {
             "type": "use_item",
-            "itemId": best_recovery["id"],
-            "name": best_recovery["name"],
-            "score": winner_score,
+            "itemId": best["payload"]["itemId"],
+            "name": best["name"],
+            "score": best["score"],
             "strategy_report": strategy_report
         }
-    elif winner_category == "equip":
+    elif best["type"] == "equip":
         return {
             "type": "equip",
-            "itemId": best_equip["id"],
-            "name": best_equip["name"],
-            "score": winner_score,
+            "itemId": best["payload"]["itemId"],
+            "name": best["name"],
+            "score": best["score"],
             "strategy_report": strategy_report
         }
-    elif winner_category == "loot":
+    elif best["type"] == "loot":
         return {
             "type": "pickup",
-            "itemId": best_loot["id"],
-            "name": best_loot["name"],
-            "score": winner_score,
+            "itemId": best["payload"]["itemId"],
+            "name": best["name"],
+            "score": best["score"],
             "strategy_report": strategy_report
         }
-    elif winner_category == "target":
+    elif best["type"] == "target":
         t_id = find_target_id(view, best_target["name"], best_target["type"], best_target["region_id"])
         if t_id:
             return {
                 "type": "attack",
                 "targetId": t_id,
                 "name": best_target["name"],
-                "score": winner_score,
+                "score": best["score"],
                 "strategy_report": strategy_report
             }
         else:
-            return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
-    elif winner_category == "navigation":
+            return {"type": "rest", "name": "None", "score": best["score"], "strategy_report": strategy_report}
+    elif best["type"] == "navigation":
         return {
             "type": "move",
-            "regionId": best_nav["id"],
-            "name": best_nav["name"],
-            "score": winner_score,
+            "regionId": best["payload"]["regionId"],
+            "name": best["name"],
+            "score": best["score"],
             "strategy_report": strategy_report
         }
-    elif winner_category == "explore":
+    elif best["type"] == "explore":
         current_region = view.get("currentRegion", {})
         curr_id = current_region.get("id") if isinstance(current_region, dict) else None
         target_ruin_id = best_explore["ruin_id"]
@@ -170,7 +249,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                         return {
                             "type": "explore",
                             "name": "Ruin Exploration",
-                            "score": winner_score,
+                            "score": best["score"],
                             "strategy_report": strategy_report
                         }
                     else:
@@ -178,30 +257,30 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                             "type": "interact",
                             "target": "ruin",
                             "name": "Ruin Vault",
-                            "score": winner_score,
+                            "score": best["score"],
                             "strategy_report": strategy_report
                         }
             return {
                 "type": "explore",
                 "name": "Ruin Exploration",
-                "score": winner_score,
+                "score": best["score"],
                 "strategy_report": strategy_report
             }
-    elif winner_category == "interact":
+    elif best["type"] == "interact":
         return {
             "type": "interact",
-            "interactable": best_interact["id"],
-            "interactableId": best_interact["id"],
-            "target": best_interact["id"],
-            "name": best_interact["name"],
-            "score": winner_score,
+            "interactable": best["payload"]["interactable"],
+            "interactableId": best["payload"]["interactableId"],
+            "target": best["payload"]["target"],
+            "name": best["name"],
+            "score": best["score"],
             "strategy_report": strategy_report
         }
-    elif winner_category == "rest":
+    elif best["type"] == "rest":
         return {
             "type": "rest",
             "name": "None",
-            "score": winner_score,
+            "score": best["score"],
             "strategy_report": strategy_report
         }
     return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}

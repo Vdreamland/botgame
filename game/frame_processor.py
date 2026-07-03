@@ -19,9 +19,10 @@ async def _execute_decision(view: dict, bot_name: str, turn_num: int, ws_client,
     act_report = action_payload.get("strategy_report", "None")
     logger.info(f"[»] {bot_name} executes action: {act_type} -> {act_name} (Score: {act_score:.2f})")
     logger.info(f"[~] {bot_name} strategic plan: {act_report}")
-    if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
-        ws_client.last_acted_turn = turn_num
-        coordinator.bots_state[bot_name]["local_cooldown"] = True
+    if act_type != "unknown":
+        if act_type in ("move", "explore", "attack", "use_item", "interact", "rest"):
+            ws_client.last_acted_turn = turn_num
+            coordinator.bots_state[bot_name]["local_cooldown"] = True
         clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
         wrapped_payload = {
             "type": "action",

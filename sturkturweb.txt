@@ -56,9 +56,11 @@
 │   ├── __init__.py                   # Penanda paket Python untuk folder config
 │   └── agent_config.py               # Memuat seluruh konfigurasi bot dari .env dan menangani logika asinkronus auto_claim_rewards
 ├── game/                           
-│   ├── __init__.py                   
+│   ├── __init__.py           
+│   ├── inventory_manager.py     #  Khusus menangani pembersihan tas secara otomatis (membuang senjata redundan, senjata lemah, dan armor duplikat).
+│   ├── action_dispatcher.py     # Khusus menangani fungsi eksekusi keputusan (_execute_decision), yaitu membungkus aksi bot ke dalam format API, mencetak log perencanaan taktis di konsol, dan mengirimkannya ke server WebSocket
 │   ├── lobby_coordinator.py     
-│   ├── frame_processor.py              
+│   ├── frame_processor.py       # Hanya bertindak sebagai penerima pesan mentah (message router) dari WebSocket. Jika ada pesan masuk, ia hanya memanggil fungsi dari file manajer masing-masing (seperti memanggil inventory_manager untuk bersih-bersih, atau action_dispatcher untuk menyerang)       
 │   └── bot_lifecycle.py               
 
 
@@ -72,7 +74,8 @@ __init__.py : https://github.com/Vdreamland/botgame/blob/master/game/__init__.py
 lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lobby_coordinator.py
 bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
 frame_processor.py : https://github.com/Vdreamland/botgame/blob/master/game/frame_processor.py
-
+action_dispatcher.py
+inventory_manager.py
 
 ai/strategy/
 navigation_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/navigation_strategy.py

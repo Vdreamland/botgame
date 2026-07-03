@@ -68,29 +68,25 @@ class GroundLootPriority:
             if isinstance(item, dict):
                 item_id = item.get("id")
                 item_name = item.get("name")
-                item_type = item.get("type", "unknown")
                 score = 0.0
                 if item_name == "sMoltz":
                     score = 0.99
-                elif item_type == "weapon":
-                    if item_name in MELEE_WEAPONS:
-                        atk = get_weapon_atk(item_name)
-                        if atk > best_melee_atk:
-                            score = 0.95
-                        else:
-                            score = 0.15
-                    elif item_name in RANGED_WEAPONS:
-                        atk = get_weapon_atk(item_name)
-                        if atk > best_ranged_atk:
-                            score = 0.95
-                        else:
-                            score = 0.15
+                elif item_name in MELEE_WEAPONS:
+                    atk = get_weapon_atk(item_name)
+                    if atk > best_melee_atk:
+                        score = 0.85
                     else:
                         score = 0.15
-                elif item_type == "armour":
+                elif item_name in RANGED_WEAPONS:
+                    atk = get_weapon_atk(item_name)
+                    if atk > best_ranged_atk:
+                        score = 0.85
+                    else:
+                        score = 0.15
+                elif item_name in {"Plate Armor", "Iron Armor", "Leather Armor"}:
                     armor_def = get_armour_def(item_name)
                     if armor_def > best_armor_def:
-                        score = 0.95
+                        score = 0.85
                     else:
                         score = 0.15
                 elif item_name in ("Medkit", "medkit"):

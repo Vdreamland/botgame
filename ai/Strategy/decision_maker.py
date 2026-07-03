@@ -7,7 +7,6 @@ from ai.Strategy.priority.target_priority import get_target_priorities
 from ai.Strategy.priority.interact_priority import get_interact_priorities
 from ai.detector.dead_zone_detector import is_dead_zone
 from ai.detector.self_detector import get_self_vital_status
-from ai.detector.enemy_detector import get_visible_enemies_by_layer
 
 def find_target_id(view: dict, target_name: str, target_type: str, region_id: str) -> str:
     if target_type == "player":
@@ -45,15 +44,6 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     best_nav = navigation_priorities[0] if navigation_priorities else {"score": 0.0}
     best_explore = exploration_priorities[0] if exploration_priorities else {"score": 0.0}
     best_interact = interact_priorities[0] if interact_priorities else {"score": 0.0}
-    
-    vital = get_self_vital_status(view)
-    curr_hp = vital.get("hp", 100)
-    curr_ep = vital.get("ep", 10)
-    
-    layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
-    l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
-    enemies_l0 = l0_counts.get("P", 0) + l0_counts.get("M", 0)
-    
     if current_is_dz:
         best_safe_nav = None
         for nav in navigation_priorities:
@@ -75,8 +65,19 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
             ("explore", best_explore.get("score", 0.0)),
             ("interact", best_interact.get("score", 0.0))
         ]
+        
+        vital = get_self_vital_status(view)
+        curr_hp = vital.get("hp", 100)
+        curr_ep = vital.get("ep", 10)
+        
+        from ai.detector.enemy_detector import get_visible_enemies_by_layer
+        layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
+        l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
+        enemies_l0 = l0_counts.get("P", 0) + l0_counts.get("M", 0)
+        
         if curr_ep <= 2 and curr_hp >= 40 and enemies_l0 == 0:
             choices.append(("rest", 0.88))
+            
         choices.sort(key=lambda x: x[1], reverse=True)
         winner_category, winner_score = choices[0]
         
@@ -114,133 +115,54 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                 "strategy_report": f"FORCED_MOVE! {strategy_report}"
             }
         return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
-    
-    candidates = []
-    
-    if best_recovery and best_recovery.get("score", 0.0) > 0.0:
-        candidates.append({
-            "type": "recovery",
-            "name": best_recovery["name"],
-            "score": best_recovery["score"],
-            "payload": {"type": "use_item", "itemId": best_recovery["id"]}
-        })
-        
-    if best_equip and best_equip.get("score", 0.0) > 0.0:
-        candidates.append({
-            "type": "equip",
-            "name": best_equip["name"],
-            "score": best_equip["score"],
-            "payload": {"type": "equip", "itemId": best_equip["id"]}
-        })
-        
-    if best_loot and best_loot.get("score", 0.0) > 0.0:
-        candidates.append({
-            "type": "loot",
-            "name": best_loot["name"],
-            "score": best_loot["score"],
-            "payload": {"type": "pickup", "itemId": best_loot["id"]}
-        })
-        
-    if best_target and best_target.get("score", 0.0) > 0.0:
-        candidates.append({
-            "type": "target",
-            "name": best_target["name"],
-            "score": best_target["score"],
-            "payload": {}
-        })
-        
-    if best_nav and best_nav.get("score", 0.0) > 0.0:
-        candidates.append({
-            "type": "navigation",
-            "name": best_nav["name"],
-            "score": best_nav["score"],
-            "payload": {"type": "move", "regionId": best_nav["id"]}
-        })
-        
-    if best_explore and best_explore.get("score", 0.0) > 0.0:
-        candidates.append({
-            "type": "explore",
-            "name": "Ruin Exploration",
-            "score": best_explore["score"],
-            "payload": {}
-        })
-        
-    if best_interact and best_interact.get("score", 0.0) > 0.0:
-        candidates.append({
-            "type": "interact",
-            "name": best_interact["name"],
-            "score": best_interact["score"],
-            "payload": {
-                "type": "interact",
-                "interactable": best_interact["id"],
-                "interactableId": best_interact["id"],
-                "target": best_interact["id"]
-            }
-        })
-        
-    if curr_ep <= 2 and curr_hp >= 40 and enemies_l0 == 0:
-        candidates.append({
-            "type": "rest",
-            "name": "None",
-            "score": 0.88,
-            "payload": {"type": "rest"}
-        })
-        
-    candidates.sort(key=lambda x: x["score"], reverse=True)
-    
-    if not candidates:
-        return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
-        
-    best = candidates[0]
-    
-    if best["type"] == "recovery":
+    if winner_category == "recovery":
         return {
             "type": "use_item",
-            "itemId": best["payload"]["itemId"],
-            "name": best["name"],
-            "score": best["score"],
+            "itemId": best_recovery["id"],
+            "name": best_recovery["name"],
+            "score": winner_score,
             "strategy_report": strategy_report
         }
-    elif best["type"] == "equip":
+    elif winner_category == "equip":
         return {
             "type": "equip",
-            "itemId": best["payload"]["itemId"],
-            "name": best["name"],
-            "score": best["score"],
+            "itemId": best_equip["id"],
+            "name": best_equip["name"],
+            "score": winner_score,
             "strategy_report": strategy_report
         }
-    elif best["type"] == "loot":
+    elif winner_category == "loot":
         return {
             "type": "pickup",
-            "itemId": best["payload"]["itemId"],
-            "name": best["name"],
-            "score": best["score"],
+            "itemId": best_loot["id"],
+            "name": best_loot["name"],
+            "score": winner_score,
             "strategy_report": strategy_report
         }
-    elif best["type"] == "target":
+    elif winner_category == "target":
         t_id = find_target_id(view, best_target["name"], best_target["type"], best_target["region_id"])
         if t_id:
             return {
                 "type": "attack",
                 "targetId": t_id,
                 "name": best_target["name"],
-                "score": best["score"],
+                "score": winner_score,
                 "strategy_report": strategy_report
             }
         else:
-            return {"type": "rest", "name": "None", "score": best["score"], "strategy_report": strategy_report}
-    elif best["type"] == "navigation":
+            return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
+    elif winner_category == "navigation":
         return {
             "type": "move",
-            "regionId": best["payload"]["regionId"],
-            "name": best["name"],
-            "score": best["score"],
+            "regionId": best_nav["id"],
+            "name": best_nav["name"],
+            "score": winner_score,
             "strategy_report": strategy_report
         }
-    elif best["type"] == "explore":
+    elif winner_category == "explore":
         current_region = view.get("currentRegion", {})
         curr_id = current_region.get("id") if isinstance(current_region, dict) else None
-        target_ruid_id = best_explore["ruin_id"]
+        target_ruin_id = best_explore["ruin_id"]
         if curr_id == target_ruid_id:
             ruins = view.get("visibleRuins", [])
             for r in ruins:
@@ -249,7 +171,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                         return {
                             "type": "explore",
                             "name": "Ruin Exploration",
-                            "score": best["score"],
+                            "score": winner_score,
                             "strategy_report": strategy_report
                         }
                     else:
@@ -257,30 +179,30 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                             "type": "interact",
                             "target": "ruin",
                             "name": "Ruin Vault",
-                            "score": best["score"],
+                            "score": winner_score,
                             "strategy_report": strategy_report
                         }
             return {
                 "type": "explore",
                 "name": "Ruin Exploration",
-                "score": best["score"],
+                "score": winner_score,
                 "strategy_report": strategy_report
             }
-    elif best["type"] == "interact":
+    elif winner_category == "interact":
         return {
             "type": "interact",
-            "interactable": best["payload"]["interactable"],
-            "interactableId": best["payload"]["interactableId"],
-            "target": best["payload"]["target"],
-            "name": best["name"],
-            "score": best["score"],
+            "interactable": best_interact["id"],
+            "interactableId": best_interact["id"],
+            "target": best_interact["id"],
+            "name": best_interact["name"],
+            "score": winner_score,
             "strategy_report": strategy_report
         }
-    elif best["type"] == "rest":
+    elif winner_category == "rest":
         return {
             "type": "rest",
             "name": "None",
-            "score": best["score"],
+            "score": winner_score,
             "strategy_report": strategy_report
         }
     return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}

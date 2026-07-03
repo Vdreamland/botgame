@@ -71,10 +71,9 @@ class EquippedPriority:
             if isinstance(item, dict):
                 item_id = item.get("id")
                 item_name = item.get("name")
-                item_type = item.get("type", "unknown")
                 score = 0.0
 
-                if item_type == "weapon":
+                if item_name in MELEE_WEAPONS or item_name in RANGED_WEAPONS:
                     if enemies_l0 > 0:
                         if item_name in MELEE_WEAPONS:
                             if best_melee_in_inv and item_name == best_melee_in_inv.get("name"):
@@ -90,13 +89,12 @@ class EquippedPriority:
                         elif item_name in MELEE_WEAPONS:
                             score = 0.15
                     else:
-                        all_weapons = MELEE_WEAPONS.union(RANGED_WEAPONS)
                         best_atk_in_inv = max(best_melee_atk, best_ranged_atk)
                         if get_weapon_atk(item_name) == best_atk_in_inv:
                             if get_weapon_atk(equipped_weapon_name) < best_atk_in_inv:
                                 score = 0.95
 
-                elif item_type == "armour":
+                elif item_name in {"Plate Armor", "Iron Armor", "Leather Armor"}:
                     if best_armor_in_inv and item_name == best_armor_in_inv.get("name"):
                         score = 0.95
 

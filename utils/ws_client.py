@@ -49,10 +49,16 @@ class ClawRoyaleWSClient:
         if not self.ws:
             return None
         try:
-            msg = await self.ws.receive_str()
-            log_ws_receive(self.bot_name, msg)
-            frame = json.loads(msg)
-            return frame
+            msg = await self.ws.receive()
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                data_str = msg.data
+                log_ws_receive(self.bot_name, data_str)
+                frame = json.loads(data_str)
+                return frame
+            elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
+                return None
+            else:
+                return None
         except Exception as e:
             log_ws_error(self.bot_name, str(e))
             return None

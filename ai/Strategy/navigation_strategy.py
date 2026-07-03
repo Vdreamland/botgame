@@ -38,6 +38,7 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     history = get_visited_history()
     curr_id = current_region.get("id") or current_region.get("regionId") or current_region.get("region_id")
     is_dz_emergency = death_analysis.get("current_is_dead_zone", False) or (curr_id in death_analysis.get("pending_dead_zones", []))
+    num_active_dz = len(death_analysis.get("dead_zones", []))
     
     for conn_id in connections:
         r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
@@ -65,6 +66,13 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                     score += 0.35
                 else:
                     score += 0.15
+
+            conn_connections = get_region_connections(conn_id)
+            if not conn_connections:
+                conn_connections = r_data.get("connections", [])
+            num_links = len(conn_connections)
+            if num_active_dz > 0 and 0 < num_links <= 4:
+                score -= 0.20
 
             if facility == "Medical Facility":
                 self_data = view.get("self", {})

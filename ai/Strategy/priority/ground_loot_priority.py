@@ -1,5 +1,4 @@
 from game_data.weapon_info import WEAPONS
-from game_data.armour_info import ARMOURS
 from ai.detector.enemy_detector import get_visible_enemies_by_layer
 
 MELEE_WEAPONS = {"Katana", "Sword", "Dagger"}
@@ -9,7 +8,12 @@ def get_weapon_atk(w_name: str) -> int:
     return WEAPONS.get(w_name, {}).get("atk", 0)
 
 def get_armour_def(a_name: str) -> int:
-    return ARMOURS.get(a_name, {}).get("def", 0)
+    ARMOURS = {
+        "Plate Armor": 20,
+        "Iron Armor": 10,
+        "Leather Armor": 5
+    }
+    return ARMOURS.get(a_name, 0)
 
 class EquippedPriority:
     def get_priorities(self, view: dict) -> list:
@@ -56,7 +60,7 @@ class EquippedPriority:
         for item in inventory:
             if isinstance(item, dict):
                 item_name = item.get("name", "None")
-                if item_name in ARMOURS:
+                if item_name in {"Plate Armor", "Iron Armor", "Leather Armor"}:
                     armor_def = get_armour_def(item_name)
                     if armor_def > best_armor_def:
                         best_armor_def = armor_def

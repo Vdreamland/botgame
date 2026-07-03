@@ -27,7 +27,8 @@ class EquippedPriority:
         equipped_armor = self_data.get("equippedArmor")
         equipped_armor_name = equipped_armor.get("name", "None") if isinstance(equipped_armor, dict) else "None"
 
-        layer_summary = get_visible_enemies_by_layer(view, "self")
+        self_bot_name = self_data.get("name", "self")
+        layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
         l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
         l1_counts = layer_summary.get(1, {}) if isinstance(layer_summary, dict) else {}
         l2_counts = layer_summary.get(2, {}) if isinstance(layer_summary, dict) else {}

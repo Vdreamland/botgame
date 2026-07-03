@@ -10,6 +10,8 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     if not isinstance(view_data, dict):
         return ""
     
+    analyze_death_zones(view_data)
+    
     self_data = view_data.get("self", {})
     hp = self_data.get("hp", 100)
     ep = self_data.get("ep", 10)
@@ -24,12 +26,12 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     weapon_name = "None"
     if isinstance(eq_weapon, dict):
         weapon_name = eq_weapon.get("name", "None")
-        
+    
     eq_armour = self_data.get("equippedArmor")
     armour_name = "None"
     if isinstance(eq_armour, dict):
         armour_name = eq_armour.get("name", "None")
-        
+    
     inventory = self_data.get("inventory", [])
     inv_slots_used = len(inventory)
     

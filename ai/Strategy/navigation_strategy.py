@@ -25,8 +25,8 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
         r_data = regions.get(conn_id, {}) if isinstance(regions, dict) else {}
         score = 0.50
         name = r_data.get("name", str(conn_id))
-        is_dz = is_dead_zone(r_data) or is_known_dead_zone(conn_id)
-        is_pending = is_pending_dead_zone(conn_id, view)
+        is_dz = is_dead_zone(r_data) or is_known_dead_zone(conn_id) or (conn_id in death_analysis.get("dead_zones", []))
+        is_pending = is_pending_dead_zone(conn_id, view) or (conn_id in death_analysis.get("pending_dead_zones", []))
         terrain = detect_terrain(r_data)
         facility = detect_facility(r_data)
         if is_dz:
@@ -70,7 +70,7 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
             is_next_to_dz = False
             if isinstance(conn_connections, list):
                 for cc_id in conn_connections:
-                    if is_known_dead_zone(cc_id):
+                    if is_known_dead_zone(cc_id) or (cc_id in death_analysis.get("dead_zones", [])) or (cc_id in death_analysis.get("pending_dead_zones", [])):
                         is_next_to_dz = True
                         break
             if is_next_to_dz:
@@ -81,9 +81,9 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                 has_weapon = isinstance(eq_weapon, dict) and eq_weapon.get("name") != "None"
                 if not has_weapon or self_data.get("hp", 100) <= 50:
                     score += 0.25
-        visit_count = get_visit_count(conn_id)
-        if visit_count > 0:
-            score -= (visit_count * 0.15)
+            visit_count = get_visit_count(conn_id)
+            if visit_count > 0:
+                score -= (visit_count * 0.15)
         priorities.append({
             "id": conn_id,
             "name": name,

@@ -6,6 +6,7 @@ from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
 from game.lobby_coordinator import LobbyCoordinator
 from utils.logger import logger
 from game.frame_processor import process_game_frame, get_ordinal
+from ai.Strategy.memory import clear_memory
 
 async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_preference: str):
     bot_name = bot_info["name"]
@@ -19,6 +20,7 @@ async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_
         ws_client = None
         try:
             clear_gameplay_log(bot_name)
+            clear_memory()
             ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
 
             if is_first_run:

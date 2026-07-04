@@ -41,6 +41,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
     curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
     w_range = WEAPONS.get(curr_weapon_name, {}).get("range", 0)
     w_ep_cost = WEAPONS.get(curr_weapon_name, {}).get("ep_cost", 1)
+    
+    is_unarmed = curr_weapon_name == "Fist"
 
     current_region = view.get("currentRegion", {})
     current_is_dz = is_dead_zone(current_region)
@@ -62,6 +64,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
         target_armor = p.get("armour", "None")
         target_ep = p.get("ep", 10)
         
+        target_is_armed = target_weapon not in ("None", "Fist")
+        
         target_def = p.get("def", 5)
         target_total_def = max(target_def, get_armour_def(target_armor))
         net_atk = max(1, curr_atk - target_total_def)
@@ -70,6 +74,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
         can_target_counter = target_ep >= target_w_ep_cost
 
         if not can_attack:
+            score = 0.0
+        elif is_unarmed and target_is_armed and net_atk < hp:
             score = 0.0
         elif layer <= w_range:
             if net_atk >= hp:
@@ -110,6 +116,8 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
         target_def = m.get("def", 1)
         net_atk = curr_atk - target_def
         if not can_attack:
+            score = 0.0
+        elif is_unarmed and is_guardian and net_atk < hp:
             score = 0.0
         elif layer <= w_range:
             if net_atk >= hp:

@@ -48,8 +48,6 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
         from ai.Strategy.memory import add_recent_event
         add_recent_event(f"Executed action: {act_type} -> {act_name}")
     if act_type in ("move", "explore", "attack", "use_item", "interact", "rest", "pickup", "equip"):
-        ws_client.last_acted_turn = turn_num
-        coordinator.bots_state[bot_name]["local_cooldown"] = True
         clean_payload = {k: v for k, v in action_payload.items() if k not in ("name", "score", "strategy_report")}
         wrapped_payload = {
             "type": "action",

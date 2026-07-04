@@ -5,7 +5,7 @@ from ai.Strategy.priority.equipped_priority import get_equipment_priorities
 from ai.Strategy.priority.recovery_priority import get_recovery_priorities
 from ai.Strategy.priority.target_priority import get_target_priorities
 from ai.Strategy.priority.interact_priority import get_interact_priorities
-from ai.detector.dead_zone_detector import is_dead_zone
+from ai.detector.dead_zone_detector import is_dead_zone, is_pending_dead_zone
 from ai.detector.self_detector import get_self_vital_status
 
 def find_target_id(view: dict, target_name: str, target_type: str, region_id: str) -> str:
@@ -36,7 +36,12 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     exploration_priorities = get_exploration_priorities(view)
     interact_priorities = get_interact_priorities(view)
     current_region = view.get("currentRegion", {})
+    
+    curr_id = current_region.get("id") if isinstance(current_region, dict) else None
     current_is_dz = is_dead_zone(current_region)
+    if not current_is_dz and curr_id:
+        current_is_dz = is_pending_dead_zone(curr_id, view)
+        
     best_recovery = recovery_priorities[0] if recovery_priorities else {"score": 0.0}
     best_equip = equipment_priorities[0] if equipment_priorities else {"score": 0.0}
     best_loot = ground_loot_priorities[0] if ground_loot_priorities else {"score": 0.0}
@@ -44,12 +49,19 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     best_nav = navigation_priorities[0] if navigation_priorities else {"score": 0.0}
     best_explore = exploration_priorities[0] if exploration_priorities else {"score": 0.0}
     best_interact = interact_priorities[0] if interact_priorities else {"score": 0.0}
+    
     if current_is_dz:
         best_safe_nav = None
         for nav in navigation_priorities:
             if nav.get("score", 0.0) > 0.10:
                 best_safe_nav = nav
                 break
+        if not best_safe_nav:
+            for nav in navigation_priorities:
+                if nav.get("score", 0.0) > 0.0:
+                    best_safe_nav = nav
+                    break
+                    
         if best_safe_nav:
             best_nav = best_safe_nav
             best_nav["score"] = 1.00

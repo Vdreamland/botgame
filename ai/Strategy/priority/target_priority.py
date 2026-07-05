@@ -80,7 +80,9 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
 
         if not can_attack:
             score = 0.0
-        elif is_unarmed and (target_is_armed or enemies_l0 > 1) and net_atk < hp:
+        elif is_unarmed and target_is_armed and hp > 50:
+            score = 0.0
+        elif is_unarmed and enemies_l0 > 1:
             score = 0.0
         elif layer <= w_range:
             if net_atk >= hp:

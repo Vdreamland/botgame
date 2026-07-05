@@ -1,7 +1,7 @@
 from ai.detector.zone_detector import detect_terrain
 from ai.detector.dead_zone_detector import get_damage_per_second, is_dead_zone, is_pending_dead_zone
 from ai.detector.ruin_detector import get_visible_ruins_status
-from ai.Strategy.memory import get_all_known_dead_zones, get_visit_count
+from ai.Strategy.memory import get_all_known_dead_zones, is_visited, get_visit_count
 
 def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     priorities = []
@@ -19,21 +19,31 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                 break
 
     occupied_regions = set()
-    if hp < 40 and not has_heal:
-        agents = view.get("visibleAgents", [])
-        if isinstance(agents, list):
-            for a in agents:
-                if isinstance(a, dict) and a.get("name") != self_bot_name:
-                    r_id = a.get("regionId") or a.get("region")
-                    if r_id:
+    regions_with_low_hp = set()
+
+    agents = view.get("visibleAgents", [])
+    if isinstance(agents, list):
+        for a in agents:
+            if isinstance(a, dict) and a.get("name") != self_bot_name:
+                r_id = a.get("regionId") or a.get("region")
+                a_hp = a.get("hp", 100)
+                if r_id:
+                    if hp < 40 and not has_heal:
                         occupied_regions.add(r_id)
-        monsters = view.get("visibleMonsters", [])
-        if isinstance(monsters, list):
-            for m in monsters:
-                if isinstance(m, dict):
-                    r_id = m.get("regionId") or m.get("region")
-                    if r_id:
+                    if a_hp <= 50:
+                        regions_with_low_hp.add(r_id)
+
+    monsters = view.get("visibleMonsters", [])
+    if isinstance(monsters, list):
+        for m in monsters:
+            if isinstance(m, dict):
+                r_id = m.get("regionId") or m.get("region")
+                m_hp = m.get("hp", 25)
+                if r_id:
+                    if hp < 40 and not has_heal:
                         occupied_regions.add(r_id)
+                    if m_hp <= 50:
+                        regions_with_low_hp.add(r_id)
 
     current_region = view.get("currentRegion", {})
     if not isinstance(current_region, dict):
@@ -68,6 +78,8 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
             score -= (visit_count * 0.15)
         if conn_id in occupied_regions:
             score = 0.0
+        if conn_id in regions_with_low_hp:
+            score = max(score, 0.95)
         priorities.append({
             "id": conn_id,
             "name": name,

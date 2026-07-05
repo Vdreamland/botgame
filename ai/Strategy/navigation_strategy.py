@@ -18,6 +18,10 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                 has_heal = True
                 break
 
+    current_region = view.get("currentRegion", {})
+    current_region_id = current_region.get("id") if isinstance(current_region, dict) else None
+    enemies_l0_count = 0
+
     occupied_regions = set()
     regions_with_low_hp = set()
 
@@ -28,6 +32,8 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                 r_id = a.get("regionId") or a.get("region")
                 a_hp = a.get("hp", 100)
                 if r_id:
+                    if r_id == current_region_id:
+                        enemies_l0_count += 1
                     if hp < 40 and not has_heal:
                         occupied_regions.add(r_id)
                     if a_hp <= 50:
@@ -40,14 +46,13 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                 r_id = m.get("regionId") or m.get("region")
                 m_hp = m.get("hp", 25)
                 if r_id:
+                    if r_id == current_region_id:
+                        enemies_l0_count += 1
                     if hp < 40 and not has_heal:
                         occupied_regions.add(r_id)
                     if m_hp <= 50:
                         regions_with_low_hp.add(r_id)
 
-    current_region = view.get("currentRegion", {})
-    if not isinstance(current_region, dict):
-        return priorities
     connections = current_region.get("connections", [])
     if not isinstance(connections, list):
         return priorities
@@ -79,7 +84,7 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
             score -= (visit_count * 0.15)
         if conn_id in occupied_regions:
             score = 0.0
-        if conn_id in regions_with_low_hp:
+        if conn_id in regions_with_low_hp and enemies_l0_count == 0:
             score = max(score, 0.95)
         priorities.append({
             "id": conn_id,

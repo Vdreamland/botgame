@@ -51,7 +51,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                 
                 ws_url = "wss://cdn.clawroyale.ai/ws/agent"
                 logger.info(f"[*] {bot_name} reconnecting directly to active game WebSocket -> {ws_url}")
-                connected = await ws_client.connect(ws_url, api_key)
+                connected = await ws_client.connect(ws_url)
                 if connected:
                     logger.info(f"[+] {bot_name} reconnected directly to active game.")
                     game_ended_normally = False
@@ -96,12 +96,12 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
 
             bypass = bypass
             await coordinator.enter_lobby(bot_name)
-            await coordinator.wait_for_lobby(bot_name, bypass_lobby=bypass)
+            await coordinator.wait_for_lobby(bot_name)
 
             ws_url = "wss://cdn.clawroyale.ai/ws/join"
             logger.info(f"[*] {bot_name} connecting to WebSocket -> {ws_url}")
             
-            connected = await ws_client.connect(ws_url, api_key)
+            connected = await ws_client.connect(ws_url)
             if not connected:
                 logger.error(f"[ERROR] Could not connect to WebSocket for {bot_name}.")
                 await coordinator.leave_lobby(bot_name)
@@ -153,7 +153,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
 
             if coordinator.bots_state[bot_name].get("alive", False):
                 ws_url = "wss://cdn.clawroyale.ai/ws/agent"
-                connected = await ws_client.connect(ws_url, api_key)
+                connected = await ws_client.connect(ws_url)
                 if connected:
                     game_ended_normally = False
                     while True:

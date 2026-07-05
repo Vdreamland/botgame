@@ -23,12 +23,17 @@ def get_armour_def(a_name: str) -> int:
             return spec.get("estimated_def_bonus", 0)
     return 0
 
-async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
+async def clean_redundant_items(self_data_temp: dict, ws_client, turn_num: int, coordinator, bot_name: str) -> bool:
     if not isinstance(self_data_temp, dict):
-        return
+        return False
     inventory = self_data_temp.get("inventory", [])
     if not isinstance(inventory, list) or not inventory:
-        return
+        return False
+
+    already_acted = ws_client.last_acted_turn == turn_num
+    is_local_cooldown = coordinator.bots_state[bot_name].get("local_cooldown", False)
+    if already_acted or is_local_cooldown:
+        return False
 
     equipped_weapon = self_data_temp.get("equippedWeapon")
     equipped_weapon_name = equipped_weapon.get("name", "Fist") if isinstance(equipped_weapon, dict) else "Fist"
@@ -93,6 +98,7 @@ async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
                         "data": {"type": "drop", "itemId": item_id}
                     }
                     await ws_client.send(wrapped_payload)
+                    return True
             elif is_ranged:
                 if item_name == best_ranged_name and not kept_ranged:
                     kept_ranged = True
@@ -104,6 +110,7 @@ async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
                         "data": {"type": "drop", "itemId": item_id}
                     }
                     await ws_client.send(wrapped_payload)
+                    return True
             elif is_armor:
                 if item_name == best_armor_name and not kept_armor:
                     kept_armor = True
@@ -115,3 +122,5 @@ async def clean_redundant_items(self_data_temp: dict, ws_client) -> None:
                         "data": {"type": "drop", "itemId": item_id}
                     }
                     await ws_client.send(wrapped_payload)
+                    return True
+    return False

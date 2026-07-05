@@ -17,7 +17,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
         return
 
     api = ClawRoyaleAPI(api_key)
-    ws_client = ClawRoyaleWSClient(bot_name)
+    ws_client = ClawRoyaleWSClient(api_key, bot_name)
 
     bypass_lobby_on_startup = True
 
@@ -94,6 +94,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
             bypass = bypass_lobby_on_startup
             bypass_lobby_on_startup = False
 
+            bypass = bypass
             await coordinator.enter_lobby(bot_name)
             await coordinator.wait_for_lobby(bot_name, bypass_lobby=bypass)
 

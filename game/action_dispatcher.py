@@ -7,9 +7,13 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
     players = detailed.get("players", [])
     monsters = detailed.get("monsters", [])
     for p in players:
-        logger.info(f"[DETECTOR] Enemy Player: {p.get('name')} | HP: {p.get('hp')} | EP: {p.get('ep')} | ATK: {p.get('atk')} | DEF: {p.get('def')} | Weapon: {p.get('weapon')} | Armour: {p.get('armour')} | Layer: {p.get('layer')}")
+        p_lay = p.get("layer")
+        display_lay = "Far (Unreachable)" if p_lay == -1 else p_lay
+        logger.info(f"[DETECTOR] Enemy Player: {p.get('name')} | HP: {p.get('hp')} | EP: {p.get('ep')} | ATK: {p.get('atk')} | DEF: {p.get('def')} | Weapon: {p.get('weapon')} | Armour: {p.get('armour')} | Layer: {display_lay}")
     for m in monsters:
-        logger.info(f"[DETECTOR] Enemy Monster: {m.get('type') or m.get('name')} | HP: {m.get('hp')} | Layer: {m.get('layer')}")
+        m_lay = m.get("layer")
+        display_lay = "Far (Unreachable)" if m_lay == -1 else m_lay
+        logger.info(f"[DETECTOR] Enemy Monster: {m.get('type') or m.get('name')} | HP: {m.get('hp')} | Layer: {display_lay}")
 
     action_payload = make_decision(view, bot_name)
     act_type = action_payload.get("type", "unknown")

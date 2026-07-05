@@ -89,12 +89,14 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
             p_w = p.get("weapon", "None")
             p_a = p.get("armour", "None")
             p_lay = p.get("layer")
-            enemy_lines.append(f" - Player : {p_name} | HP: {p_hp} | EP: {p_ep} | ATK: {p_atk} | DEF: {p_def} | Weapon: {p_w} | Armor: {p_a} | Layer: {p_lay}")
+            display_lay = "Far (Unreachable)" if p_lay == -1 else p_lay
+            enemy_lines.append(f" - Player : {p_name} | HP: {p_hp} | EP: {p_ep} | ATK: {p_atk} | DEF: {p_def} | Weapon: {p_w} | Armor: {p_a} | Layer: {display_lay}")
         for m in monsters:
             m_name = m.get("type") or m.get("name", "Unknown")
             m_hp = m.get("hp")
             m_lay = m.get("layer")
-            enemy_lines.append(f" - Monster : {m_name} | HP: {m_hp} | Layer: {m_lay}")
+            display_lay = "Far (Unreachable)" if m_lay == -1 else m_lay
+            enemy_lines.append(f" - Monster : {m_name} | HP: {m_hp} | Layer: {display_lay}")
         enemy_display = "\n".join(enemy_lines) + "\n\n"
     else:
         enemy_display = ""

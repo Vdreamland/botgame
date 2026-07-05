@@ -42,7 +42,7 @@ class ClawRoyaleWSClient:
             return False
         try:
             raw_data = json.dumps(payload)
-            log_ws_send(self.bot_name, raw_data)
+            log_ws_send(self.bot_name, payload)
             await self.ws.send_str(raw_data)
             return True
         except Exception as e:

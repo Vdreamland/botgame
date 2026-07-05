@@ -71,6 +71,9 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                     if game_ended_normally:
                         await coordinator.leave_game(bot_name)
                         coordinator.bots_state[bot_name]["game_id"] = None
+                else:
+                    coordinator.bots_state[bot_name]["alive"] = False
+                    coordinator.bots_state[bot_name]["game_id"] = None
                 await asyncio.sleep(5)
                 continue
 
@@ -168,6 +171,9 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                     if game_ended_normally:
                         await coordinator.leave_game(bot_name)
                         coordinator.bots_state[bot_name]["game_id"] = None
+                else:
+                    coordinator.bots_state[bot_name]["alive"] = False
+                    coordinator.bots_state[bot_name]["game_id"] = None
 
         except Exception as e:
             logger.error(f"[ERROR] Error in {bot_name} game execution loop: {e}")

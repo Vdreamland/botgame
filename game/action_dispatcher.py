@@ -56,6 +56,6 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
         }
         await ws_client.send(wrapped_payload)
         coordinator.bots_state[bot_name]["local_cooldown"] = True
-        major_actions = {"move", "explore", "attack", "rest", "use_item", "interact"}
+        major_actions = {"move", "explore", "attack", "rest", "interact"}
         if act_type in major_actions:
             ws_client.last_acted_turn = turn_num

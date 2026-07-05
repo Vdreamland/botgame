@@ -130,7 +130,7 @@ def get_detailed_enemy_stats(view: dict, self_bot_name: str) -> dict:
                 if classification == "self":
                     continue
                 region_id = agent.get("regionId") or agent.get("region")
-                layer = layers.get(region_id, -1)
+                layer = layers.get(region_id, "Far (Unreachable)")
                 eq_weapon = agent.get("equippedWeapon")
                 weapon_name = eq_weapon.get("name", "None") if isinstance(eq_weapon, dict) else "None"
                 eq_armour = agent.get("equippedArmor")
@@ -171,7 +171,7 @@ def get_detailed_enemy_stats(view: dict, self_bot_name: str) -> dict:
                 m_type = monster.get("type", "Unknown")
                 is_g = monster.get("is_guardian", monster.get("isGuardian", False))
                 region_id = monster.get("regionId") or monster.get("region")
-                layer = layers.get(region_id, -1)
+                layer = layers.get(region_id, "Far (Unreachable)")
                 if is_g or m_type == "Guardian":
                     hp = monster.get("hp", GUARDIAN_STATS.get("hp", 150))
                     atk = GUARDIAN_STATS.get("atk", 20)

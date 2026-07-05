@@ -9,74 +9,74 @@ from game_data.world_info import TERRAINS
 def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
     if not isinstance(view_data, dict):
         return ""
-    
+
     analyze_death_zones(view_data)
-    
+
     self_data = view_data.get("self", {})
     hp = self_data.get("hp", 100)
     ep = self_data.get("ep", 10)
     atk = self_data.get("atk", 25)
     defense = self_data.get("def", 5)
     kills = self_data.get("kills", 0)
-    
+
     vision_info = get_layered_zones(view_data)
     vision_zones = vision_info.get("total_visible_zones", 0)
-    
+
     eq_weapon = self_data.get("equippedWeapon")
     weapon_name = "None"
     if isinstance(eq_weapon, dict):
         weapon_name = eq_weapon.get("name", "None")
-        
+
     eq_armour = self_data.get("equippedArmor")
     armour_name = "None"
     if isinstance(eq_armour, dict):
         armour_name = eq_armour.get("name", "None")
-        
+
     inventory = self_data.get("inventory", [])
     inv_slots_used = len(inventory)
-    
+
     inv_counts = {}
     for item in inventory:
         if isinstance(item, dict):
             name = item.get("name", "Unknown")
             inv_counts[name] = inv_counts.get(name, 0) + 1
-            
+
     inv_display = ", ".join([f"{name} [{count}]" for name, count in inv_counts.items()]) if inv_counts else "None"
-    
+
     current_region = view_data.get("currentRegion", {})
     location_name = current_region.get("name", "Unknown")
-    
+
     raw_terrain = detect_terrain(current_region)
     terrain_name = str(raw_terrain).capitalize()
-    
+
     weather_name = str(detect_weather(view_data)).capitalize()
-    
+
     terrain_key = str(raw_terrain).lower()
     vision_mod = TERRAINS.get(terrain_key, {}).get("vision_modifier", 0)
-    
+
     links_count = len(current_region.get("connections", []))
-    
+
     known_dz = get_all_known_dead_zones()
     dead_zone_names = list(known_dz.values())
     dead_zone_display = ", ".join(sorted(dead_zone_names)) if dead_zone_names else "None"
-    
+
     loot_list = detect_ground_loot(view_data)
     ground_loot_display = ", ".join(loot_list) if loot_list else "None"
-    
+
     layer_summary = get_visible_enemies_by_layer(view_data, bot_name)
     for i in (0, 1, 2):
         if i not in layer_summary:
             layer_summary[i] = {"P": 0, "M": 0, "A": 0}
-            
+
     layer_lines = []
     for layer, counts in sorted(layer_summary.items()):
         layer_lines.append(f"Layer {layer} : P {counts['P']} / M {counts['M']} / A {counts['A']}")
     layer_display = "\n".join(layer_lines)
-    
+
     detailed = get_detailed_enemy_stats(view_data, bot_name)
     players = detailed.get("players", [])
     monsters = detailed.get("monsters", [])
-    
+
     enemy_lines = []
     if players or monsters:
         enemy_lines.append("[VISIBLE ENEMIES DETAILS]")
@@ -89,7 +89,7 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
             p_w = p.get("weapon", "None")
             p_a = p.get("armour", "None")
             p_lay = p.get("layer")
-            enemy_lines.append(f" - Player  : {p_name} | HP: {p_hp} | EP: {p_ep} | ATK: {p_atk} | DEF: {p_def} | Weapon: {p_w} | Armor: {p_a} | Layer: {p_lay}")
+            enemy_lines.append(f" - Player : {p_name} | HP: {p_hp} | EP: {p_ep} | ATK: {p_atk} | DEF: {p_def} | Weapon: {p_w} | Armor: {p_a} | Layer: {p_lay}")
         for m in monsters:
             m_name = m.get("type") or m.get("name", "Unknown")
             m_hp = m.get("hp")
@@ -98,10 +98,10 @@ def format_agent_status_log(bot_name: str, turn: int, view_data: dict) -> str:
         enemy_display = "\n".join(enemy_lines) + "\n\n"
     else:
         enemy_display = ""
-        
+
     recent_evs = get_recent_events()
     recent_display = "\n".join([f"- {ev}" for ev in recent_evs]) if recent_evs else "None"
-    
+
     return (
         f"\n# Turn {turn} [{bot_name}]\n"
         f"------------------------------------------------------------\n"

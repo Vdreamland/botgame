@@ -1,10 +1,17 @@
 from ai.detector.self_detector import get_self_vital_status
 from game_data.item_info import RECOVERY_ITEMS
+from ai.detector.dead_zone_detector import is_dead_zone, is_pending_dead_zone
 
 def get_recovery_priorities(view: dict) -> list:
     priorities = []
     if not isinstance(view, dict):
         return priorities
+
+    current_region = view.get("currentRegion", {})
+    curr_id = current_region.get("id") if isinstance(current_region, dict) else None
+    if is_dead_zone(current_region) or (curr_id and is_pending_dead_zone(curr_id, view)):
+        return priorities
+
     self_data = view.get("self", {})
     inventory = self_data.get("inventory", []) if isinstance(self_data, dict) else []
     if not isinstance(inventory, list) or not inventory:

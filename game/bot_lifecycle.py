@@ -130,11 +130,12 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                         await coordinator.enter_game(bot_name)
                         break
                     elif dec == "ASK_ENTRY_TYPE":
+                        entry_type = room_preference or get_room_preference() or "free"
+                        if entry_type not in ("free", "paid"):
+                            entry_type = "free"
                         hello_payload = {
                             "type": "hello",
-                            "room_preference": room_preference or get_room_preference(),
-                            "relics": [],
-                            "packs": []
+                            "entryType": entry_type
                         }
                         await ws_client.send(hello_payload)
                         continue

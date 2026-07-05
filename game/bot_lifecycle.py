@@ -10,7 +10,7 @@ from game.frame_processor import process_game_frame
 from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
 from logs.quest_reward_log import log_redeem_attempt, log_redeem_success, log_redeem_failed
 
-async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator) -> None:
+async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, room_preference: str = None) -> None:
     bot_name = bot_config.get("name")
     api_key = bot_config.get("api_key")
     if not api_key:
@@ -132,7 +132,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator) -> 
                     elif dec == "ASK_ENTRY_TYPE":
                         hello_payload = {
                             "type": "hello",
-                            "room_preference": get_room_preference(),
+                            "room_preference": room_preference or get_room_preference(),
                             "relics": [],
                             "packs": []
                         }

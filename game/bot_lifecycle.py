@@ -1,170 +1,179 @@
 import asyncio
+import aiohttp
+import json
+from utils.logger import logger
 from utils.ws_client import ClawRoyaleWSClient
 from utils.api_client import ClawRoyaleAPI
-from config.agen_config import auto_claim_rewards
-from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
+from config.agen_config import get_configured_bots, get_room_preference
 from game.lobby_coordinator import LobbyCoordinator
-from utils.logger import logger
-from game.frame_processor import process_game_frame, get_ordinal
-from ai.Strategy.memory import clear_memory
+from game.frame_processor import process_game_frame
+from logs.logs_gameplay import write_gameplay_log, clear_gameplay_log
+from logs.quest_reward_log import log_redeem_attempt, log_redeem_success, log_redeem_failed
 
-async def run_bot_lifecycle(bot_info: dict, coordinator: LobbyCoordinator, room_preference: str):
-    bot_name = bot_info["name"]
-    api_key = bot_info["api_key"]
+async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator) -> None:
+    bot_name = bot_config.get("name")
+    api_key = bot_config.get("api_key")
+    if not api_key:
+        return
 
-    api_client = ClawRoyaleAPI(api_key=api_key)
-    ws_url = "wss://cdn.clawroyale.ai/ws/join"
-    is_first_run = True
+    api = ClawRoyaleAPI(api_key)
+    ws_client = ClawRoyaleWSClient(bot_name)
+
+    bypass_lobby_on_startup = True
 
     while True:
-        ws_client = None
         try:
-            clear_gameplay_log(bot_name)
-            clear_memory()
-            ws_client = ClawRoyaleWSClient(api_key=api_key, bot_name=bot_name)
+            profile = await api.get_my_profile()
+            if not profile:
+                logger.error(f"[ERROR] Could not fetch profile for {bot_name}.")
+                await asyncio.sleep(5)
+                continue
 
-            if is_first_run:
-                await auto_claim_rewards(api_client, bot_name, coordinator.bots_state, coordinator.draw_table)
-                is_first_run = False
-
-            profile_res = await api_client.get_my_profile()
-            in_active_game = False
-            if profile_res.get("success"):
-                data = profile_res.get("data", {})
-                current_games = data.get("currentGames", [])
-                for g in current_games:
-                    if g.get("isAlive") is True:
-                        in_active_game = True
-                        coordinator.bots_state[bot_name]["agent_id"] = g.get("agentId")
-                        coordinator.bots_state[bot_name]["room_id"] = g.get("gameId")
+            current_games = profile.get("currentGames", {})
+            active_game_id = None
+            if isinstance(current_games, dict):
+                for g_id, g_status in current_games.items():
+                    if isinstance(g_status, dict) and g_status.get("status") == "active":
+                        active_game_id = g_id
                         break
 
-            if not in_active_game:
-                if coordinator.bots_state[bot_name].get("alive", True):
-                    coordinator.bots_state[bot_name]["alive"] = False
-                    await coordinator.draw_table()
+            if active_game_id:
+                agent_id = None
+                members = current_games[active_game_id].get("members", {})
+                if isinstance(members, dict):
+                    for a_id, details in members.items():
+                        if isinstance(details, dict) and details.get("name") == bot_name:
+                            agent_id = a_id
+                            break
+                coordinator.bots_state[bot_name]["agent_id"] = agent_id
+                coordinator.bots_state[bot_name]["game_id"] = active_game_id
+                coordinator.bots_state[bot_name]["alive"] = True
                 
-                if ws_client.last_logged_turn >= 0:
-                    latest_view = coordinator.bots_state[bot_name].get("view", {})
-                    if isinstance(latest_view, dict):
-                        if "self" not in latest_view:
-                            latest_view["self"] = {}
-                        latest_view["self"]["hp"] = 0
-                        latest_view["self"]["isAlive"] = False
-                        death_turn = ws_client.last_logged_turn + 1
-                        logger.info(f"[-] {bot_name} confirmed dead. Logging final turn {death_turn}.")
-                        write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
-                        write_gameplay_log(bot_name, "[SYSTEM] Agent has been eliminated.")
-                else:
-                    coordinator.bots_state[bot_name]["alive"] = True
+                ws_url = "wss://cdn.clawroyale.ai/ws/agent"
+                logger.info(f"[*] {bot_name} reconnecting directly to active game WebSocket -> {ws_url}")
+                connected = await ws_client.connect(ws_url, api_key)
+                if connected:
+                    logger.info(f"[+] {bot_name} reconnected directly to active game.")
+                    game_ended_normally = False
+                    while True:
+                        msg = await ws_client.receive()
+                        if msg is None:
+                            logger.warning(f"[-] {bot_name} disconnected from game WebSocket.")
+                            break
+                        
+                        try:
+                            frame = json.loads(msg)
+                        except json.JSONDecodeError:
+                            continue
+                        
+                        success = await process_game_frame(frame, bot_name, coordinator, ws_client)
+                        if not success:
+                            game_ended_normally = True
+                            break
+                    await ws_client.close()
+                    if game_ended_normally:
+                        await coordinator.leave_game(bot_name)
+                await asyncio.sleep(5)
+                continue
 
+            if coordinator.bots_state[bot_name].get("alive", False):
+                coordinator.bots_state[bot_name]["alive"] = False
+                latest_view = coordinator.bots_state[bot_name].get("view", {})
+                if isinstance(latest_view, dict):
+                    if "self" not in latest_view:
+                        latest_view["self"] = {}
+                    latest_view["self"]["hp"] = 0
+                    latest_view["self"]["isAlive"] = False
+                last_turn = coordinator.bots_state[bot_name].get("turn", 0) or ws_client.last_logged_turn
+                death_turn = last_turn + 1 if last_turn else 1
+                logger.info(f"[-] {bot_name} has been eliminated (detected from profile status). Logging final turn {death_turn}.")
+                write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+                write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} was eliminated during connection loss (HP: 0).")
                 await coordinator.leave_game(bot_name)
+
+            bypass = bypass_lobby_on_startup
+            bypass_lobby_on_startup = False
+
+            await coordinator.enter_lobby(bot_name)
+            await coordinator.wait_for_lobby(bot_name, bypass_lobby=bypass)
+
+            ws_url = "wss://cdn.clawroyale.ai/ws/join"
+            logger.info(f"[*] {bot_name} connecting to WebSocket -> {ws_url}")
+            
+            connected = await ws_client.connect(ws_url, api_key)
+            if not connected:
+                logger.error(f"[ERROR] Could not connect to WebSocket for {bot_name}.")
+                await coordinator.leave_lobby(bot_name)
+                await asyncio.sleep(5)
+                continue
+
+            ws_client.last_acted_turn = -1
+            ws_client.last_logged_turn = -1
+
+            while True:
+                msg = await ws_client.receive()
+                if msg is None:
+                    logger.warning(f"[-] {bot_name} WebSocket connection closed.")
+                    break
+                
                 try:
-                    await coordinator.enter_lobby(bot_name)
-                    await coordinator.wait_for_lobby(bot_name)
-                finally:
-                    await coordinator.leave_lobby(bot_name)
-
-            success = await ws_client.connect(ws_url)
-            if success:
-                await coordinator.enter_game(bot_name)
-
-            try:
-                welcome_frame = await ws_client.receive()
-                if welcome_frame and welcome_frame.get("type") == "welcome":
-                    decision = welcome_frame.get("decision")
-
-                    if decision in ("ASK_ENTRY_TYPE", "FREE_ONLY"):
+                    frame = json.loads(msg)
+                except json.JSONDecodeError:
+                    continue
+                
+                f_type = frame.get("type")
+                if f_type == "welcome":
+                    dec = frame.get("decision")
+                    if dec == "ALREADY_IN_GAME":
+                        logger.info(f"[+] All Setup ready to play for {bot_name} ...")
+                        coordinator.bots_state[bot_name]["alive"] = True
+                        await coordinator.enter_game(bot_name)
+                        break
+                    elif dec == "ASK_ENTRY_TYPE":
                         hello_payload = {
                             "type": "hello",
-                            "entryType": room_preference,
-                            "version": ws_client.api_version
+                            "room_preference": get_room_preference(),
+                            "relics": [],
+                            "packs": []
                         }
                         await ws_client.send(hello_payload)
+                        continue
+                
+                if f_type == "assigned":
+                    data = frame.get("data", {})
+                    coordinator.bots_state[bot_name]["agent_id"] = data.get("agentId")
+                    coordinator.bots_state[bot_name]["game_id"] = data.get("gameId")
+                    coordinator.bots_state[bot_name]["alive"] = True
+                    await coordinator.enter_game(bot_name)
+                    logger.info(f"[+] All Setup ready to play for {bot_name} ...")
+                    break
 
-                        while True:
-                            try:
-                                frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
-                            except asyncio.TimeoutError:
-                                logger.warning(f"[!] {bot_name} timeout waiting for frame.")
-                                break
+            await ws_client.close()
 
-                            if frame is None:
-                                logger.warning(f"[!] {bot_name} connection closed by server.")
-                                break
+            if coordinator.bots_state[bot_name].get("alive", False):
+                ws_url = "wss://cdn.clawroyale.ai/ws/agent"
+                connected = await ws_client.connect(ws_url, api_key)
+                if connected:
+                    game_ended_normally = False
+                    while True:
+                        msg = await ws_client.receive()
+                        if msg is None:
+                            logger.warning(f"[-] {bot_name} disconnected from game WebSocket.")
+                            break
+                        
+                        try:
+                            frame = json.loads(msg)
+                        except json.JSONDecodeError:
+                            continue
+                        
+                        success = await process_game_frame(frame, bot_name, coordinator, ws_client)
+                        if not success:
+                            game_ended_normally = True
+                            break
+                    await ws_client.close()
+                    if game_ended_normally:
+                        await coordinator.leave_game(bot_name)
 
-                            is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
-                            if not is_alive:
-                                break
-
-                            msg_type = frame.get("type") if isinstance(frame, dict) else None
-                            if msg_type == "queued":
-                                coordinator.bots_state[bot_name]["room"] = "Queue"
-                                coordinator.bots_state[bot_name]["room_id"] = ""
-                                coordinator.bots_state[bot_name]["status"] = "Queued"
-                                await coordinator.draw_table()
-                            elif msg_type in ("assigned", "joined"):
-                                game_id = frame.get("gameId") or frame.get("matchId") or "Room"
-                                agent_id = frame.get("agentId")
-                                if agent_id:
-                                    coordinator.bots_state[bot_name]["agent_id"] = agent_id
-                                try:
-                                    m_id = int(game_id)
-                                    room_display = get_ordinal(m_id)
-                                    room_id_str = str(game_id)
-                                except Exception:
-                                    room_display = str(game_id)
-                                    room_id_str = str(game_id)
-                                coordinator.bots_state[bot_name]["room"] = room_display[:10]
-                                coordinator.bots_state[bot_name]["room_id"] = room_id_str
-                                coordinator.bots_state[bot_name]["status"] = "In Progress"
-                                await coordinator.draw_table()
-                                logger.info(f"[+] All Setup ready to play for {bot_name} ...")
-                            elif msg_type == "error":
-                                coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                                await coordinator.draw_table()
-                                break
-
-                    elif decision == "ALREADY_IN_GAME":
-                        coordinator.bots_state[bot_name]["room"] = "Room"
-                        coordinator.bots_state[bot_name]["room_id"] = ""
-                        coordinator.bots_state[bot_name]["status"] = "In Progress"
-                        coordinator.bots_state[bot_name]["alive"] = True
-                        await coordinator.draw_table()
-                        logger.info(f"[+] All Setup ready to play for {bot_name} ...")
-                        while True:
-                            try:
-                                frame = await asyncio.wait_for(ws_client.receive(), timeout=35.0)
-                            except asyncio.TimeoutError:
-                                logger.warning(f"[!] {bot_name} timeout waiting for frame.")
-                                break
-
-                            if frame is None:
-                                logger.warning(f"[!] {bot_name} connection closed by server.")
-                                break
-
-                            is_alive = await process_game_frame(frame, bot_name, coordinator, ws_client)
-                            if not is_alive:
-                                break
-            except Exception as e:
-                coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                await coordinator.draw_table()
-                logger.error(f"[!] Error in {bot_name} game execution loop: {str(e)}", exc_info=True)
-            else:
-                coordinator.bots_state[bot_name]["status"] = "Disconnect"
-                await coordinator.draw_table()
         except Exception as e:
-            write_gameplay_log(bot_name, f"[SYSTEM] Error occurred in lifecycle: {str(e)}. Retrying in 5 seconds...")
-            coordinator.bots_state[bot_name]["status"] = "Retrying"
-            await coordinator.draw_table()
-            await coordinator.leave_lobby(bot_name)
-            await asyncio.sleep(5.0)
-        finally:
-            if ws_client:
-                await ws_client.close()
-
-        is_bot_alive = coordinator.bots_state[bot_name].get("alive", True)
-        if not is_bot_alive:
-            coordinator.bots_state[bot_name]["status"] = "Retrying"
-            await coordinator.draw_table()
-            await asyncio.sleep(5.0)
+            logger.error(f"[ERROR] Error in {bot_name} game execution loop: {e}")
+            await asyncio.sleep(5)

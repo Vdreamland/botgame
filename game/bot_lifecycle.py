@@ -77,6 +77,22 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                 await asyncio.sleep(5)
                 continue
 
+            if coordinator.bots_state[bot_name].get("alive", False):
+                coordinator.bots_state[bot_name]["alive"] = False
+                latest_view = coordinator.bots_state[bot_name].get("view", {})
+                if isinstance(latest_view, dict):
+                    if "self" not in latest_view:
+                        latest_view["self"] = {}
+                    latest_view["self"]["hp"] = 0
+                    latest_view["self"]["isAlive"] = False
+                last_turn = coordinator.bots_state[bot_name].get("turn", 0) or ws_client.last_logged_turn
+                death_turn = last_turn + 1 if last_turn else 1
+                logger.info(f"[-] {bot_name} has been eliminated (detected from profile status). Logging final turn {death_turn}.")
+                write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+                write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} was eliminated during connection loss (HP: 0).")
+                await coordinator.leave_game(bot_name)
+                coordinator.bots_state[bot_name]["game_id"] = None
+
             bypass = bypass_lobby_on_startup
             bypass_lobby_on_startup = False
 
@@ -151,7 +167,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
 
             await ws_client.close()
 
-            if coordinator.bots_state[bot_name].get("alive", False) and coordinator.bots_state[bot_name].get("game_id"):
+            if coordinator.bots_state[bot_name].get("alive", False):
                 ws_url = "wss://cdn.clawroyale.ai/ws/agent"
                 connected = await ws_client.connect(ws_url)
                 if connected:

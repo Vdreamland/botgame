@@ -33,6 +33,7 @@ def find_target_id(view: dict, target_name: str, target_type: str, region_id: st
 def make_decision(view: dict, self_bot_name: str, turn_num: int = 0) -> dict:
     if not isinstance(view, dict):
         return {"type": "rest", "name": "None", "score": 0.0, "strategy_report": "None"}
+    analyze_death_zones(view)
     recovery_priorities = get_recovery_priorities(view, turn_num)
     equipment_priorities = get_equipment_priorities(view)
     ground_loot_priorities = get_ground_loot_priorities(view)

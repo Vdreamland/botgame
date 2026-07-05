@@ -58,7 +58,6 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
         if turn is not None:
             acted_cleaning = await clean_redundant_items(self_data_temp, ws_client, turn, coordinator, bot_name)
             if acted_cleaning:
-                ws_client.last_acted_turn = turn
                 coordinator.bots_state[bot_name]["local_cooldown"] = True
 
         turn = frame.get("turn")

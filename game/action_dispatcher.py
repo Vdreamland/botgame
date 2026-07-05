@@ -40,7 +40,6 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
                 "data": {"type": "drop", "itemId": discard_item_id}
             }
             await ws_client.send(drop_payload)
-            ws_client.last_acted_turn = turn_num
             coordinator.bots_state[bot_name]["local_cooldown"] = True
             return
 
@@ -56,3 +55,7 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
             "data": clean_payload
         }
         await ws_client.send(wrapped_payload)
+        coordinator.bots_state[bot_name]["local_cooldown"] = True
+        major_actions = {"move", "explore", "attack", "rest", "use_item", "interact"}
+        if act_type in major_actions:
+            ws_client.last_acted_turn = turn_num

@@ -1,7 +1,7 @@
 from ai.detector.zone_detector import detect_terrain
 from ai.detector.dead_zone_detector import get_damage_per_second, is_dead_zone, is_pending_dead_zone
 from ai.detector.ruin_detector import get_visible_ruins_status
-from ai.Strategy.memory import get_all_known_dead_zones, is_visited, get_visit_count
+from ai.Strategy.memory import get_all_known_dead_zones, get_visit_count
 
 def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     priorities = []
@@ -69,7 +69,8 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
                     score += 0.10
         elif terrain in ("forest", "hills", "water"):
             score += 0.05
-        if is_dead_zone(r_data):
+        known_dz = get_all_known_dead_zones()
+        if is_dead_zone(r_data) or conn_id in known_dz:
             score = 0.0
         elif is_pending_dead_zone(conn_id, view):
             score = 0.02

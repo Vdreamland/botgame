@@ -15,7 +15,7 @@ async def execute_decision(view: dict, bot_name: str, turn_num: int, ws_client, 
         display_lay = "Far (Unreachable)" if m_lay == -1 else m_lay
         logger.info(f"[DETECTOR] Enemy Monster: {m.get('type') or m.get('name')} | HP: {m.get('hp')} | Layer: {display_lay}")
 
-    action_payload = make_decision(view, bot_name)
+    action_payload = make_decision(view, bot_name, turn_num)
     act_type = action_payload.get("type", "unknown")
     act_name = action_payload.get("name", "None")
     act_score = action_payload.get("score", 0.0)

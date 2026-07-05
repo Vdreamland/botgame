@@ -2,7 +2,7 @@ from ai.detector.self_detector import get_self_vital_status
 from game_data.item_info import RECOVERY_ITEMS
 from ai.detector.dead_zone_detector import is_dead_zone, is_pending_dead_zone
 
-def get_recovery_priorities(view: dict) -> list:
+def get_recovery_priorities(view: dict, turn_num: int = 0) -> list:
     priorities = []
     if not isinstance(view, dict):
         return priorities
@@ -32,7 +32,9 @@ def get_recovery_priorities(view: dict) -> list:
             continue
         score = 0.0
         if name == "Medkit":
-            if hp_diff <= 5 and ep_diff <= 1:
+            if turn_num >= 58 and (hp_diff > 0 or ep_diff > 0):
+                score = 0.95
+            elif hp_diff <= 5 and ep_diff <= 1:
                 score = 0.0
             elif hp <= 30 and hp_diff >= 30:
                 score = 0.98
@@ -43,7 +45,9 @@ def get_recovery_priorities(view: dict) -> list:
             else:
                 score = 0.10
         elif name == "Emergency Food":
-            if hp_diff <= 5:
+            if turn_num >= 58 and hp_diff > 0:
+                score = 0.95
+            elif hp_diff <= 5:
                 score = 0.0
             elif hp <= 40 and hp_diff >= 20:
                 score = 0.90
@@ -52,7 +56,9 @@ def get_recovery_priorities(view: dict) -> list:
             else:
                 score = 0.15
         elif name == "Bandage":
-            if hp_diff <= 5:
+            if turn_num >= 58 and hp_diff > 0:
+                score = 0.95
+            elif hp_diff <= 5:
                 score = 0.0
             elif hp <= 60 and hp_diff >= 20:
                 score = 0.80
@@ -61,7 +67,9 @@ def get_recovery_priorities(view: dict) -> list:
             else:
                 score = 0.10
         elif name == "Energy Drink":
-            if ep_diff <= 1:
+            if turn_num >= 58 and ep_diff > 0:
+                score = 0.95
+            elif ep_diff <= 1:
                 score = 0.0
             elif ep <= 2 and ep_diff >= 5:
                 score = 0.95

@@ -1,12 +1,17 @@
-from ai.Strategy.navigation_strategy import get_navigation_priorities
-from ai.Strategy.ruin_exploration_strategy import get_exploration_priorities
-from ai.Strategy.priority.ground_loot_priority import get_ground_loot_priorities
-from ai.Strategy.priority.equipped_priority import get_equipment_priorities
+from ai.detector.self_detector import get_self_vital_status, check_inventory_full, check_better_equipments_in_inventory
+from ai.detector.enemy_detector import get_detailed_enemy_stats
+from ai.detector.dead_zone_detector import is_dead_zone, is_pending_dead_zone
+from ai.detector.ground_detector import detect_ground_loot
+from ai.detector.ruin_detector import get_visible_ruins_status, evaluate_explore_safety
+from ai.detector.zone_detector import detect_facility_detail
+
 from ai.Strategy.priority.recovery_priority import get_recovery_priorities
+from ai.Strategy.priority.equipped_priority import get_equipment_priorities
+from ai.Strategy.priority.ground_loot_priority import get_ground_loot_priorities
 from ai.Strategy.priority.target_priority import get_target_priorities
 from ai.Strategy.priority.interact_priority import get_interact_priorities
-from ai.detector.dead_zone_detector import is_dead_zone, is_pending_dead_zone
-from ai.detector.self_detector import get_self_vital_status
+from ai.Strategy.navigation_strategy import get_navigation_priorities
+from ai.Strategy.ruin_exploration_strategy import get_exploration_priorities
 
 def find_target_id(view: dict, target_name: str, target_type: str, region_id: str) -> str:
     if target_type == "player":
@@ -25,10 +30,10 @@ def find_target_id(view: dict, target_name: str, target_type: str, region_id: st
                         return m.get("id") or m.get("monsterId")
     return None
 
-def make_decision(view: dict, self_bot_name: str) -> dict:
+def make_decision(view: dict, self_bot_name: str, turn_num: int = 0) -> dict:
     if not isinstance(view, dict):
         return {"type": "rest", "name": "None", "score": 0.0, "strategy_report": "None"}
-    recovery_priorities = get_recovery_priorities(view)
+    recovery_priorities = get_recovery_priorities(view, turn_num)
     equipment_priorities = get_equipment_priorities(view)
     ground_loot_priorities = get_ground_loot_priorities(view)
     target_priorities = get_target_priorities(view, self_bot_name)

@@ -53,8 +53,10 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                         from ai.Strategy.memory import add_recent_event
                         add_recent_event(f"Took {prev_hp - new_hp} damage")
                     if prev_kills is not None and new_kills is not None and new_kills > prev_kills:
-                        from ai.Strategy.memory import add_recent_event
+                        from ai.Strategy.memory import add_recent_event, mark_loot_spot
                         add_recent_event("Killed an enemy!")
+                        if curr_id:
+                            mark_loot_spot(curr_id)
 
         turn = frame.get("turn")
         if turn is not None:
@@ -133,10 +135,6 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
                 else:
                     from ai.Strategy.memory import add_recent_event
                     add_recent_event(f"Player {event_data.get('agentId')} was eliminated")
-                    death_region = event_data.get("regionId") or event_data.get("region_id") or event_data.get("region")
-                    if death_region:
-                        from ai.Strategy.memory import mark_death_spot
-                        mark_death_spot(death_region)
 
         if msg_type == "game_ended":
             if not coordinator.bots_state[bot_name].get("alive", True):
@@ -192,8 +190,9 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             current_region = frame.get("view", {}).get("currentRegion", {})
             curr_id = current_region.get("id") if isinstance(current_region, dict) else None
             if curr_id:
-                from ai.Strategy.memory import mark_visited, record_map_connections
+                from ai.Strategy.memory import mark_visited, record_map_connections, remove_loot_spot
                 mark_visited(curr_id)
+                remove_loot_spot(curr_id)
                 record_map_connections(curr_id, current_region.get("connections", []))
 
             self_data = frame.get("view", {}).get("self")

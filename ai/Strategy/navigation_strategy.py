@@ -1,7 +1,7 @@
 from ai.detector.zone_detector import detect_terrain
 from ai.detector.dead_zone_detector import get_damage_per_second, is_dead_zone, is_pending_dead_zone
 from ai.detector.ruin_detector import get_visible_ruins_status
-from ai.Strategy.memory import get_all_known_dead_zones, get_visit_count
+from ai.Strategy.memory import get_all_known_dead_zones, get_visit_count, is_loot_spot
 
 def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
     priorities = []
@@ -86,6 +86,8 @@ def get_navigation_priorities(view: dict, self_bot_name: str) -> list:
             score = 0.0
         if conn_id in regions_with_low_hp and enemies_l0_count == 0:
             score = max(score, 0.95)
+        if is_loot_spot(conn_id) and enemies_l0_count == 0:
+            score = max(score, 0.98)
         priorities.append({
             "id": conn_id,
             "name": name,

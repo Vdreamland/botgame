@@ -9,14 +9,15 @@ def get_weapon_atk(w_name: str) -> int:
     return WEAPONS.get(w_name, {}).get("atk_bonus", 0)
 
 def get_armour_def(a_name: str) -> int:
-    ARMOURS_DICT = {
-        "Plate Armor": 20,
-        "Chainmail": 10,
-        "Iron Armor": 10,
-        "Leather Armor": 5
+    ARMOURS_TO_GRADE = {
+        "Plate Armor": "Epic",
+        "Chainmail": "Rare",
+        "Iron Armor": "Rare",
+        "Leather Armor": "Common"
     }
-    if a_name in ARMOURS_DICT:
-        return ARMOURS_DICT[a_name]
+    grade = ARMOURS_TO_GRADE.get(a_name)
+    if grade:
+        return ARMOUR_GRADES.get(grade, {}).get("estimated_def_bonus", 0)
     for grade_name, spec in ARMOUR_GRADES.items():
         if grade_name.lower() in a_name.lower():
             return spec.get("estimated_def_bonus", 0)

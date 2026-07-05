@@ -2,6 +2,8 @@ import collections
 from config.agen_config import get_configured_bots
 from game_data.monster_info import MONSTERS, GUARDIAN_STATS
 
+_region_layers_cache = {}
+
 def get_ally_names() -> set:
     try:
         bots = get_configured_bots()
@@ -22,9 +24,18 @@ def classify_agent(agent_name: str, self_bot_name: str) -> str:
     return "player"
 
 def calculate_region_layers(view: dict) -> dict:
-    layers = {}
+    global _region_layers_cache
     if not isinstance(view, dict):
-        return layers
+        return {}
+    
+    view_id = id(view)
+    if view_id in _region_layers_cache:
+        return _region_layers_cache[view_id]
+        
+    if len(_region_layers_cache) > 20:
+        _region_layers_cache.clear()
+        
+    layers = {}
     current_region = view.get("currentRegion", {})
     if not isinstance(current_region, dict):
         return layers
@@ -53,6 +64,8 @@ def calculate_region_layers(view: dict) -> dict:
                     elif conn in connections:
                         visited.add(conn)
                         queue.append((conn, dist + 1))
+                        
+    _region_layers_cache[view_id] = layers
     return layers
 
 def get_visible_enemies_by_layer(view: dict, self_bot_name: str) -> dict:

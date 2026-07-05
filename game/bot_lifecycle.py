@@ -70,10 +70,11 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                     await ws_client.close()
                     if game_ended_normally:
                         await coordinator.leave_game(bot_name)
+                        coordinator.bots_state[bot_name]["game_id"] = None
                 await asyncio.sleep(5)
                 continue
 
-            if coordinator.bots_state[bot_name].get("alive", False):
+            if coordinator.bots_state[bot_name].get("alive", False) and coordinator.bots_state[bot_name].get("game_id"):
                 coordinator.bots_state[bot_name]["alive"] = False
                 latest_view = coordinator.bots_state[bot_name].get("view", {})
                 if isinstance(latest_view, dict):
@@ -87,6 +88,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                 write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
                 write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} was eliminated during connection loss (HP: 0).")
                 await coordinator.leave_game(bot_name)
+                coordinator.bots_state[bot_name]["game_id"] = None
 
             bypass = bypass_lobby_on_startup
             bypass_lobby_on_startup = False
@@ -145,7 +147,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
 
             await ws_client.close()
 
-            if coordinator.bots_state[bot_name].get("alive", False):
+            if coordinator.bots_state[bot_name].get("alive", False) and coordinator.bots_state[bot_name].get("game_id"):
                 ws_url = "wss://cdn.clawroyale.ai/ws/agent"
                 connected = await ws_client.connect(ws_url)
                 if connected:
@@ -165,6 +167,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                     await ws_client.close()
                     if game_ended_normally:
                         await coordinator.leave_game(bot_name)
+                        coordinator.bots_state[bot_name]["game_id"] = None
 
         except Exception as e:
             logger.error(f"[ERROR] Error in {bot_name} game execution loop: {e}")

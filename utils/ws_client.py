@@ -6,8 +6,7 @@ from logs.logs_network import (
     log_ws_error,
     log_ws_send,
     log_ws_receive,
-    log_ws_closed,
-    log_ws_not_open_error
+    log_ws_closed
 )
 
 class ClawRoyaleWSClient:
@@ -21,8 +20,8 @@ class ClawRoyaleWSClient:
         }
         self.session = None
         self.ws = None
-        self.last_logged_turn = -1
         self.last_acted_turn = -1
+        self.last_logged_turn = -1
 
     async def connect(self, url: str) -> bool:
         log_ws_connecting(self.bot_name, url)
@@ -33,17 +32,22 @@ class ClawRoyaleWSClient:
             return True
         except Exception as e:
             log_ws_error(self.bot_name, str(e))
+            if self.session:
+                await self.session.close()
+                self.session = None
             return False
 
-    async def send(self, data: dict):
-        if self.ws:
-            try:
-                await self.ws.send_str(json.dumps(data))
-                log_ws_send(self.bot_name, data)
-            except Exception as e:
-                log_ws_error(self.bot_name, str(e))
-        else:
-            log_ws_not_open_error(self.bot_name)
+    async def send(self, payload: dict) -> bool:
+        if not self.ws:
+            return False
+        try:
+            raw_data = json.dumps(payload)
+            log_ws_send(self.bot_name, raw_data)
+            await self.ws.send_str(raw_data)
+            return True
+        except Exception as e:
+            log_ws_error(self.bot_name, str(e))
+            return False
 
     async def receive(self):
         if not self.ws:
@@ -63,9 +67,15 @@ class ClawRoyaleWSClient:
             log_ws_error(self.bot_name, str(e))
             return None
 
-    async def close(self):
-        if self.ws:
-            await self.ws.close()
-            log_ws_closed(self.bot_name)
-        if self.session:
-            await self.session.close()
+    async def close(self) -> None:
+        try:
+            if self.ws:
+                await self.ws.close()
+                log_ws_closed(self.bot_name)
+        except Exception:
+            pass
+        finally:
+            self.ws = None
+            if self.session:
+                await self.session.close()
+                self.session = None

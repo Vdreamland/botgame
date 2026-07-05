@@ -76,12 +76,13 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             if view_data:
                 is_alive = False
 
-        if turn is not None and turn != ws_client.last_logged_turn and is_alive:
+        if msg_type == "agent_view" and turn is not None and turn != ws_client.last_logged_turn and is_alive:
             write_gameplay_log(bot_name, f"# Turn {turn}", frame.get("view", {}))
             ws_client.last_logged_turn = turn
 
     if msg_type in ("agent_view", "turn_advanced"):
-        coordinator.bots_state[bot_name]["view"] = frame.get("view", {})
+        if "view" in frame:
+            coordinator.bots_state[bot_name]["view"] = frame.get("view", {})
         coordinator.bots_state[bot_name]["turn"] = frame.get("turn", 0)
         await coordinator.draw_table()
 

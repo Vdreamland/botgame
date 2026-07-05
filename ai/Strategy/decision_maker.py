@@ -159,6 +159,9 @@ def make_decision(view: dict, self_bot_name: str, turn_num: int = 0) -> dict:
     vital = get_self_vital_status(view)
     is_hp_full = vital.get("hp", 100) >= vital.get("max_hp", 100)
     is_ep_full = vital.get("ep", 10) >= vital.get("max_ep", 10)
+    if curr_ep == 0 and winner_category in ("move", "attack", "explore", "interact"):
+        return {"type": "rest", "name": "None", "score": 1.0, "strategy_report": f"EP_DEPLETED! Forced Rest | {strategy_report}"}
+
     if winner_score < 0.15:
         if is_hp_full and is_ep_full and best_nav.get("score", 0.0) > 0.0:
             return {
@@ -169,6 +172,7 @@ def make_decision(view: dict, self_bot_name: str, turn_num: int = 0) -> dict:
                 "strategy_report": f"FORCED_MOVE! {strategy_report}"
             }
         return {"type": "rest", "name": "None", "score": winner_score, "strategy_report": strategy_report}
+
     if winner_category == "recovery":
         return {
             "type": "use_item",

@@ -129,7 +129,7 @@ def make_decision(view: dict, self_bot_name: str, turn_num: int = 0) -> dict:
     l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
     enemies_l0 = l0_counts.get("P", 0) + l0_counts.get("M", 0)
     
-    if curr_ep <= 2 and curr_hp >= 40 and enemies_l0 == 0:
+    if curr_ep <= 4 and curr_hp >= 40 and enemies_l0 == 0:
         choices.append(("rest", 0.88))
     
     choices.sort(key=lambda x: x[1], reverse=True)

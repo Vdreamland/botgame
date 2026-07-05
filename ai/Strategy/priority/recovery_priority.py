@@ -71,7 +71,7 @@ def get_recovery_priorities(view: dict, turn_num: int = 0) -> list:
                 score = 0.95
             elif ep_diff <= 1:
                 score = 0.0
-            elif ep <= 2 and ep_diff >= 5:
+            elif ep <= 4 and ep_diff >= 5:
                 score = 0.95
             elif ep_diff >= 5:
                 score = 0.80

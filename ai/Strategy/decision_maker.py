@@ -1,6 +1,6 @@
 from ai.detector.self_detector import get_self_vital_status, check_inventory_full, check_better_equipments_in_inventory
 from ai.detector.enemy_detector import get_detailed_enemy_stats
-from ai.detector.dead_zone_detector import is_dead_zone, is_pending_dead_zone
+from ai.detector.dead_zone_detector import is_dead_zone, is_pending_dead_zone, analyze_death_zones
 from ai.detector.ground_detector import detect_ground_loot
 from ai.detector.ruin_detector import get_visible_ruins_status, evaluate_explore_safety
 from ai.detector.zone_detector import detect_facility_detail

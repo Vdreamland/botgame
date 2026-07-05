@@ -211,7 +211,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
         current_region = view.get("currentRegion", {})
         curr_id = current_region.get("id") if isinstance(current_region, dict) else None
         target_ruin_id = best_explore["ruin_id"]
-        if curr_id == target_ruid_id if "target_ruid_id" in locals() else curr_id == target_ruin_id:
+        if curr_id == target_ruin_id:
             ruins = view.get("visibleRuins", [])
             for r in ruins:
                 if isinstance(r, dict) and r.get("ruinId") == target_ruin_id:

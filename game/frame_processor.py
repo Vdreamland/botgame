@@ -16,6 +16,8 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
     if not isinstance(frame, dict):
         return True
 
+    is_alive = True
+    view_data = {}
     msg_type = frame.get("type")
     
     if msg_type in ("agent_view", "turn_advanced"):
@@ -103,134 +105,134 @@ async def process_game_frame(frame: dict, bot_name: str, coordinator: LobbyCoord
             coordinator.bots_state[bot_name]["alive"] = True
             await coordinator.draw_table()
 
-    if msg_type == "event":
-        event_name = frame.get("event")
-        event_data = frame.get("data", {})
-        my_agent_id = coordinator.bots_state[bot_name].get("agent_id")
-        
-        if event_name not in ("agent_died", "game_settled"):
-            logger.info(f"[RAW EVENT] {bot_name} received event '{event_name}': {event_data}")
+        if msg_type == "event":
+            event_name = frame.get("event")
+            event_data = frame.get("data", {})
+            my_agent_id = coordinator.bots_state[bot_name].get("agent_id")
+            
+            if event_name not in ("agent_died", "game_settled"):
+                logger.info(f"[RAW EVENT] {bot_name} received event '{event_name}': {event_data}")
 
-        if event_name == "agent_died":
-            if event_data.get("agentId") == my_agent_id:
-                logger.info(f"[-] {bot_name} received agent_died event.")
-                coordinator.bots_state[bot_name]["alive"] = False
-                await coordinator.draw_table()
-                latest_view = coordinator.bots_state[bot_name].get("view", {})
-                if isinstance(latest_view, dict):
-                    if "self" not in latest_view:
-                        latest_view["self"] = {}
-                    latest_view["self"]["hp"] = 0
-                    latest_view["self"]["isAlive"] = False
-                turn_num = frame.get("turn") or ws_client.last_logged_turn
-                if turn_num >= 0:
-                    write_gameplay_log(bot_name, f"# Turn {turn_num}", latest_view)
-                write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
+            if event_name == "agent_died":
+                if event_data.get("agentId") == my_agent_id:
+                    logger.info(f"[-] {bot_name} received agent_died event.")
+                    coordinator.bots_state[bot_name]["alive"] = False
+                    await coordinator.draw_table()
+                    latest_view = coordinator.bots_state[bot_name].get("view", {})
+                    if isinstance(latest_view, dict):
+                        if "self" not in latest_view:
+                            latest_view["self"] = {}
+                        latest_view["self"]["hp"] = 0
+                        latest_view["self"]["isAlive"] = False
+                    turn_num = frame.get("turn") or ws_client.last_logged_turn
+                    if turn_num >= 0:
+                        write_gameplay_log(bot_name, f"# Turn {turn_num}", latest_view)
+                    write_gameplay_log(bot_name, f"[SYSTEM] Agent {bot_name} received agent_died event (HP: 0). Exiting game loop...")
+                    return False
+                else:
+                    from ai.Strategy.memory import add_recent_event
+                    add_recent_event(f"Player {event_data.get('agentId')} was eliminated")
+                    death_region = event_data.get("regionId") or event_data.get("region_id") or event_data.get("region")
+                    if death_region:
+                        from ai.Strategy.memory import mark_death_spot
+                        mark_death_spot(death_region)
+
+        if msg_type == "game_ended":
+            if not coordinator.bots_state[bot_name].get("alive", True):
                 return False
-            else:
-                from ai.Strategy.memory import add_recent_event
-                add_recent_event(f"Player {event_data.get('agentId')} was eliminated")
-                death_region = event_data.get("regionId") or event_data.get("region_id") or event_data.get("region")
-                if death_region:
-                    from ai.Strategy.memory import mark_death_spot
-                    mark_death_spot(death_region)
-
-    if msg_type == "game_ended":
-        if not coordinator.bots_state[bot_name].get("alive", True):
-            return False
-        coordinator.bots_state[bot_name]["alive"] = False
-        await coordinator.draw_table()
-        latest_view = coordinator.bots_state[bot_name].get("view", {})
-        if isinstance(latest_view, dict):
-            if "self" not in latest_view:
-                latest_view["self"] = {}
-            latest_view["self"]["hp"] = 0
-            latest_view["self"]["isAlive"] = False
-        
-        if ws_client.last_logged_turn >= 0:
-            death_turn = ws_client.last_logged_turn + 1
-            logger.info(f"[-] {bot_name} match ended (game_ended received). Logging final turn {death_turn}.")
-            write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
-        
-        write_gameplay_log(bot_name, "[SYSTEM] Match has ended (game_ended received). Exiting game loop...")
-        return False
-
-    game_id = frame.get("gameId") or frame.get("matchId")
-    if game_id:
-        try:
-            m_id = int(game_id)
-            room_display = get_ordinal(m_id)
-            room_id_str = str(game_id)
-        except ValueError:
-            room_display = str(game_id)
-            room_id_str = str(game_id)
-        if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
-            coordinator.bots_state[bot_name]["room"] = room_display[:10]
-            coordinator.bots_state[bot_name]["room_id"] = room_id_str
+            coordinator.bots_state[bot_name]["alive"] = False
             await coordinator.draw_table()
-    
-    if msg_type == "turn_advanced":
-        coordinator.bots_state[bot_name]["local_cooldown"] = False
+            latest_view = coordinator.bots_state[bot_name].get("view", {})
+            if isinstance(latest_view, dict):
+                if "self" not in latest_view:
+                    latest_view["self"] = {}
+                latest_view["self"]["hp"] = 0
+                latest_view["self"]["isAlive"] = False
+            
+            if ws_client.last_logged_turn >= 0:
+                death_turn = ws_client.last_logged_turn + 1
+                logger.info(f"[-] {bot_name} match ended (game_ended received). Logging final turn {death_turn}.")
+                write_gameplay_log(bot_name, f"# Turn {death_turn}", latest_view)
+            
+            write_gameplay_log(bot_name, "[SYSTEM] Match has ended (game_ended received). Exiting game loop...")
+            return False
 
-    if msg_type == "action_result":
-        success = frame.get("success", True)
-        if not success:
-            err = frame.get("error", {})
-            logger.warning(f"[!] Action result warning: {err.get('message', 'Unknown')} (Code: {err.get('code', 'None')})")
+        game_id = frame.get("gameId") or frame.get("matchId")
+        if game_id:
+            try:
+                m_id = int(game_id)
+                room_display = get_ordinal(m_id)
+                room_id_str = str(game_id)
+            except ValueError:
+                room_display = str(game_id)
+                room_id_str = str(game_id)
+            if coordinator.bots_state[bot_name]["room"] != room_display[:10]:
+                coordinator.bots_state[bot_name]["room"] = room_display[:10]
+                coordinator.bots_state[bot_name]["room_id"] = room_id_str
+                await coordinator.draw_table()
+        
+        if msg_type == "turn_advanced":
             coordinator.bots_state[bot_name]["local_cooldown"] = False
-            from ai.Strategy.memory import add_recent_event
-            add_recent_event(f"Action failed: {err.get('message', 'Unknown error')}")
-        res_data = frame.get("data", {})
-        if isinstance(res_data, dict):
-            if res_data.get("canAct") is True or res_data.get("can_act") is True:
+
+        if msg_type == "action_result":
+            success = frame.get("success", True)
+            if not success:
+                err = frame.get("error", {})
+                logger.warning(f"[!] Action result warning: {err.get('message', 'Unknown')} (Code: {err.get('code', 'None')})")
                 coordinator.bots_state[bot_name]["local_cooldown"] = False
+                from ai.Strategy.memory import add_recent_event
+                add_recent_event(f"Action failed: {err.get('message', 'Unknown error')}")
+            res_data = frame.get("data", {})
+            if isinstance(res_data, dict):
+                if res_data.get("canAct") is True or res_data.get("can_act") is True:
+                    coordinator.bots_state[bot_name]["local_cooldown"] = False
 
-    if msg_type == "agent_view":
-        current_region = frame.get("view", {}).get("currentRegion", {})
-        curr_id = current_region.get("id") if isinstance(current_region, dict) else None
-        if curr_id:
-            from ai.Strategy.memory import mark_visited, record_map_connections
-            mark_visited(curr_id)
-            record_map_connections(curr_id, current_region.get("connections", []))
+        if msg_type == "agent_view":
+            current_region = frame.get("view", {}).get("currentRegion", {})
+            curr_id = current_region.get("id") if isinstance(current_region, dict) else None
+            if curr_id:
+                from ai.Strategy.memory import mark_visited, record_map_connections
+                mark_visited(curr_id)
+                record_map_connections(curr_id, current_region.get("connections", []))
 
-        self_data = frame.get("view", {}).get("self")
-        is_agent_alive = True
-        can_act = True
-        if isinstance(self_data, dict) and self_data:
-            is_agent_alive = self_data.get("isAlive", True)
-            can_act = self_data.get("canAct", self_data.get("can_act", True))
-            if self_data.get("hp") == 0:
-                is_agent_alive = False
-        else:
-            is_agent_alive = False
-
-        turn_num = frame.get("turn", 0)
-        already_acted = ws_client.last_acted_turn == turn_num
-        is_local_cooldown = coordinator.bots_state[bot_name].get("local_cooldown", False)
-
-        if msg_type in ("agent_view", "turn_advanced") and is_agent_alive and can_act and not already_acted and not is_local_cooldown:
-            await execute_decision(frame.get("view", {}), bot_name, turn_num, ws_client, coordinator)
-
-    if msg_type == "can_act_changed" and (frame.get("canAct") is True or frame.get("can_act") is True):
-        coordinator.bots_state[bot_name]["local_cooldown"] = False
-        stored_view = coordinator.bots_state[bot_name].get("view", {})
-        if stored_view:
-            self_data = stored_view.get("self")
+            self_data = frame.get("view", {}).get("self")
             is_agent_alive = True
+            can_act = True
             if isinstance(self_data, dict) and self_data:
                 is_agent_alive = self_data.get("isAlive", True)
+                can_act = self_data.get("canAct", self_data.get("can_act", True))
                 if self_data.get("hp") == 0:
                     is_agent_alive = False
             else:
                 is_agent_alive = False
-            
-            stored_view["self"]["canAct"] = True
-            stored_view["self"]["can_act"] = True
 
-        turn_num = coordinator.bots_state[bot_name].get("turn", 0)
-        already_acted = ws_client.last_acted_turn == turn_num
+            turn_num = frame.get("turn", 0)
+            already_acted = ws_client.last_acted_turn == turn_num
+            is_local_cooldown = coordinator.bots_state[bot_name].get("local_cooldown", False)
 
-        if is_agent_alive and not already_acted:
-            await execute_decision(stored_view, bot_name, turn_num, ws_client, coordinator)
+            if msg_type in ("agent_view", "turn_advanced") and is_agent_alive and can_act and not already_acted and not is_local_cooldown:
+                await execute_decision(frame.get("view", {}), bot_name, turn_num, ws_client, coordinator)
 
-    return True
+        if msg_type == "can_act_changed" and (frame.get("canAct") is True or frame.get("can_act") is True):
+            coordinator.bots_state[bot_name]["local_cooldown"] = False
+            stored_view = coordinator.bots_state[bot_name].get("view", {})
+            if stored_view:
+                self_data = stored_view.get("self")
+                is_agent_alive = True
+                if isinstance(self_data, dict) and self_data:
+                    is_agent_alive = self_data.get("isAlive", True)
+                    if self_data.get("hp") == 0:
+                        is_agent_alive = False
+                else:
+                    is_agent_alive = False
+                
+                stored_view["self"]["canAct"] = True
+                stored_view["self"]["can_act"] = True
+
+            turn_num = coordinator.bots_state[bot_name].get("turn", 0)
+            already_acted = ws_client.last_acted_turn == turn_num
+
+            if is_agent_alive and not already_acted:
+                await execute_decision(stored_view, bot_name, turn_num, ws_client, coordinator)
+
+        return True

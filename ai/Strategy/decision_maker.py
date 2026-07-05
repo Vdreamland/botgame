@@ -50,6 +50,25 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
     best_explore = exploration_priorities[0] if exploration_priorities else {"score": 0.0}
     best_interact = interact_priorities[0] if interact_priorities else {"score": 0.0}
     
+    self_data = view.get("self", {})
+    eq_weapon = self_data.get("equippedWeapon")
+    curr_weapon_name = eq_weapon.get("name", "Fist") if isinstance(eq_weapon, dict) else "Fist"
+    is_unarmed = curr_weapon_name == "Fist"
+
+    from ai.detector.enemy_detector import get_detailed_enemy_stats
+    detailed_enemies = get_detailed_enemy_stats(view, self_bot_name)
+    enemies_l0_detailed = [p for p in detailed_enemies.get("players", []) if p.get("layer") == 0]
+    monsters_l0_detailed = [m for m in detailed_enemies.get("monsters", []) if m.get("layer") == 0]
+
+    has_threat_l0 = False
+    for p in enemies_l0_detailed:
+        if p.get("weapon", "None") not in ("None", "Fist"):
+            has_threat_l0 = True
+            break
+    for m in monsters_l0_detailed:
+        has_threat_l0 = True
+        break
+
     if current_is_dz:
         best_safe_nav = None
         for nav in navigation_priorities:
@@ -77,6 +96,13 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
                 ("explore", best_explore.get("score", 0.0)),
                 ("interact", best_interact.get("score", 0.0))
             ]
+    elif is_unarmed and has_threat_l0:
+        if best_loot.get("score", 0.0) >= 0.95:
+            best_loot["score"] = 1.00
+            choices = [("loot", 1.00)]
+        else:
+            best_nav["score"] = 1.00
+            choices = [("navigation", 1.00)]
     else:
         choices = [
             ("recovery", best_recovery.get("score", 0.0)),
@@ -185,7 +211,7 @@ def make_decision(view: dict, self_bot_name: str) -> dict:
         current_region = view.get("currentRegion", {})
         curr_id = current_region.get("id") if isinstance(current_region, dict) else None
         target_ruin_id = best_explore["ruin_id"]
-        if curr_id == target_ruin_id:
+        if curr_id == target_ruid_id if "target_ruid_id" in locals() else curr_id == target_ruin_id:
             ruins = view.get("visibleRuins", [])
             for r in ruins:
                 if isinstance(r, dict) and r.get("ruinId") == target_ruin_id:

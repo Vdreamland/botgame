@@ -2,6 +2,7 @@ from ai.detector.enemy_detector import get_detailed_enemy_stats
 from game_data.weapon_info import WEAPONS
 from game_data.armour_info import ARMOUR_GRADES
 from ai.detector.dead_zone_detector import is_dead_zone
+from ai.detector.enemy_detector import get_visible_enemies_by_layer
 
 def get_weapon_atk(w_name: str) -> int:
     return WEAPONS.get(w_name, {}).get("atk_bonus", 0)
@@ -53,6 +54,10 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
     else:
         can_attack = curr_ep >= (w_ep_cost + 2)
 
+    layer_summary = get_visible_enemies_by_layer(view, self_bot_name)
+    l0_counts = layer_summary.get(0, {}) if isinstance(layer_summary, dict) else {}
+    enemies_l0 = l0_counts.get("P", 0) + l0_counts.get("M", 0)
+
     for p in players:
         layer = p.get("layer", -1)
         if layer == -1:
@@ -75,7 +80,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
 
         if not can_attack:
             score = 0.0
-        elif is_unarmed and target_is_armed and net_atk < hp:
+        elif is_unarmed and (target_is_armed or enemies_l0 > 1) and net_atk < hp:
             score = 0.0
         elif layer <= w_range:
             if net_atk >= hp:
@@ -117,7 +122,7 @@ def get_target_priorities(view: dict, self_bot_name: str) -> list:
         net_atk = curr_atk - target_def
         if not can_attack:
             score = 0.0
-        elif is_unarmed and is_guardian and net_atk < hp:
+        elif is_unarmed and (is_guardian or enemies_l0 > 1) and net_atk < hp:
             score = 0.0
         elif layer <= w_range:
             if net_atk >= hp:

@@ -106,12 +106,15 @@ class GroundLootPriority:
                 if item_name in owned_item_names and (item_name in MELEE_WEAPONS or item_name in RANGED_WEAPONS or item_name in {"Plate Armor", "Iron Armor", "Leather Armor", "Chainmail"} or item_type in ("armour", "armor")):
                     score = 0.0
                 elif item_name == "sMoltz":
-                    score = 0.99
+                    if enemies_l0 > 0:
+                        score = 0.10
+                    else:
+                        score = 0.99
                 elif item_name in MELEE_WEAPONS:
                     atk = get_weapon_atk(item_name)
                     if atk > best_melee_atk:
                         if not is_armed and not has_any_weapon_in_inv:
-                            score = 0.97
+                            score = 1.00
                         elif enemies_l0 > 0 and is_armed:
                             score = 0.40
                         elif curr_hp <= 30 and is_armed:
@@ -124,7 +127,7 @@ class GroundLootPriority:
                     atk = get_weapon_atk(item_name)
                     if atk > best_ranged_atk:
                         if not is_armed and not has_any_weapon_in_inv:
-                            score = 0.97
+                            score = 1.00
                         elif enemies_l0 > 0 and is_armed:
                             score = 0.40
                         elif curr_hp <= 30 and is_armed:

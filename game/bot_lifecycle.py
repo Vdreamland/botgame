@@ -61,10 +61,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                             logger.warning(f"[-] {bot_name} disconnected from game WebSocket.")
                             break
                         
-                        try:
-                            frame = json.loads(msg)
-                        except json.JSONDecodeError:
-                            continue
+                        frame = msg
                         
                         success = await process_game_frame(frame, bot_name, coordinator, ws_client)
                         if not success:
@@ -117,10 +114,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                     logger.warning(f"[-] {bot_name} WebSocket connection closed.")
                     break
                 
-                try:
-                    frame = json.loads(msg)
-                except json.JSONDecodeError:
-                    continue
+                frame = msg
                 
                 f_type = frame.get("type")
                 if f_type == "welcome":
@@ -162,10 +156,7 @@ async def run_bot_lifecycle(bot_config: dict, coordinator: LobbyCoordinator, roo
                             logger.warning(f"[-] {bot_name} disconnected from game WebSocket.")
                             break
                         
-                        try:
-                            frame = json.loads(msg)
-                        except json.JSONDecodeError:
-                            continue
+                        frame = msg
                         
                         success = await process_game_frame(frame, bot_name, coordinator, ws_client)
                         if not success:

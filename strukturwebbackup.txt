@@ -1,0 +1,151 @@
+/botgame
+├── .env                              # Menyimpan variabel lingkungan (konfigurasi bot, API key, jumlah bot, dan jenis room)
+├── requirements.txt                  # Daftar pustaka Python yang diperlukan (aiohttp dan python-dotenv)
+├── rungame.py                        # Berkas peluncur utama yang menjalankan pengorstrasian multi-bot secara asinkronus
+├── ai/                               # Folder pusat logika kecerdasan buatan, pengambilan keputusan, dan taktis bot
+│    ├── __init__.py                  # Penanda paket Python untuk mengekspos modul-modul AI
+│    ├── skill/                       
+│    │    ├──  __init__.py                     
+│    │    └── vision.py               # untuk mengetahui jarak pandang agen kita berapa zone/tiles
+│    ├── agent_info.py                # untuk menampilkan informasi bot/agent kita di log
+│    ├── detector/                    # tempat untuk mendeteksi awal untuk kumpulkan informasi
+│    │    ├── __init__.py             # Penanda paket Python untuk sub-folder decision
+│    │    ├── zone_detector.py        # Deteksi informasi TERRAINS/FACILITIES/WEATHERS/jumlah layer
+│    │    ├── dead_zone_detector.py   # Deteksi deadzone
+│    │    ├── ground_detector.py      # Deteksi apa aja loot yang ada di ground/zone bot/agent berada
+│    │    ├── enemy_detector.py       # Deteksi jumlah musuh/nama musuh/stats musuh/stats monster
+│    │    ├── self_detector.py        # mengevaluasi kekuatan diri kita sendiri sebelum bertarung
+│    │    └── ruin_detector.py        # Reruntuhan (ruin) merupakan objek penting untuk mendapatkan Relic dan Pack [1.12.0]   
+│    ├── Strategy/                    
+│    │    ├── priority 
+│    │    │    ├── __init__.py 
+│    │    │    ├── decision_maker.py 
+│    │    │    ├── ground_loot_priority
+│    │    │    ├── equipped_priority.py
+│    │    │    ├── interact_priority.py  
+│    │    │    ├── recovery_priority.py   
+│    │    │    └── target_priority.py
+│    │    ├── memory.py
+│    │    ├── navigation_strategy
+│    │    ├── ruin_exploration_strategy.py
+│    │    └── __init__.py   
+├── game_data/
+│    ├── __init__.py                  # Penanda paket Python (bisa digunakan untuk mengekspos semua kamus data sekaligus)
+│    ├── player_info.py               # Menyimpan statistik dasar pemain (HP, EP, ATK, DEF, Vision, limit inventaris)
+│    ├── monster_info.py              # Kamus data monster biasa (Wolf, Bear, Bandit) dan monster Guardian (Turret) beserta jangkauannya
+│    ├── weapon_info.py               # Kamus data statistik senjata (Fist, Dagger, Sword, Katana, Bow, Pistol, Sniper Rifle)
+│    ├── armour_info.py               # Kamus data jenis armor (grade, bonus defense) yang terdeteksi dari game
+│    ├── item_info.py                 # Kamus data item pemulihan (HP & EP recovery) dan kegunaan item utilitas
+│    ├── action_info.py               # Aturan biaya EP, cooldown aksi, dan konstanta perhitungan Alert Gauge
+│    ├── relic_info.py                # Panduan warna slot relic (R/G/B) dan pemetaan statistik rentang nilai afiks positif/negatif
+│    ├── pack_info.py                 # Ensiklopedia 20 kategori pack (CAT-00 s.d CAT-19) lengkap untuk Tier T1, T2, T3
+│    └── world_info.py                # Aturan modifier terrain, weather, sistem waktu, fasilitas peta, dan batas aman Death Zone
+├── utils/                            # [Tambahan Baru] Folder untuk utilitas sistem dan helper koneksi
+│    ├── __init__.py                  # Penanda paket Python untuk folder utils
+│    ├── ws_client.py                 # Menangani siklus koneksi WebSocket & Join Handshake
+│    ├── logger.py                    # Konfigurasi pusat saluran logging bot
+│    └── api_client.py                # Helper API REST untuk interaksi dengan server (ClawRoyaleAPI)
+├── logs/                             # Folder tempat menyimpan file hasil audit bot
+│   ├── __init__.py                   # Penanda paket Python untuk folder utils
+│   ├── logs_network.py               # Menampilkan log aktivitas jaringan WebSocket, siklus koneksi, dan handshake di terminal
+│   ├── logs_gameplay.py              # Mengelola penulisan log aktivitas turn-by-turn jalannya permainan bot ke berkas teks terpisah
+│   ├── logs_combat.py                # Menampilkan log pertempuran bot dan kejadian pertarungan secara asinkronus di terminal
+│   ├── logs_agent.py                 # Menyimpan seluruh fungsi log khusus untuk deteksi konfigurasi, pencatatan daftar nama bot, pelaporan jumlah bot, serta pemantauan status antrean Lobby awal sebelum masuk ke dalam permainan.
+│   └── quest_reward_log.py           # Menampilkan log pelaporan audit klaim kode WELCOME serta penukaran jatah hadiah mingguan
+├── config/                           # Folder tempat menyimpan konfigurasi muatan bot
+│   ├── __init__.py                   # Penanda paket Python untuk folder config
+│   └── agent_config.py               # Memuat seluruh konfigurasi bot dari .env dan menangani logika asinkronus auto_claim_rewards
+├── game/                           
+│   ├── __init__.py           
+│   ├── inventory_manager.py     #  Khusus menangani pembersihan tas secara otomatis (membuang senjata redundan, senjata lemah, dan armor duplikat).
+│   ├── action_dispatcher.py     # Khusus menangani fungsi eksekusi keputusan (_execute_decision), yaitu membungkus aksi bot ke dalam format API, mencetak log perencanaan taktis di konsol, dan mengirimkannya ke server WebSocket
+│   ├── lobby_coordinator.py     
+│   ├── frame_processor.py       # Hanya bertindak sebagai penerima pesan mentah (message router) dari WebSocket. Jika ada pesan masuk, ia hanya memanggil fungsi dari file manajer masing-masing (seperti memanggil inventory_manager untuk bersih-bersih, atau action_dispatcher untuk menyerang)       
+│   └── bot_lifecycle.py               
+
+
+
+
+http://localhost:8080
+Link url :
+
+game/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/game/__init__.py
+lobby_coordinator.py : https://github.com/Vdreamland/botgame/blob/master/game/lobby_coordinator.py
+bot_lifecycle.py : https://github.com/Vdreamland/botgame/blob/master/game/bot_lifecycle.py
+frame_processor.py : https://github.com/Vdreamland/botgame/blob/master/game/frame_processor.py
+action_dispatcher.py : https://github.com/Vdreamland/botgame/blob/master/game/action_dispatcher.py
+inventory_manager.py : https://github.com/Vdreamland/botgame/blob/master/game/inventory_manager.py
+
+ai/strategy/
+navigation_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/navigation_strategy.py
+ruin_exploration_strategy.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/ruin_exploration_strategy.py
+decision_maker.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/decision_maker.py
+memory.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/memory.py
+
+ai/strategy/priority/
+ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/ground_loot_priority.py
+equipped_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/equipped_priority.py
+recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/recovery_priority.py
+target_priority.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/target_priority.py
+interact_priority.py : https://github.com/Vdreamland/botgame/blob/master/ai/Strategy/priority/interact_priority.py
+
+
+ai/detector/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/__init__.py
+zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/zone_detector.py
+dead_zone_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/dead_zone_detector.py
+ground_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/ground_detector.py
+enemy_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/enemy_detector.py
+ruin_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/ruin_detector.py
+self_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/self_detector.py
+
+ai/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/__init__.py
+agent_info.py : https://github.com/Vdreamland/botgame/blob/master/ai/agent_info.py
+
+
+ai/skill/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/__init__.py
+vision.py : https://github.com/Vdreamland/botgame/blob/master/ai/skill/vision.py
+
+config/
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/config/__init__.py
+agen_config.py : https://github.com/Vdreamland/botgame/blob/master/config/agen_config.py
+
+game_data/ 
+__init__.py : https://github.com/Vdreamland/botgame/blob/master/game_data/__init__.py
+player_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/player_info.py
+monster_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/monster_info.py
+weapon_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/weapon_info.py
+armour_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/armour_info.py
+item_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/item_info.py
+action_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/action_info.py
+relic_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/relic_info.py
+pack_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/pack_info.py
+world_info.py : https://github.com/Vdreamland/botgame/blob/master/game_data/world_info.py
+
+utils/
+init__.py : https://github.com/Vdreamland/botgame/blob/master/utils/__init__.py
+api_client.py : https://github.com/Vdreamland/botgame/blob/master/utils/api_client.py
+logger.py : https://github.com/Vdreamland/botgame/blob/master/utils/logger.py
+ws_client.py : https://github.com/Vdreamland/botgame/blob/master/utils/ws_client.py
+
+logs/
+init__.py : https://github.com/Vdreamland/botgame/blob/master/logs/__init__.py
+logs_network.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_network.py
+quest_reward_log : https://github.com/Vdreamland/botgame/blob/master/logs/quest_reward_log.py
+logs_agent.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_agent.py
+logs_gameplay.py : https://github.com/Vdreamland/botgame/blob/master/logs/logs_gameplay.py
+
+.env : https://github.com/Vdreamland/botgame/blob/master/.env
+requirements.txt : https://github.com/Vdreamland/botgame/blob/master/requirements.txt
+rungame.py : https://github.com/Vdreamland/botgame/blob/master/rungame.py
+
+#Dokumentasi
+Docs.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/Docs.txt
+GameGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/GameGuide.txt
+PlayGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PlayGuide.txt
+PreaSeasonGuide.txt : https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/PreaSeasonGuide1.txt
+skill.md https://github.com/Vdreamland/botgame/blob/master/01-GameInfo/skill-1.12.0.md
+StrukturWebsite.txt : https://github.com/Vdreamland/botgame/blob/master/StrukturWeb.txt

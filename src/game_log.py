@@ -1,6 +1,6 @@
 from collections import Counter
 
-def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_status, alive_count, fight_history=None):
+def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_status, alive_count, fight_history=None, deadzone_status=None):
     name = status.get("name", "Unknown")
     hp = status.get("hp", 0)
     max_hp = status.get("max_hp", 100)
@@ -91,6 +91,34 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
                 output.append(f"Layer {dist}: {region_names}")
     else:
         output.append("Radar: None")
+        
+    if deadzone_status:
+        current_status = deadzone_status.get("current_region_status", "Safe")
+        active_list = deadzone_status.get("active_deadzones", [])
+        pending_list = deadzone_status.get("pending_deadzones", [])
+        
+        has_deadzones_info = (current_status != "Safe") or active_list or pending_list
+        
+        if has_deadzones_info:
+            output.append("")
+            output.append("Deadzones:")
+            if current_status == "Deadzone":
+                output.append(f"  - Current Location ({location}): Deadzone!")
+            elif current_status == "Pending":
+                output.append(f"  - Current Location ({location}): Pending Collapse!")
+            else:
+                output.append(f"  - Current Location ({location}): Safe")
+                
+            if active_list:
+                active_strs = [f"{item['name']} (Layer {item['layer']})" for item in active_list]
+                output.append(f"  - Active Deadzones: {', '.join(active_strs)}")
+                
+            if pending_list:
+                pending_strs = [f"{item['name']} (Layer {item['layer']})" for item in pending_list]
+                output.append(f"  - Pending Collapse: {', '.join(pending_strs)}")
+        else:
+            output.append("")
+            output.append("Deadzones: None")
         
     enemy_layers = enemy_status.get("layers", {})
     output.append("")

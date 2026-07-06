@@ -5,6 +5,7 @@ from src.ai.detector.loot_detector import parse_loot_status
 from src.ai.detector.zone_detector import parse_zone_status
 from src.ai.detector.radar_detector import parse_radar_status
 from src.ai.detector.enemy_detector import parse_enemy_status
+from src.ai.detector.deadzone_detector import parse_deadzone_status
 from src.utils.zone_helper import calculate_region_distances
 
 class StateManager:
@@ -52,6 +53,11 @@ class StateManager:
         }
         self.enemy_status = {
             "layers": {i: {"counts": {"P": 0, "M": 0, "A": 0}, "agents": [], "monsters": []} for i in range(4)}
+        }
+        self.deadzone_status = {
+            "current_region_status": "Safe",
+            "active_deadzones": [],
+            "pending_deadzones": []
         }
 
     def _update_entities(self, view_data):
@@ -106,11 +112,12 @@ class StateManager:
             self.loot_status = parse_loot_status(data)
             self.radar_status = parse_radar_status(data, self.current_distances)
             self.enemy_status = parse_enemy_status(data, self.known_entities, self.current_distances)
+            self.deadzone_status = parse_deadzone_status(data, self.current_distances)
             
             self.current_turn = data.get("turn", self.current_turn)
             self.alive_count = view_data.get("aliveCount", self.alive_count)
             
-            print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history)
+            print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history, deadzone_status=self.deadzone_status)
             
         elif frame_type in ["hp_changed", "agent_damaged", "monster_damaged"]:
             target_id = data.get("targetId")

@@ -99,7 +99,7 @@ ground_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detect
 enemy_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/enemy_detector.py
 ruin_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/ruin_detector.py
 self_detector.py : https://github.com/Vdreamland/botgame/blob/master/ai/detector/self_detector.py
-deadzone_detector.py
+
 
 
 ai/

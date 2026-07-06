@@ -87,6 +87,7 @@ loot_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detect
 radar_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/radar_detector.py
 zone_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/zone_detector.py
 enemy_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/enemy_detector.py
+deadzone_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/deadzone_detector.py
 
 
 Reference :

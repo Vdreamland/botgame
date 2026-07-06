@@ -58,6 +58,12 @@ class DecisionMaker:
         elif action_type == "search":
             return create_search_action()
         elif action_type == "interact":
+            current_region_id = raw_data.get("view", {}).get("currentRegion", {}).get("id")
+            facility_name = best_action.get("facility_name")
+            if current_region_id and facility_name:
+                facility_key = f"{current_region_id}_{facility_name}"
+                if hasattr(manager, "interacted_facilities"):
+                    manager.interacted_facilities.add(facility_key)
             return {
                 "type": "action",
                 "data": {

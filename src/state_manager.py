@@ -17,6 +17,7 @@ class StateManager:
         self.region_name_map = {}
         self.current_distances = {}
         self.pending_loot_regions = []
+        self.interacted_facilities = set()
         self.status = {
             "name": "Unknown",
             "hp": 0,

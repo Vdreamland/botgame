@@ -93,6 +93,9 @@ class StateManager:
             view_data = data.get("view", {})
             self._update_entities(view_data)
             
+            prev_hp = self.status.get("hp", 0)
+            prev_history_len = len(self.fight_history)
+            
             visible_regions = view_data.get("visibleRegions", [])
             for r in visible_regions:
                 r_id = r.get("id")
@@ -117,14 +120,35 @@ class StateManager:
             self.current_turn = data.get("turn", self.current_turn)
             self.alive_count = view_data.get("aliveCount", self.alive_count)
             
+            curr_hp = self.status.get("hp", 0)
+            if curr_hp < prev_hp and prev_hp > 0 and len(self.fight_history) == prev_history_len:
+                damage_taken = prev_hp - curr_hp
+                layer_0 = self.enemy_status.get("layers", {}).get(0, {})
+                possible_attackers = []
+                for agent in layer_0.get("agents", []):
+                    possible_attackers.append(agent.get("name"))
+                for monster in layer_0.get("monsters", []):
+                    possible_attackers.append(monster.get("name"))
+                    
+                region_name = self.zone_status.get("location", "Unknown Region")
+                if possible_attackers:
+                    attacker_name = possible_attackers[0] if len(possible_attackers) == 1 else ", ".join(possible_attackers)
+                    log_msg = f"{attacker_name} attacked You for {damage_taken} damage using None from {region_name} (Same Region)"
+                else:
+                    log_msg = f"You took {damage_taken} damage from an unknown source or environment in {region_name}"
+                    
+                self.fight_history.append(log_msg)
+                if len(self.fight_history) > 10:
+                    self.fight_history.pop(0)
+            
             print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history, deadzone_status=self.deadzone_status)
             
         elif frame_type in ["hp_changed", "agent_damaged", "monster_damaged"]:
             target_id = data.get("targetId")
-            attacker_id = data.get("agentId", data.get("attackerId"))
+            attacker_id = data.get("attackerId", data.get("agentId"))
             damage = data.get("damage", 0)
             
-            entity_id = target_id if target_id else attacker_id
+            entity_id = target_id if target_id else data.get("agentId")
             if entity_id and entity_id in self.known_entities:
                 self.known_entities[entity_id]["hp"] = data.get("hp", data.get("currentHp", 0))
                 
@@ -134,43 +158,49 @@ class StateManager:
                 if new_hp == 0:
                     self.status["is_alive"] = False
                     
-            if target_id and attacker_id and damage > 0:
-                is_target_me = hasattr(self, "my_id") and target_id == self.my_id
-                is_attacker_me = hasattr(self, "my_id") and attacker_id == self.my_id
+            if damage > 0 and hasattr(self, "my_id"):
+                is_target_me = (entity_id == self.my_id)
+                is_attacker_me = (attacker_id == self.my_id) and (entity_id != self.my_id)
                 
                 if is_target_me or is_attacker_me:
-                    attacker_data = self.known_entities.get(attacker_id, {})
-                    target_data = self.known_entities.get(target_id, {})
+                    attacker_name = "Unknown"
+                    target_name = "Unknown"
                     
-                    attacker_name = attacker_data.get("name", "Unknown") if not is_attacker_me else "You"
-                    target_name = target_data.get("name", "Unknown") if not is_target_me else "You"
-                    
-                    if not is_attacker_me and not attacker_data:
-                        attacker_name = data.get("agentName", data.get("attackerName", "Unknown"))
+                    if is_target_me:
+                        target_name = "You"
+                        att_id = data.get("attackerId")
+                        if att_id:
+                            attacker_name = self.known_entities.get(att_id, {}).get("name", "An enemy")
+                        else:
+                            attacker_name = data.get("attackerName", data.get("agentName", "An enemy"))
+                            
+                        if attacker_name in ["Unknown", "An enemy"]:
+                            layer_0_agents = self.enemy_status.get("layers", {}).get(0, {}).get("agents", [])
+                            if len(layer_0_agents) == 1:
+                                attacker_name = layer_0_agents[0].get("name")
+                            else:
+                                attacker_name = "An enemy"
+                    else:
+                        attacker_name = "You"
+                        target_name = self.known_entities.get(entity_id, {}).get("name", "An enemy")
                         
                     weapon_val = data.get("weapon")
-                    if not weapon_val:
-                        weapon_val = attacker_data.get("equippedWeapon", "None")
-                    
                     weapon_name = "None"
                     if isinstance(weapon_val, dict):
                         weapon_name = weapon_val.get("name", "None")
                     elif isinstance(weapon_val, str):
                         weapon_name = weapon_val
-                        
-                    region_id = target_data.get("regionId", target_data.get("region_id"))
-                    if not region_id:
-                        region_id = attacker_data.get("regionId", attacker_data.get("region_id"))
-                    if not region_id and hasattr(self, "status"):
-                        region_id = self.status.get("region_id")
-                        
+                    elif attacker_id and attacker_id in self.known_entities:
+                        w_data = self.known_entities[attacker_id].get("equippedWeapon")
+                        if w_data:
+                            weapon_name = w_data.get("name", "None") if isinstance(w_data, dict) else w_data
+                            
+                    region_id = self.status.get("region_id")
                     region_name = self.region_name_map.get(region_id, "Unknown Region")
                     
-                    dist = self.current_distances.get(region_id)
-                    layer_str = f"Layer {dist}" if dist is not None else "Unknown Layer"
-                    if dist == 0:
-                        layer_str = "Same Region"
-                        
+                    dist = self.current_distances.get(region_id, 0)
+                    layer_str = f"Layer {dist}" if dist > 0 else "Same Region"
+                    
                     if is_target_me:
                         log_msg = f"{attacker_name} attacked You for {damage} damage using {weapon_name} from {region_name} ({layer_str})"
                     else:

@@ -81,12 +81,6 @@ class StateManager:
             if monster_id:
                 monster["entity_type"] = "monster"
                 self.known_entities[monster_id] = monster
-                
-        for npc in view_data.get("visibleNPCs", []):
-            npc_id = npc.get("id")
-            if npc_id:
-                npc["entity_type"] = "npc"
-                self.known_entities[npc_id] = npc
 
     def process_message(self, frame_type, data):
         if frame_type in ["agent_view", "turn_advanced"]:

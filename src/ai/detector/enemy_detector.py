@@ -12,7 +12,7 @@ def get_ally_names(my_name):
 
 def is_guardian_or_monster(entity_data):
     entity_type = entity_data.get("entity_type")
-    if entity_type in ["monster", "npc"]:
+    if entity_type == "monster":
         return True
         
     name = entity_data.get("name", "")
@@ -22,10 +22,7 @@ def is_guardian_or_monster(entity_data):
     if any(k in name.lower() for k in ["guardian", "hermit"]):
         return True
         
-    if entity_data.get("typeId") in ["guardian", "monster", "npc"]:
-        return True
-        
-    if entity_data.get("isNPC") or entity_data.get("is_npc") or entity_data.get("npc"):
+    if entity_data.get("typeId") in ["guardian", "monster"]:
         return True
         
     if entity_data.get("def", 0) == 120 or entity_data.get("maxHp") == 150:
@@ -59,8 +56,7 @@ def parse_enemy_status(agent_view_data, known_entities, distances=None):
         
     visible_agent_ids = {a.get("id") for a in view.get("visibleAgents", []) if a.get("id")}
     visible_monster_ids = {m.get("id") for m in view.get("visibleMonsters", []) if m.get("id")}
-    visible_npc_ids = {n.get("id") for n in view.get("visibleNPCs", []) if n.get("id")}
-    visible_ids = visible_agent_ids | visible_monster_ids | visible_npc_ids
+    visible_ids = visible_agent_ids | visible_monster_ids
     
     for entity_id, entity_data in known_entities.items():
         if entity_id not in visible_ids:

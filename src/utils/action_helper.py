@@ -21,7 +21,7 @@ def create_loot_action(item_id):
     return {
         "type": "action",
         "data": {
-            "type": "loot",
+            "type": "pickup",
             "itemId": item_id
         }
     }

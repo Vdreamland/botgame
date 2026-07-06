@@ -52,6 +52,9 @@
             ├── enemy_detector.py
             └── zone_detector.py
 
+
+Github Link :
+
 src/
 __init__.py https://github.com/Vdreamland/botgame/blob/master/src/__init__.py
 config.py https://github.com/Vdreamland/botgame/blob/master/src/config.py
@@ -65,32 +68,33 @@ __init__.py https://github.com/Vdreamland/botgame/blob/master/src/ai/__init__.py
 
 ai/detector/
 __init__.py 
-self_detector.py
-loot_detector.py
-radar_detector.py
-zone_detector.py
-enemy_detector.py
+self_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/self_detector.py
+loot_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/loot_detector.py
+radar_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/radar_detector.py
+zone_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/zone_detector.py
+enemy_detector.py https://github.com/Vdreamland/botgame/blob/master/src/ai/detector/enemy_detector.py
 
-Github Link :
+
 Reference :
-actions.md
-agent-memory.md
-api-summary.md
-errors.md
-free-games.md
-game-systems.md
-preseason1-quests.md
-runtime-modes.md
-setup.md
-game-guide.md
-heartbeat.md
-skill.md
-gotchas.md
-strategy.md
+actions.md https://github.com/Vdreamland/botgame/blob/master/docs/references/actions.md
+agent-memory.md https://github.com/Vdreamland/botgame/blob/master/docs/references/agent-memory.md
+api-summary.md https://github.com/Vdreamland/botgame/blob/master/docs/references/api-summary.md
+errors.md https://github.com/Vdreamland/botgame/blob/master/docs/references/errors.md
+free-games.md https://github.com/Vdreamland/botgame/blob/master/docs/references/free-games.md
+game-systems.md https://github.com/Vdreamland/botgame/blob/master/docs/references/game-systems.md
+game-loop.md https://github.com/Vdreamland/botgame/blob/master/docs/references/game-loop.md
+preseason1-quests.md https://github.com/Vdreamland/botgame/blob/master/docs/references/preseason1-quests.md
+runtime-modes.md https://github.com/Vdreamland/botgame/blob/master/docs/references/runtime-modes.md
+setup.md https://github.com/Vdreamland/botgame/blob/master/docs/references/setup.md
+game-guide.md https://github.com/Vdreamland/botgame/blob/master/docs/game-guide.md
+heartbeat.md https://github.com/Vdreamland/botgame/blob/master/docs/heartbeat.md
+skill.md https://github.com/Vdreamland/botgame/blob/master/docs/skill.md
+gotchas.md https://github.com/Vdreamland/botgame/blob/master/docs/references/gotchas.md
+strategy.md https://github.com/Vdreamland/botgame/blob/master/docs/game-knowledge/strategy.md
 
-requirements.txt
-.env
-rungame.py
+requirements.txt https://github.com/Vdreamland/botgame/blob/master/requirements.txt
+.env https://github.com/Vdreamland/botgame/blob/master/.env
+rungame.py https://github.com/Vdreamland/botgame/blob/master/rungame.py
 
 
 

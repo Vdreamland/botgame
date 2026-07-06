@@ -66,8 +66,15 @@ def parse_enemy_status(agent_view_data, known_entities):
             "agents": [],
             "monsters": []
         }
-        
+    
+    visible_agent_ids = {a.get("id") for a in view.get("visibleAgents", []) if a.get("id")}
+    visible_monster_ids = {m.get("id") for m in view.get("visibleMonsters", []) if m.get("id")}
+    visible_npc_ids = {n.get("id") for n in view.get("visibleNPCs", []) if n.get("id")}
+    visible_ids = visible_agent_ids | visible_monster_ids | visible_npc_ids
+
     for entity_id, entity_data in known_entities.items():
+        if entity_id not in visible_ids:
+            continue
         if not entity_data.get("isAlive", True):
             continue
 

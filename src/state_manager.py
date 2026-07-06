@@ -98,8 +98,6 @@ class StateManager:
             self.current_turn = data.get("turn", self.current_turn + 1)
             self.alive_count = data.get("aliveCount", self.alive_count)
             
-            print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count)
-            
         elif frame_type in ["hp_changed", "agent_damaged", "monster_damaged"]:
             entity_id = data.get("targetId", data.get("agentId"))
             if entity_id and entity_id in self.known_entities:
@@ -110,18 +108,16 @@ class StateManager:
                 self.status["hp"] = new_hp
                 if new_hp == 0:
                     self.status["is_alive"] = False
-                    print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count)
                 
         elif frame_type in ["agent_died", "monster_killed"]:
             entity_id = data.get("targetId", data.get("agentId"))
             if entity_id and entity_id in self.known_entities:
                 self.known_entities[entity_id]["hp"] = 0
                 self.known_entities[entity_id]["isAlive"] = False
-                
+            
             if hasattr(self, "my_id") and entity_id == self.my_id:
                 self.status["hp"] = 0
                 self.status["is_alive"] = False
-                print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count)
                 
         elif frame_type == "ep_changed":
             entity_id = data.get("targetId", data.get("agentId"))

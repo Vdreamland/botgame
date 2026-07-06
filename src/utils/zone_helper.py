@@ -39,3 +39,23 @@ def get_terrain_penalty(terrain_type, weather_type):
         "vision_modifier": total_vision_mod,
         "ep_cost_modifier": total_ep_cost_mod
     }
+
+def calculate_region_distances(current_region_id, visible_regions):
+    if not current_region_id:
+        return {}
+        
+    region_map = {r.get("id"): r for r in visible_regions if r.get("id")}
+    
+    distances = {current_region_id: 0}
+    queue = deque([current_region_id])
+    
+    while queue:
+        curr = queue.popleft()
+        curr_dist = distances[curr]
+        region_data = region_map.get(curr, {})
+        for conn in region_data.get("connections", []):
+            if conn in region_map and conn not in distances:
+                distances[conn] = curr_dist + 1
+                queue.append(conn)
+                
+    return distances

@@ -3,23 +3,24 @@ import time
 from src.api import get_account_state, redeem_welcome_code
 from src.websocket_handler import run_ws_loop
 
-def initialize_agent():
-    print("Initializing Agent...")
+def initialize_agent(first_run=False):
     account_data = get_account_state()
     if not account_data:
         print("Failed to retrieve account data.")
         return None
 
-    print(f"Account loaded: {account_data.get('name')} | Balance: {account_data.get('balance')} sMoltz")
-    
-    print("Checking onboarding bundle claim (WELCOME)...")
-    redeem_welcome_code()
+    if first_run:
+        print(f"Account loaded: {account_data.get('name')} | Balance: {account_data.get('balance')} sMoltz")
+        print("Checking onboarding bundle claim (WELCOME)...")
+        redeem_welcome_code()
     
     return account_data
 
 def main():
+    first_run = True
     while True:
-        account_data = initialize_agent()
+        account_data = initialize_agent(first_run=first_run)
+        first_run = False
         if not account_data:
             print("Failed to initialize agent. Retrying in 10 seconds...")
             time.sleep(10)

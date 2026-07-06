@@ -10,5 +10,6 @@ from .action_helper import (
 from .zone_helper import (
     get_adjacent_safe_zones,
     find_shortest_path,
-    get_terrain_penalty
+    get_terrain_penalty,
+    calculate_region_distances
 )

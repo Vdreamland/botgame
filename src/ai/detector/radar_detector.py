@@ -1,40 +1,32 @@
-from collections import deque
+from src.utils import calculate_region_distances
 
 def parse_radar_status(agent_view_data):
     view = agent_view_data.get("view", {})
     current_region = view.get("currentRegion", {})
-    current_id = current_region.get("id")
+    current_region_id = current_region.get("id")
     
     visible_regions = view.get("visibleRegions", [])
-    regions_map = {r.get("id"): r for r in visible_regions}
+    region_map = {r.get("id"): r for r in visible_regions if r.get("id")}
     
-    if current_id not in regions_map and current_id:
-        regions_map[current_id] = current_region
+    if current_region_id not in region_map and current_region_id:
+        region_map[current_region_id] = current_region
         
-    queue = deque([(current_id, 0)])
-    visited = {current_id: 0}
-    
-    while queue:
-        node_id, dist = queue.popleft()
-        node_data = regions_map.get(node_id)
-        if not node_data:
-            continue
-            
-        for neighbor_id in node_data.get("connections", []):
-            if neighbor_id not in visited and neighbor_id in regions_map:
-                visited[neighbor_id] = dist + 1
-                queue.append((neighbor_id, dist + 1))
+    distances = calculate_region_distances(current_region_id, visible_regions)
                 
-    layers = {}
-    for r_id, dist in visited.items():
-        r_data = regions_map.get(r_id, {})
-        r_name = r_data.get("name", "Unknown")
-        
-        if dist not in layers:
-            layers[dist] = []
-        layers[dist].append(r_name)
-        
+    layers = {i: [] for i in range(1, 4)}
+    max_layer = 0
+    
+    for r_id, dist in distances.items():
+        if dist == 0:
+            continue
+        if dist in layers:
+            r_data = region_map.get(r_id, {})
+            name = r_data.get("name", "Unknown")
+            layers[dist].append(name)
+            if dist > max_layer:
+                max_layer = dist
+                
     return {
         "layers": layers,
-        "max_detected_layer": max(layers.keys()) if layers else 0
+        "max_detected_layer": max_layer
     }

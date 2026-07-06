@@ -1,6 +1,6 @@
 import os
-from collections import deque
 from src.game_data import MONSTERS, GUARDIANS
+from src.utils import calculate_region_distances
 
 def get_ally_names(my_name):
     allies = set()
@@ -45,23 +45,8 @@ def parse_enemy_status(agent_view_data, known_entities):
     ally_names = get_ally_names(my_name)
     
     visible_regions = view.get("visibleRegions", [])
-    region_map = {r.get("id"): r for r in visible_regions}
     
-    if current_region_id not in region_map and current_region_id:
-        region_map[current_region_id] = current_region
-        
-    distances = {}
-    if current_region_id:
-        distances[current_region_id] = 0
-    queue = deque([current_region_id])
-    while queue:
-        curr = queue.popleft()
-        curr_dist = distances[curr]
-        region_data = region_map.get(curr, {})
-        for conn in region_data.get("connections", []):
-            if conn in region_map and conn not in distances:
-                distances[conn] = curr_dist + 1
-                queue.append(conn)
+    distances = calculate_region_distances(current_region_id, visible_regions)
                 
     layers = {}
     for i in range(4):

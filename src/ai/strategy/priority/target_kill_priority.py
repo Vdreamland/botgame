@@ -35,9 +35,9 @@ class TargetKillPriority:
                         continue
                         
                     if hp_ratio < 0.3:
-                        return 98, {"action_type": "attack", "target_id": agent_id}
+                        return 98, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
                         
-                    return 93, {"action_type": "attack", "target_id": agent_id}
+                    return 93, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
                     
         for monster in visible_monsters:
             monster_id = monster.get("id")
@@ -56,10 +56,10 @@ class TargetKillPriority:
                         continue
                         
                     if hp_ratio < 0.3:
-                        return 98, {"action_type": "attack", "target_id": monster_id}
+                        return 98, {"action_type": "attack", "target_id": monster_id, "target_type": "monster"}
                         
                     if monster_name in GUARDIANS:
-                        return 85, {"action_type": "attack", "target_id": monster_id}
-                    return 77, {"action_type": "attack", "target_id": monster_id}
+                        return 85, {"action_type": "attack", "target_id": monster_id, "target_type": "monster"}
+                    return 77, {"action_type": "attack", "target_id": monster_id, "target_type": "monster"}
                     
         return 0, None

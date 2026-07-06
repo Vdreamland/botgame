@@ -48,6 +48,9 @@ async def play_game(websocket):
             data = json.loads(message)
             frame_type = data.get("type")
             
+            if frame_type not in ["agent_view", "turn_advanced"]:
+                print(f"[Server Event] {frame_type}: {data}")
+                
             if frame_type == "game_ended":
                 print("\n========================================")
                 print("Game has ended.")

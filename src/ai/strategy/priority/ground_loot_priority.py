@@ -49,9 +49,8 @@ class GroundLootPriority:
         if not ground_items:
             return 0, None
             
-        weapon_candidates = []
         smoltz_candidates = []
-        armor_candidates = []
+        ground_armors = []
         consumable_candidates = []
         utility_candidates = []
         
@@ -77,12 +76,19 @@ class GroundLootPriority:
                 orig_name = armor_lower[name_lower]
                 defense = ARMOR[orig_name].get("def", 0)
                 if defense > current_best_armor_def:
-                    armor_candidates.append(item_id)
+                    ground_armors.append((item_id, defense))
             elif name_lower in recovery_lower:
                 consumable_candidates.append(item_id)
             elif name_lower in utility_lower:
                 utility_candidates.append(item_id)
                 
+        if ground_armors:
+            ground_armors.sort(key=lambda x: x[1], reverse=True)
+            armor_candidates = [a[0] for a in ground_armors]
+        else:
+            armor_candidates = []
+            
+        ground_weapons = []
         for item in ground_items:
             name = item.get("name")
             item_id = item.get("id")
@@ -95,11 +101,17 @@ class GroundLootPriority:
                 atk = WEAPONS[orig_name].get("atk", 0)
                 if name_lower in melee_names_lower:
                     if atk > current_best_melee:
-                        weapon_candidates.append(item_id)
+                        ground_weapons.append((item_id, atk))
                 elif name_lower in ranged_names_lower:
                     if atk > current_best_ranged:
-                        weapon_candidates.append(item_id)
+                        ground_weapons.append((item_id, atk))
                         
+        if ground_weapons:
+            ground_weapons.sort(key=lambda x: x[1], reverse=True)
+            weapon_candidates = [w[0] for w in ground_weapons]
+        else:
+            weapon_candidates = []
+            
         has_valuable_ground_upgrade = bool(weapon_candidates or armor_candidates or (utility_candidates and "binoculars" in [i.get("name", "").lower() for i in ground_items]))
         
         if len(inventory) >= 10:

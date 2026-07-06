@@ -48,7 +48,7 @@ class EquippedPriority:
                         if atk > best_ranged_atk:
                             best_ranged_atk = atk
                             best_ranged_id = item_id
-                        
+                            
         best_armor_id = None
         best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
         for item in inventory:
@@ -94,7 +94,7 @@ class EquippedPriority:
                 if best_ranged_id:
                     return 100, {"action_type": "equip", "item_id": best_ranged_id}
         elif has_outer_enemies:
-            if best_ranged_atk > 0:
+            if best_ranged_atk >= 25 and my_ep >= 4:
                 if best_ranged_id:
                     return 100, {"action_type": "equip", "item_id": best_ranged_id}
             else:

@@ -28,21 +28,21 @@ class RecoveryPriority:
                 item_id = item.get("id")
                 if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
                     return 99, {"action_type": "use_item", "item_id": item_id}
-                    
+        
         if current_turn >= 58 and hp < max_hp:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
                 if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
                     return 100, {"action_type": "use_item", "item_id": item_id}
-                    
+        
         if hp_ratio < 0.7:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
                 if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
                     return 96, {"action_type": "use_item", "item_id": item_id}
-                    
+        
         if ep < 3:
             for item in inventory:
                 name = item.get("name")
@@ -50,5 +50,24 @@ class RecoveryPriority:
                 if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("ep_heal", 0) > 0:
                     return 75, {"action_type": "use_item", "item_id": item_id}
             return 70, {"action_type": "rest"}
-            
+        
+        current_region_id = view.get("currentRegion", {}).get("id")
+        visible_agents = view.get("visibleAgents", [])
+        visible_monsters = view.get("visibleMonsters", [])
+        my_id = self_data.get("id")
+        
+        has_nearby_enemies = False
+        for agent in visible_agents:
+            if agent.get("id") != my_id and agent.get("isAlive", True):
+                has_nearby_enemies = True
+                break
+        if not has_nearby_enemies:
+            for monster in visible_monsters:
+                if monster.get("isAlive", True):
+                    has_nearby_enemies = True
+                    break
+        
+        if not has_nearby_enemies and ep < 8:
+            return 60, {"action_type": "rest"}
+        
         return 0, None

@@ -28,6 +28,9 @@ class TargetKillPriority:
                     max_hp_val = agent.get("maxHp", 100)
                     hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
                     
+                    if not has_weapon and hp_ratio >= 0.3:
+                        continue
+                        
                     if not has_weapon and not enemy_has_weapon and hp_ratio >= 0.5:
                         continue
                         
@@ -49,6 +52,9 @@ class TargetKillPriority:
                     max_hp_val = monster.get("maxHp", 100)
                     hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
                     
+                    if not has_weapon and hp_ratio >= 0.3:
+                        continue
+                        
                     if hp_ratio < 0.3:
                         return 98, {"action_type": "attack", "target_id": monster_id}
                         

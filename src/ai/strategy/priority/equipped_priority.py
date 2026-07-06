@@ -21,7 +21,6 @@ class EquippedPriority:
         best_ranged_id = None
         best_ranged_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names else 0
         
-        # Determine best available items in inventory
         for item in inventory:
             name = item.get("name")
             item_id = item.get("id")
@@ -50,38 +49,50 @@ class EquippedPriority:
                     best_armor_def = defense
                     best_armor_id = item_id
                     
-        # Combat context check: Is there any enemy in Layer 0?
         current_region_id = view.get("currentRegion", {}).get("id")
         visible_agents = view.get("visibleAgents", [])
         visible_monsters = view.get("visibleMonsters", [])
         my_id = self_data.get("id")
         
         has_layer_0_enemies = False
+        has_outer_enemies = False
+        
         for agent in visible_agents:
-            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                has_layer_0_enemies = True
-                break
-                
+            if agent.get("id") != my_id and agent.get("isAlive", True):
+                if agent.get("regionId") == current_region_id:
+                    has_layer_0_enemies = True
+                else:
+                    has_outer_enemies = True
+                    
         for monster in visible_monsters:
-            if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
-                has_layer_0_enemies = True
-                break
-                
-        # Dynamic weapon swapping logic
+            if monster.get("isAlive", True):
+                if monster.get("regionId") == current_region_id:
+                    has_layer_0_enemies = True
+                else:
+                    has_outer_enemies = True
+                    
         if has_layer_0_enemies:
-            # Under close combat, prefer best Melee weapon
-            if best_melee_id and eq_weapon_name not in melee_names:
-                return 100, {"action_type": "equip", "item_id": best_melee_id}
-        else:
-            # Under ranged/exploration, prefer overall highest ATK weapon
-            if best_ranged_atk >= best_melee_atk:
-                if best_ranged_id and eq_weapon_name != WEAPONS.get(best_ranged_id, {}):
+            if best_melee_atk >= best_ranged_atk and best_melee_atk > 0:
+                if best_melee_id:
+                    return 100, {"action_type": "equip", "item_id": best_melee_id}
+            else:
+                if best_ranged_id:
+                    return 100, {"action_type": "equip", "item_id": best_ranged_id}
+        elif has_outer_enemies:
+            if best_ranged_atk > 0:
+                if best_ranged_id:
                     return 100, {"action_type": "equip", "item_id": best_ranged_id}
             else:
-                if best_melee_id and eq_weapon_name != WEAPONS.get(best_melee_id, {}):
+                if best_melee_id:
+                    return 100, {"action_type": "equip", "item_id": best_melee_id}
+        else:
+            if best_ranged_atk > best_melee_atk:
+                if best_ranged_id:
+                    return 100, {"action_type": "equip", "item_id": best_ranged_id}
+            else:
+                if best_melee_id:
                     return 100, {"action_type": "equip", "item_id": best_melee_id}
                     
-        # Fallback to armor equip
         if best_armor_id:
             return 99, {"action_type": "equip", "item_id": best_armor_id}
             

@@ -40,13 +40,12 @@ def parse_enemy_status(agent_view_data, known_entities):
     my_id = self_data.get("id")
     
     current_region = view.get("currentRegion", {})
-    current_region_id = current_region.get("id")
     
     ally_names = get_ally_names(my_name)
     
     visible_regions = view.get("visibleRegions", [])
     
-    distances = calculate_region_distances(current_region_id, visible_regions)
+    distances = calculate_region_distances(current_region, visible_regions)
                 
     layers = {}
     for i in range(4):

@@ -40,12 +40,17 @@ def get_terrain_penalty(terrain_type, weather_type):
         "ep_cost_modifier": total_ep_cost_mod
     }
 
-def calculate_region_distances(current_region_id, visible_regions):
+def calculate_region_distances(current_region, visible_regions):
+    if not current_region:
+        return {}
+    current_region_id = current_region.get("id")
     if not current_region_id:
         return {}
         
     region_map = {r.get("id"): r for r in visible_regions if r.get("id")}
-    
+    if current_region_id not in region_map:
+        region_map[current_region_id] = current_region
+        
     distances = {current_region_id: 0}
     queue = deque([current_region_id])
     

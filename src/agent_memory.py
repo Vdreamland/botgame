@@ -6,11 +6,13 @@ class AgentMemory:
     def __init__(self):
         self.interacted_facilities = set()
         self.pending_loot_regions = []
+        self.visited_history = []
         self.shared_file = "shared_team_memory.json"
 
     def reset_local(self):
         self.interacted_facilities.clear()
         self.pending_loot_regions.clear()
+        self.visited_history.clear()
 
     def reset_shared(self):
         for _ in range(5):
@@ -22,6 +24,15 @@ class AgentMemory:
                 break
             except Exception:
                 time.sleep(0.05)
+
+    def add_visited_region(self, region_id):
+        if not region_id:
+            return
+        if region_id in self.visited_history:
+            self.visited_history.remove(region_id)
+        self.visited_history.append(region_id)
+        if len(self.visited_history) > 5:
+            self.visited_history.pop(0)
 
     def update_my_state(self, bot_name, hp, ep, region_id, weapon, target_id, inventory):
         if not bot_name:

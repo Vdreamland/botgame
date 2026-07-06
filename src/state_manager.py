@@ -121,6 +121,7 @@ class StateManager:
             curr_region_id = self.status.get("region_id")
             if prev_region_id and curr_region_id != prev_region_id:
                 self.last_visited_region_id = prev_region_id
+                self.memory.add_visited_region(prev_region_id)
         
             self.zone_status = parse_zone_status(data)
             self.loot_status = parse_loot_status(data)
@@ -162,7 +163,7 @@ class StateManager:
                 ep=self.status.get("ep", 0),
                 region_id=self.status.get("region_id"),
                 weapon=eq_weapon_name,
-                target_id=None,
+                target_id=getattr(self, "last_attack_target_id", None),
                 inventory=self.status.get("inventory", [])
             )
         

@@ -58,7 +58,10 @@ class SurvivalPriority:
                         turns_to_kill_enemy = (target_hp + my_dmg - 1) // my_dmg
                         turns_to_kill_me = (hp + enemy_dmg - 1) // enemy_dmg
                         
-                        is_combat_feasible = (turns_to_kill_enemy < turns_to_kill_me) or (turns_to_kill_enemy <= 1)
+                        if hp < 30 and target_hp > 30:
+                            is_combat_feasible = False
+                        else:
+                            is_combat_feasible = (turns_to_kill_enemy < turns_to_kill_me) or (turns_to_kill_enemy <= 1)
                         
                         if enemy_has_weapon:
                             layer_0_armed_count += 1

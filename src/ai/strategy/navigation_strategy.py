@@ -90,8 +90,12 @@ class NavigationStrategy:
         
         team_states = manager.memory.get_team_states() if hasattr(manager, "memory") else {}
         teammate_regions = []
+        is_leader = True
+        
         for teammate, state in team_states.items():
             if teammate != my_name:
+                if teammate < my_name:
+                    is_leader = False
                 t_reg_id = state.get("region_id")
                 if t_reg_id:
                     teammate_regions.append(t_reg_id)
@@ -100,8 +104,15 @@ class NavigationStrategy:
             score = 50
             r_data = region_map.get(rid, {})
             
-            if rid == getattr(manager, "last_visited_region_id", None):
-                score -= 30
+            visited_history = manager.memory.visited_history if hasattr(manager, "memory") else []
+            if rid in visited_history:
+                idx = len(visited_history) - 1 - visited_history.index(rid)
+                if idx == 0:
+                    score -= 30
+                elif idx == 1:
+                    score -= 20
+                elif idx == 2:
+                    score -= 10
                 
             if r_data.get("items"):
                 score += 20
@@ -117,7 +128,7 @@ class NavigationStrategy:
             if r_data.get("terrain", "").lower() == "ruins":
                 score += 10
                 
-            if teammate_regions:
+            if teammate_regions and not is_leader:
                 if rid in teammate_regions:
                     score += 25
                 else:

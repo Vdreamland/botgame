@@ -38,7 +38,7 @@ def create_use_item_action(item_id):
     return {
         "type": "action",
         "data": {
-            "type": "useItem",
+            "type": "use_item",
             "itemId": item_id
         }
     }

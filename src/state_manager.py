@@ -18,6 +18,7 @@ class StateManager:
         self.current_distances = {}
         self.pending_loot_regions = []
         self.interacted_facilities = set()
+        self.last_visited_region_id = None
         self.can_act = True
         self.status = {
             "name": "Unknown",
@@ -91,6 +92,7 @@ class StateManager:
             self._update_entities(view_data)
             
             prev_hp = self.status.get("hp", 0)
+            prev_region_id = self.status.get("region_id")
             prev_history_len = len(self.fight_history)
             
             visible_regions = view_data.get("visibleRegions", [])
@@ -111,6 +113,11 @@ class StateManager:
             self.current_distances = calculate_region_distances(current_region, visible_regions)
             
             self.status = parse_self_status(data)
+            
+            curr_region_id = self.status.get("region_id")
+            if prev_region_id and curr_region_id != prev_region_id:
+                self.last_visited_region_id = prev_region_id
+                
             self.zone_status = parse_zone_status(data)
             self.loot_status = parse_loot_status(data)
             self.radar_status = parse_radar_status(data, self.current_distances)

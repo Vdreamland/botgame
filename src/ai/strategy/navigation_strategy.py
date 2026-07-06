@@ -65,16 +65,39 @@ class NavigationStrategy:
             if len(path) > 1:
                 return 84, {"action_type": "move", "destination": path[1]}
                 
-        distances = calculate_region_distances(current_region, visible_regions)
-        safe_regions = [
-            r_id for r_id, dist in distances.items()
-            if r_id and r_id not in gas_ids and not region_map.get(r_id, {}).get("isDeathZone")
-        ]
+        safe_neighbors = [rid for rid in connections if rid and rid not in gas_ids and not region_map.get(rid, {}).get("isDeathZone")]
+        if not safe_neighbors:
+            return 50, {"action_type": "move", "destination": connections[0]}
+            
+        best_neighbor = None
+        best_neighbor_score = -999
         
-        if safe_regions:
-            for target in safe_regions:
-                path = find_shortest_path(current_region_id, target, all_connections)
-                if len(path) > 1:
-                    return 55, {"action_type": "move", "destination": path[1]}
-                    
+        for rid in safe_neighbors:
+            score = 50
+            r_data = region_map.get(rid, {})
+            
+            if rid == getattr(manager, "last_visited_region_id", None):
+                score -= 30
+                
+            if r_data.get("items"):
+                score += 20
+                
+            facilities = r_data.get("interactables", [])
+            for fac in facilities:
+                fac_name = fac.get("name")
+                if fac_name in ["Supply Cache", "Medical Facility"]:
+                    fac_key = f"{rid}_{fac_name}"
+                    if not hasattr(manager, "interacted_facilities") or fac_key not in manager.interacted_facilities:
+                        score += 15
+                        
+            if r_data.get("terrain", "").lower() == "ruins":
+                score += 10
+                
+            if score > best_neighbor_score:
+                best_neighbor_score = score
+                best_neighbor = rid
+                
+        if best_neighbor:
+            return 55, {"action_type": "move", "destination": best_neighbor}
+            
         return 50, {"action_type": "move", "destination": connections[0]}

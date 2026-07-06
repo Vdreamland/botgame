@@ -14,7 +14,7 @@ async def run_ws_loop(active_game=None):
         async for message in websocket:
             frame = json.loads(message)
             frame_type = frame.get("type")
-            data = frame.get("data", {})
+            data = frame.get("data", {}) if "data" in frame else frame
             
             if frame_type == "welcome":
                 decision = data.get("decision")

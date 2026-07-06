@@ -1,4 +1,4 @@
-from src.game_data import GUARDIANS
+from src.game_data import GUARDIANS, WEAPONS
 
 class SurvivalPriority:
     def evaluate(self, manager, raw_data):
@@ -16,6 +16,10 @@ class SurvivalPriority:
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
         has_weapon = (eq_weapon_name not in ["None", "Fist"])
+        
+        weapon_data = WEAPONS.get(eq_weapon_name, {})
+        weapon_atk = weapon_data.get("atk", 0)
+        my_atk_total = my_atk + weapon_atk
         
         current_region_id = view.get("currentRegion", {}).get("id")
         if not current_region_id:
@@ -40,47 +44,41 @@ class SurvivalPriority:
             if agent_id and agent_id != my_id and region_id == current_region_id:
                 if agent.get("isAlive", True):
                     is_guard = (agent.get("isGuardian") or "guardian" in agent.get("name", "").lower())
-                    if is_guard:
-                        has_guardian = True
-                        has_dangerous_enemies = True
-                    else:
+                    if not is_guard:
                         layer_0_player_count += 1
-                        enemy_weapon = agent.get("weapon", "None")
-                        enemy_has_weapon = (enemy_weapon not in ["None", "Fist"])
-                        
-                        target_atk = agent.get("atk", 25) if agent.get("atk") is not None else 25
-                        target_def = agent.get("def", 5) if agent.get("def") is not None else 5
-                        target_hp = agent.get("hp", 100)
-                        
-                        my_dmg = max(1, my_atk - target_def)
-                        enemy_dmg = max(1, target_atk - my_def)
-                        
-                        turns_to_kill_enemy = (target_hp + my_dmg - 1) // my_dmg
-                        turns_to_kill_me = (hp + enemy_dmg - 1) // enemy_dmg
-                        
-                        if hp < 30 and target_hp > 30:
-                            is_combat_feasible = False
-                        else:
-                            is_combat_feasible = (turns_to_kill_enemy < turns_to_kill_me) or (turns_to_kill_enemy <= 1)
-                        
-                        if enemy_has_weapon:
-                            layer_0_armed_count += 1
-                            if not is_combat_feasible:
-                                has_dangerous_enemies = True
-                        else:
-                            layer_0_unarmed_count += 1
-                            if hp < 20 and not is_combat_feasible:
-                                has_dangerous_enemies = True
-                            elif not has_weapon and target_hp > hp:
-                                has_dangerous_enemies = True
-                                
                     has_layer_0_enemies = True
-                    
+                
                 enemy_weapon = agent.get("weapon", "None")
                 enemy_has_weapon = (enemy_weapon not in ["None", "Fist"])
                 if not has_weapon and enemy_has_weapon:
                     unarmed_danger = True
                     
+                target_atk = agent.get("atk") if agent.get("atk") is not None else 25
+                target_def = agent.get("def") if agent.get("def") is not None else 5
+                target_hp = agent.get("hp", 100)
+                
+                my_dmg = max(1, my_atk_total - target_def)
+                target_dmg = max(1, target_atk - my_def)
+                
+                turns_to_kill_enemy = (target_hp + my_dmg - 1) // my_dmg
+                turns_to_kill_me = (hp + target_dmg - 1) // target_dmg
+                
+                if hp < 30 and target_hp > 30:
+                    is_combat_feasible = False
+                else:
+                    is_combat_feasible = (turns_to_kill_enemy < turns_to_kill_me) or (turns_to_kill_enemy <= 1)
+                
+                if enemy_has_weapon:
+                    layer_0_armed_count += 1
+                    if not is_combat_feasible:
+                        has_dangerous_enemies = True
+                else:
+                    layer_0_unarmed_count += 1
+                    if hp < 20 and not is_combat_feasible:
+                        has_dangerous_enemies = True
+                    elif not has_weapon and target_hp > hp:
+                        has_dangerous_enemies = True
+                        
         for monster in visible_monsters:
             monster_id = monster.get("id")
             region_id = monster.get("regionId")

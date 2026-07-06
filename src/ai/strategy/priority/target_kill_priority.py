@@ -37,6 +37,8 @@ class TargetKillPriority:
         weapon_range = weapon_data.get("range", 0)
         weapon_ep_cost = weapon_data.get("ep_cost", 1)
         
+        my_atk_total = my_atk + weapon_data.get("atk", 0)
+        
         if self_data.get("ep", 10) < weapon_ep_cost:
             return 0, None
             
@@ -70,6 +72,16 @@ class TargetKillPriority:
                         
                         target_atk = agent.get("atk") if agent.get("atk") is not None else 25
                         target_def = agent.get("def") if agent.get("def") is not None else 5
+                        
+                        my_dmg = max(1, my_atk_total - target_def)
+                        target_dmg = max(1, target_atk - my_def)
+                        
+                        turns_to_kill_enemy = (target_hp + my_dmg - 1) // my_dmg
+                        turns_to_kill_me = (my_hp + target_dmg - 1) // target_dmg
+                        
+                        is_combat_feasible = (turns_to_kill_enemy < turns_to_kill_me) or (turns_to_kill_enemy <= 1)
+                        if not is_combat_feasible:
+                            continue
                         
                         if hp_ratio < 0.3:
                             manager.last_attack_target_id = agent_id
@@ -117,7 +129,7 @@ class TargetKillPriority:
                         target_atk = monster.get("atk") if monster.get("atk") is not None else base_stats.get("atk", 25)
                         target_def = monster.get("def") if monster.get("def") is not None else base_stats.get("def", 5)
                         
-                        my_dmg = max(1, my_atk - target_def)
+                        my_dmg = max(1, my_atk_total - target_def)
                         target_dmg = max(1, target_atk - my_def)
                         
                         turns_to_kill_target = (target_hp + my_dmg - 1) // my_dmg

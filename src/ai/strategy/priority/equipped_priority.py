@@ -5,6 +5,7 @@ class EquippedPriority:
         view = raw_data.get("view", {})
         self_data = view.get("self", {})
         inventory = self_data.get("inventory", [])
+        my_ep = self_data.get("ep", 10)
         
         equipped_weapon = self_data.get("equippedWeapon")
         equipped_armor = self_data.get("equippedArmor")
@@ -12,14 +13,18 @@ class EquippedPriority:
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
         eq_armor_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else (equipped_armor if equipped_armor else "None")
         
+        current_ep_cost = WEAPONS.get(eq_weapon_name, {}).get("ep_cost", 1) if eq_weapon_name in WEAPONS else 1
+        
         melee_names = ["Fist", "Dagger", "Sword", "Katana"]
         ranged_names = ["Bow", "Pistol", "Sniper rifle"]
         
         best_melee_id = None
-        best_melee_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in melee_names else 0
+        best_melee_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in melee_names and my_ep >= current_ep_cost else 0
         
         best_ranged_id = None
-        best_ranged_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names else 0
+        best_ranged_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names and my_ep >= current_ep_cost else 0
+        
+        emergency_weapon_id = None
         
         for item in inventory:
             name = item.get("name")
@@ -29,14 +34,20 @@ class EquippedPriority:
                 
             if name in WEAPONS:
                 atk = WEAPONS[name].get("atk", 0)
-                if name in melee_names:
-                    if atk > best_melee_atk:
-                        best_melee_atk = atk
-                        best_melee_id = item_id
-                elif name in ranged_names:
-                    if atk > best_ranged_atk:
-                        best_ranged_atk = atk
-                        best_ranged_id = item_id
+                cost = WEAPONS[name].get("ep_cost", 1)
+                
+                if my_ep >= cost:
+                    if not emergency_weapon_id:
+                        emergency_weapon_id = item_id
+                        
+                    if name in melee_names:
+                        if atk > best_melee_atk:
+                            best_melee_atk = atk
+                            best_melee_id = item_id
+                    elif name in ranged_names:
+                        if atk > best_ranged_atk:
+                            best_ranged_atk = atk
+                            best_ranged_id = item_id
                         
         best_armor_id = None
         best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
@@ -71,6 +82,10 @@ class EquippedPriority:
                 else:
                     has_outer_enemies = True
                     
+        if has_layer_0_enemies or has_outer_enemies:
+            if my_ep < current_ep_cost and emergency_weapon_id:
+                return 100, {"action_type": "equip", "item_id": emergency_weapon_id}
+                
         if has_layer_0_enemies:
             if best_melee_atk >= best_ranged_atk and best_melee_atk > 0:
                 if best_melee_id:

@@ -68,11 +68,11 @@ class TargetKillPriority:
                             continue
                             
                         if hp_ratio < 0.3:
-                            return 98, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
+                            return 98, {"action_type": "attack", "target_id": agent_id, "target_type": "agent", "target_region_id": region_id}
                             
                         if is_guard:
-                            return 85, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
-                        return 93, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
+                            return 85, {"action_type": "attack", "target_id": agent_id, "target_type": "agent", "target_region_id": region_id}
+                        return 93, {"action_type": "attack", "target_id": agent_id, "target_type": "agent", "target_region_id": region_id}
                         
         for monster in visible_monsters:
             monster_id = monster.get("id")
@@ -108,10 +108,10 @@ class TargetKillPriority:
                             continue
                             
                         if hp_ratio < 0.3:
-                            return 98, {"action_type": "attack", "target_id": monster_id, "target_type": "monster"}
+                            return 98, {"action_type": "attack", "target_id": monster_id, "target_type": "monster", "target_region_id": region_id}
                             
                         if is_guard:
-                            return 85, {"action_type": "attack", "target_id": monster_id, "target_type": "monster"}
-                        return 77, {"action_type": "attack", "target_id": monster_id, "target_type": "monster"}
+                            return 85, {"action_type": "attack", "target_id": monster_id, "target_type": "monster", "target_region_id": region_id}
+                        return 77, {"action_type": "attack", "target_id": monster_id, "target_type": "monster", "target_region_id": region_id}
                         
         return 0, None

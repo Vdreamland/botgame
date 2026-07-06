@@ -1,4 +1,4 @@
-from src.game_data import WEAPONS, ARMOR, RECOVERY_ITEMS
+from src.game_data import WEAPONS, ARMOR, RECOVERY_ITEMS, UTILITY_ITEMS
 
 class GroundLootPriority:
     def evaluate(self, manager, raw_data):
@@ -47,6 +47,7 @@ class GroundLootPriority:
         smoltz_candidates = []
         armor_candidates = []
         consumable_candidates = []
+        utility_candidates = []
         
         for item in ground_items:
             name = item.get("name")
@@ -66,6 +67,8 @@ class GroundLootPriority:
                     armor_candidates.append(item_id)
             elif name in RECOVERY_ITEMS:
                 consumable_candidates.append(item_id)
+            elif name in UTILITY_ITEMS:
+                utility_candidates.append(item_id)
                 
         if weapon_candidates:
             return 90, {"action_type": "loot", "item_id": weapon_candidates[0]}
@@ -75,5 +78,7 @@ class GroundLootPriority:
             return 80, {"action_type": "loot", "item_id": armor_candidates[0]}
         if consumable_candidates:
             return 70, {"action_type": "loot", "item_id": consumable_candidates[0]}
+        if utility_candidates:
+            return 65, {"action_type": "loot", "item_id": utility_candidates[0]}
             
         return 0, None

@@ -61,10 +61,10 @@ def create_rest_action():
     }
 
 def create_discard_action(item_id):
-    return {
-        "type": "action",
-        "data": {
-            "type": "discard",
-            "itemId": item_id
-        }
-    }
+ return {
+ "type": "action",
+ "data": {
+ "type": "drop",
+ "itemId": item_id
+ }
+ }

@@ -66,6 +66,32 @@ class RecoveryPriority:
                 if monster.get("isAlive", True):
                     has_nearby_enemies = True
                     break
+                    
+        has_layer_0_enemies = False
+        for agent in visible_agents:
+            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
+                has_layer_0_enemies = True
+                break
+        if not has_layer_0_enemies:
+            for monster in visible_monsters:
+                if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
+                    has_layer_0_enemies = True
+                    break
+                    
+        if not has_layer_0_enemies and has_nearby_enemies:
+            if hp < 90:
+                for item in inventory:
+                    name = item.get("name")
+                    item_id = item.get("id")
+                    if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
+                        return 96, {"action_type": "use_item", "item_id": item_id}
+            if ep < 7:
+                for item in inventory:
+                    name = item.get("name")
+                    item_id = item.get("id")
+                    if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("ep_heal", 0) > 0:
+                        return 96, {"action_type": "use_item", "item_id": item_id}
+                return 96, {"action_type": "rest"}
         
         if not has_nearby_enemies and ep < 8:
             return 60, {"action_type": "rest"}

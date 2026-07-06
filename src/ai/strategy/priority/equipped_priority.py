@@ -82,11 +82,23 @@ class EquippedPriority:
                 else:
                     has_outer_enemies = True
                     
+        team_states = manager.memory.get_team_states() if hasattr(manager, "memory") else {}
+        is_leader = True
+        my_name = self_data.get("name", "Unknown")
+        for teammate in team_states:
+            if teammate != my_name:
+                if teammate < my_name:
+                    is_leader = False
+                    
         if has_layer_0_enemies or has_outer_enemies:
             if my_ep < current_ep_cost and emergency_weapon_id:
                 return 100, {"action_type": "equip", "item_id": emergency_weapon_id}
                 
         if has_layer_0_enemies:
+            if not is_leader and best_ranged_atk > 0:
+                if best_ranged_id:
+                    return 100, {"action_type": "equip", "item_id": best_ranged_id}
+                    
             if best_melee_atk >= best_ranged_atk and best_melee_atk > 0:
                 if best_melee_id:
                     return 100, {"action_type": "equip", "item_id": best_melee_id}

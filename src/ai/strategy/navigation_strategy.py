@@ -1,4 +1,5 @@
 from src.utils.zone_helper import get_adjacent_safe_zones, find_shortest_path, calculate_region_distances
+from src.game_data import GLOBAL_MAP
 
 class NavigationStrategy:
     def evaluate(self, manager, raw_data):
@@ -22,6 +23,7 @@ class NavigationStrategy:
         visible_monsters = view.get("visibleMonsters", [])
         
         self_data = view.get("self", {})
+        my_id = self_data.get("id")
         my_ep = self_data.get("ep", 10)
         my_hp = self_data.get("hp", 100)
         my_name = self_data.get("name", "Unknown")
@@ -54,8 +56,8 @@ class NavigationStrategy:
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
             safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
             if safe_targets:
-                return 98, {"action_type": "move", "destination": safe_targets[0]}
-            return 98, {"action_type": "move", "destination": connections[0]}
+                return 100, {"action_type": "move", "destination": safe_targets[0]}
+            return 100, {"action_type": "move", "destination": connections[0]}
             
         elif current_region_id in gas_ids:
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
@@ -64,11 +66,9 @@ class NavigationStrategy:
                 return 91, {"action_type": "move", "destination": safe_targets[0]}
             return 91, {"action_type": "move", "destination": connections[0]}
             
-        all_connections = getattr(manager, "accumulated_connections", {})
-        if not all_connections:
-            all_connections = {r.get("id"): r.get("connections", []) for r in visible_regions if r.get("id")}
-            if current_region_id not in all_connections:
-                all_connections[current_region_id] = connections
+        all_connections = dict(GLOBAL_MAP)
+        if hasattr(manager, "accumulated_connections"):
+            all_connections.update(manager.accumulated_connections)
             
         if hasattr(manager, "pending_loot_regions") and manager.pending_loot_regions:
             target_loot_region = manager.pending_loot_regions[0]
@@ -107,6 +107,17 @@ class NavigationStrategy:
             target_teammate_region = teammate_regions[0]
             path_to_teammate = find_shortest_path(current_region_id, target_teammate_region, all_connections)
             
+        has_layer_0_enemies = False
+        for agent in visible_agents:
+            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
+                has_layer_0_enemies = True
+                break
+        if not has_layer_0_enemies:
+            for monster in visible_monsters:
+                if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
+                    has_layer_0_enemies = True
+                    break
+                    
         for rid in safe_neighbors:
             score = 50
             r_data = region_map.get(rid, {})
@@ -138,6 +149,22 @@ class NavigationStrategy:
             if path_to_teammate and len(path_to_teammate) > 1:
                 if rid == path_to_teammate[1]:
                     score += 25
+                    
+            if has_layer_0_enemies:
+                has_melee_enemy_at_layer_0 = False
+                for agent in visible_agents:
+                    if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
+                        e_weapon = agent.get("weapon", "None")
+                        if e_weapon in ["None", "Fist", "Dagger", "Sword", "Katana"]:
+                            has_melee_enemy_at_layer_0 = True
+                            break
+                if not has_melee_enemy_at_layer_0:
+                    for monster in visible_monsters:
+                        if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
+                            has_melee_enemy_at_layer_0 = True
+                            break
+                if has_melee_enemy_at_layer_0 and eq_weapon_name in ["Bow", "Pistol", "Sniper rifle"]:
+                    score += 45
                             
             if score > best_neighbor_score:
                 best_neighbor_score = score

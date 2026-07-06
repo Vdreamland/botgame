@@ -50,8 +50,12 @@ class GroundLootPriority:
         
         team_states = manager.memory.get_team_states() if hasattr(manager, "memory") else {}
         teammates_in_region = []
+        is_leader = True
+        
         for name, t_state in team_states.items():
             if name != my_name:
+                if name < my_name:
+                    is_leader = False
                 if t_state.get("region_id") == current_region_id:
                     teammate_weapon = t_state.get("weapon", "None")
                     has_no_good_weapon = (teammate_weapon in ["None", "Fist", "Bow"])
@@ -68,6 +72,8 @@ class GroundLootPriority:
             equipped_count[eq_armor_name] = 1
             
         spare_weapons = []
+        spare_armors = []
+        
         for item in inventory:
             name = item.get("name")
             item_id = item.get("id")
@@ -77,6 +83,12 @@ class GroundLootPriority:
                     equipped_count[name] -= 1
                 else:
                     spare_weapons.append((item_id, name))
+            elif name in ARMOR:
+                needed_for_self = equipped_count.get(name, 0)
+                if needed_for_self > 0:
+                    equipped_count[name] -= 1
+                else:
+                    spare_armors.append((item_id, name))
                     
         if spare_weapons and teammates_in_region:
             for teammate in teammates_in_region:
@@ -88,6 +100,16 @@ class GroundLootPriority:
                             break
                     return 76, {"action_type": "discard", "item_id": best_spare_id, "item_name": best_spare_name}
                     
+        if not is_leader and spare_armors and team_states:
+            for name, t_state in team_states.items():
+                if name != my_name and name < my_name:
+                    if t_state.get("region_id") == current_region_id:
+                        leader_inv = t_state.get("inventory", [])
+                        if "Plate Armor" not in leader_inv:
+                            for s_id, s_name in spare_armors:
+                                if s_name == "Plate Armor":
+                                    return 76, {"action_type": "discard", "item_id": s_id, "item_name": s_name}
+                                    
         if not ground_items:
             return 0, None
             
@@ -154,7 +176,12 @@ class GroundLootPriority:
         else:
             weapon_candidates = []
             
-        has_valuable_ground_upgrade = bool(weapon_candidates or armor_candidates or (utility_candidates and "binoculars" in [i.get("name", "").lower() for i in ground_items]))
+        has_valuable_ground_upgrade = bool(
+            weapon_candidates or 
+            armor_candidates or 
+            smoltz_candidates or 
+            (utility_candidates and "binoculars" in [i.get("name", "").lower() for i in ground_items])
+        )
         
         if len(inventory) >= 10:
             if not has_valuable_ground_upgrade:

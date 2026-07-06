@@ -6,6 +6,9 @@ class RuinExplorationStrategy:
         terrain = current_region.get("terrain", "").lower()
         
         if terrain == "ruins" and current_region_id:
+            if hasattr(manager, "searched_regions") and current_region_id in manager.searched_regions:
+                return 0, None
+                
             visible_ruins = view.get("visibleRuins", [])
             ruin_data = next((r for r in visible_ruins if r.get("ruinId") == current_region_id), None)
             

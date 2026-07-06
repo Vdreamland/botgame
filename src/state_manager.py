@@ -18,6 +18,7 @@ class StateManager:
         self.current_distances = {}
         self.pending_loot_regions = []
         self.interacted_facilities = set()
+        self.searched_regions = set()
         self.last_visited_region_id = None
         self.can_act = True
         self.status = {

@@ -87,6 +87,9 @@ class DecisionMaker:
         elif action_type == "rest":
             return create_rest_action()
         elif action_type == "search":
+            current_region_id = raw_data.get("view", {}).get("currentRegion", {}).get("id")
+            if current_region_id and hasattr(manager, "searched_regions"):
+                manager.searched_regions.add(current_region_id)
             return create_search_action()
         elif action_type == "discard":
             return create_discard_action(best_action["item_id"])

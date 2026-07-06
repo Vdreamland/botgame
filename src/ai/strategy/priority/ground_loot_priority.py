@@ -147,9 +147,9 @@ class GroundLootPriority:
             return 85, {"action_type": "loot", "item_id": smoltz_candidates[0]}
         if armor_candidates:
             return 80, {"action_type": "loot", "item_id": armor_candidates[0]}
+        if utility_candidates:
+            return 75, {"action_type": "loot", "item_id": utility_candidates[0]}
         if consumable_candidates:
             return 70, {"action_type": "loot", "item_id": consumable_candidates[0]}
-        if utility_candidates:
-            return 65, {"action_type": "loot", "item_id": utility_candidates[0]}
             
         return 0, None

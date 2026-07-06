@@ -1,20 +1,30 @@
-from math import ceil
+import os
 from src.game_data import MONSTERS, GUARDIANS, WEAPONS
+
+def get_ally_names(my_name):
+    allies = set()
+    for key, value in os.environ.items():
+        if key.startswith("BOT") and key.endswith("_NAME"):
+            if value and value != my_name:
+                allies.add(value)
+    return allies
 
 class TargetKillPriority:
     def evaluate(self, manager, raw_data):
         view = raw_data.get("view", {})
         self_data = view.get("self", {})
         my_id = self_data.get("id")
+        my_name = self_data.get("name", "Unknown")
         current_region_id = view.get("currentRegion", {}).get("id")
         
         if not current_region_id:
             return 0, None
             
         my_hp = self_data.get("hp", 100)
-        my_ep = self_data.get("ep", 10)
         my_atk = self_data.get("atk", 25)
         my_def = self_data.get("def", 7)
+        
+        ally_names = get_ally_names(my_name)
         
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
@@ -25,7 +35,7 @@ class TargetKillPriority:
         weapon_range = weapon_data.get("range", 0)
         weapon_ep_cost = weapon_data.get("ep_cost", 1)
         
-        if my_ep < weapon_ep_cost:
+        if self_data.get("ep", 10) < weapon_ep_cost:
             return 0, None
             
         visible_agents = view.get("visibleAgents", [])
@@ -35,10 +45,14 @@ class TargetKillPriority:
             agent_id = agent.get("id")
             region_id = agent.get("regionId")
             if agent_id and agent_id != my_id:
+                agent_name = agent.get("name", "")
+                if agent_name in ally_names:
+                    continue
+                    
                 dist = manager.current_distances.get(region_id, 999) if manager.current_distances else (0 if region_id == current_region_id else 999)
                 if dist <= weapon_range:
                     if agent.get("isAlive", True):
-                        is_guard = (agent.get("isGuardian") or "guardian" in agent.get("name", "").lower())
+                        is_guard = (agent.get("isGuardian") or "guardian" in agent_name.lower())
                         
                         target_hp = agent.get("hp", 100)
                         max_hp_val = agent.get("maxHp", 100)

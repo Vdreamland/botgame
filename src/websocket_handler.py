@@ -4,11 +4,12 @@ from src.config import WS_JOIN_URL, HEADERS
 from src.state_manager import StateManager
 from src.ai import DecisionMaker
 
-async def run_ws_loop(active_game=None):
+async def run_ws_loop(active_game=None, headers=None):
+    use_headers = headers if headers else HEADERS
     if active_game:
         print(f"Active game found: {active_game.get('gameId')}. Resuming directly...")
         
-    async with websockets.connect(WS_JOIN_URL, additional_headers=HEADERS) as websocket:
+    async with websockets.connect(WS_JOIN_URL, additional_headers=use_headers) as websocket:
         print("Connected to WebSocket. Waiting for welcome frame...")
         
         async for message in websocket:

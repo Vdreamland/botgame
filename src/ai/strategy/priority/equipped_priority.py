@@ -31,7 +31,7 @@ class EquippedPriority:
             item_id = item.get("id")
             if not item_id or not name:
                 continue
-                
+            
             if name in WEAPONS:
                 atk = WEAPONS[name].get("atk", 0)
                 cost = WEAPONS[name].get("ep_cost", 1)
@@ -39,7 +39,7 @@ class EquippedPriority:
                 if my_ep >= cost:
                     if not emergency_weapon_id:
                         emergency_weapon_id = item_id
-                        
+                    
                     if name in melee_names:
                         if atk > best_melee_atk:
                             best_melee_atk = atk
@@ -48,7 +48,7 @@ class EquippedPriority:
                         if atk > best_ranged_atk:
                             best_ranged_atk = atk
                             best_ranged_id = item_id
-                            
+        
         best_armor_id = None
         best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
         for item in inventory:
@@ -59,7 +59,7 @@ class EquippedPriority:
                 if defense > best_armor_def:
                     best_armor_def = defense
                     best_armor_id = item_id
-                    
+        
         current_region_id = view.get("currentRegion", {}).get("id")
         visible_agents = view.get("visibleAgents", [])
         visible_monsters = view.get("visibleMonsters", [])
@@ -74,20 +74,20 @@ class EquippedPriority:
                     has_layer_0_enemies = True
                 else:
                     has_outer_enemies = True
-                    
+        
         for monster in visible_monsters:
             if monster.get("isAlive", True):
                 if monster.get("regionId") == current_region_id:
                     has_layer_0_enemies = True
                 else:
                     has_outer_enemies = True
-                    
+        
         if has_layer_0_enemies or has_outer_enemies:
             if my_ep < current_ep_cost and emergency_weapon_id:
                 return 100, {"action_type": "equip", "item_id": emergency_weapon_id}
-                
+        
         if has_layer_0_enemies:
-            if best_melee_atk >= best_ranged_atk and best_melee_atk > 0:
+            if best_melee_atk > 0:
                 if best_melee_id:
                     return 100, {"action_type": "equip", "item_id": best_melee_id}
             else:
@@ -100,15 +100,10 @@ class EquippedPriority:
             else:
                 if best_melee_id:
                     return 100, {"action_type": "equip", "item_id": best_melee_id}
-        else:
-            if best_ranged_atk > best_melee_atk:
-                if best_ranged_id:
+                elif best_ranged_id:
                     return 100, {"action_type": "equip", "item_id": best_ranged_id}
-            else:
-                if best_melee_id:
-                    return 100, {"action_type": "equip", "item_id": best_melee_id}
-                    
+        
         if best_armor_id:
             return 99, {"action_type": "equip", "item_id": best_armor_id}
-            
+        
         return 0, None

@@ -27,10 +27,8 @@ async def run_ws_loop(active_game=None):
                 elif decision in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
                     if decision == "ASK_ENTRY_TYPE":
                         entry_frame = {
-                            "type": "entry_type",
-                            "data": {
-                                "entryType": "free"
-                            }
+                            "type": "hello",
+                            "entryType": "free"
                         }
                         await websocket.send(json.dumps(entry_frame))
                         print("Sent hello frame with entryType: free")

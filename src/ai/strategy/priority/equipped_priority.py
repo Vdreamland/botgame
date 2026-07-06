@@ -87,21 +87,13 @@ class EquippedPriority:
                 return 100, {"action_type": "equip", "item_id": emergency_weapon_id}
         
         if has_layer_0_enemies:
-            if best_melee_atk > 0:
-                if best_melee_id:
-                    return 100, {"action_type": "equip", "item_id": best_melee_id}
-            else:
-                if best_ranged_id:
-                    return 100, {"action_type": "equip", "item_id": best_ranged_id}
+            if best_melee_id:
+                return 100, {"action_type": "equip", "item_id": best_melee_id}
+            elif eq_weapon_name not in melee_names and best_ranged_id:
+                return 100, {"action_type": "equip", "item_id": best_ranged_id}
         elif has_outer_enemies:
-            if best_ranged_atk >= 25 and my_ep >= 4:
-                if best_ranged_id:
-                    return 100, {"action_type": "equip", "item_id": best_ranged_id}
-            else:
-                if best_melee_id:
-                    return 100, {"action_type": "equip", "item_id": best_melee_id}
-                elif best_ranged_id:
-                    return 100, {"action_type": "equip", "item_id": best_ranged_id}
+            if best_ranged_id:
+                return 100, {"action_type": "equip", "item_id": best_ranged_id}
         
         if best_armor_id:
             return 99, {"action_type": "equip", "item_id": best_armor_id}

@@ -131,9 +131,9 @@ def parse_enemy_status(agent_view_data, known_entities):
                 "hp": hp_val,
                 "max_hp": max_hp_val,
                 "is_npc": is_guardian,
-                "atk": entity_data.get("atk", 12),
-                "def": entity_data.get("def", 120),
-                "kills": entity_data.get("kills", 0)
+                "atk": entity_data.get("atk"),
+                "def": entity_data.get("def"),
+                "kills": entity_data.get("kills", entity_data.get("killCount"))
             })
             
     return {

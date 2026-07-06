@@ -116,10 +116,15 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
             is_npc = monster.get("is_npc", False)
             
             if is_npc:
-                m_atk = monster.get("atk", 12)
-                m_def = monster.get("def", 120)
-                m_kills = monster.get("kills", 0)
-                output.append(f"  -> [Guardian] {m_name} | HP: {hp_val}/{max_hp_val} | ATK: {m_atk} | DEF: {m_def} | Kills: {m_kills}")
+                m_atk = monster.get("atk")
+                m_def = monster.get("def")
+                m_kills = monster.get("kills")
+                
+                atk_str = str(m_atk) if m_atk is not None else "?"
+                def_str = str(m_def) if m_def is not None else "?"
+                kills_str = str(m_kills) if m_kills is not None else "0"
+                
+                output.append(f"  -> [Guardian] {m_name} | HP: {hp_val}/{max_hp_val} | ATK: {atk_str} | DEF: {def_str} | Kills: {kills_str}")
             else:
                 output.append(f"  -> [Monster] {m_name} | HP: {hp_val}/{max_hp_val}")
             

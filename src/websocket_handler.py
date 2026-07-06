@@ -20,13 +20,13 @@ async def play_game(websocket):
                 
             manager.process_message(frame_type, data)
             
-            if frame_type == "agent_view":
-                if manager.is_agent_dead(data):
-                    print("\n========================================")
-                    print("Your agent has died. Terminating loop.")
-                    print("========================================\n")
-                    break
+            if manager.is_agent_dead():
+                print("\n========================================")
+                print("Your agent has died. Terminating loop.")
+                print("========================================\n")
+                break
                 
+            if frame_type == "agent_view":
                 pong_frame = {"type": "ping"}
                 await websocket.send(json.dumps(pong_frame))
                 

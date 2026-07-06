@@ -48,15 +48,6 @@ async def play_game(websocket):
             data = json.loads(message)
             frame_type = data.get("type")
             
-            if frame_type not in ["agent_view", "turn_advanced"]:
-                print(f"[Server Event] {frame_type}: {data}")
-                
-            if frame_type == "game_ended":
-                print("\n========================================")
-                print("Game has ended.")
-                print("========================================\n")
-                break
-                
             manager.process_message(frame_type, data)
             
             if manager.is_agent_dead():
@@ -65,25 +56,34 @@ async def play_game(websocket):
                 print("========================================\n")
                 break
                 
-            if frame_type == "agent_view":
-                action = decision_maker.make_decision(manager, data)
+            if frame_type in ["agent_view", "can_act_changed"]:
+                if manager.can_act:
+                    action = decision_maker.make_decision(manager, data)
+                    manager.can_act = False
+                    
+                    from src.game_log import print_turn_log
+                    print_turn_log(
+                        manager.current_turn,
+                        manager.status,
+                        manager.zone_status,
+                        manager.loot_status,
+                        manager.radar_status,
+                        manager.enemy_status,
+                        manager.alive_count,
+                        fight_history=manager.fight_history,
+                        deadzone_status=manager.deadzone_status,
+                        pending_loot_regions=manager.pending_loot_regions,
+                        interacted_facilities=list(manager.interacted_facilities),
+                        ai_decision=decision_maker.last_decision
+                    )
+                    
+                    await websocket.send(json.dumps(action))
+                    
+            elif frame_type == "game_ended":
+                print("\n========================================")
+                print("Game has ended.")
+                print("========================================\n")
+                break
                 
-                from src.game_log import print_turn_log
-                print_turn_log(
-                    manager.current_turn,
-                    manager.status,
-                    manager.zone_status,
-                    manager.loot_status,
-                    manager.radar_status,
-                    manager.enemy_status,
-                    manager.alive_count,
-                    fight_history=manager.fight_history,
-                    deadzone_status=manager.deadzone_status,
-                    pending_loot_regions=manager.pending_loot_regions,
-                    interacted_facilities=list(manager.interacted_facilities),
-                    ai_decision=decision_maker.last_decision
-                )
-                
-                await websocket.send(json.dumps(action))
     except Exception as e:
         print(f"WebSocket connection error: {e}")

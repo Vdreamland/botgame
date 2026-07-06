@@ -18,6 +18,7 @@ class StateManager:
         self.current_distances = {}
         self.pending_loot_regions = []
         self.interacted_facilities = set()
+        self.can_act = True
         self.status = {
             "name": "Unknown",
             "hp": 0,
@@ -85,7 +86,7 @@ class StateManager:
                 self.known_entities[monster_id] = monster
 
     def process_message(self, frame_type, data):
-        if frame_type in ["agent_view", "turn_advanced"]:
+        if frame_type in ["agent_view", "turn_advanced", "can_act_changed"]:
             view_data = data.get("view", {})
             self._update_entities(view_data)
             
@@ -118,6 +119,7 @@ class StateManager:
             
             self.current_turn = data.get("turn", self.current_turn)
             self.alive_count = view_data.get("aliveCount", self.alive_count)
+            self.can_act = data.get("canAct", self.can_act)
             
             curr_hp = self.status.get("hp", 0)
             if curr_hp < prev_hp and prev_hp > 0 and len(self.fight_history) == prev_history_len:
@@ -142,7 +144,7 @@ class StateManager:
             
             if frame_type == "turn_advanced":
                 print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history, deadzone_status=self.deadzone_status, pending_loot_regions=self.pending_loot_regions, interacted_facilities=list(self.interacted_facilities))
-            
+                
         elif frame_type in ["hp_changed", "agent_damaged", "monster_damaged"]:
             target_id = data.get("targetId")
             attacker_id = data.get("attackerId", data.get("agentId"))
@@ -236,6 +238,10 @@ class StateManager:
             new_ep = data.get("ep", data.get("currentEp", 0))
             if hasattr(self, "my_id") and entity_id == self.my_id:
                 self.status["ep"] = new_ep
+                
+        elif frame_type == "action_result":
+            success = data.get("success", True)
+            self.can_act = data.get("canAct", not success)
 
     def is_agent_dead(self):
         return self.status["hp"] == 0 or not self.status["is_alive"]

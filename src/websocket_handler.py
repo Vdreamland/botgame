@@ -9,31 +9,23 @@ async def run_ws_loop(active_game=None):
         print(f"Active game found: {active_game.get('gameId')}. Resuming directly...")
         
     async with websockets.connect(WS_JOIN_URL, additional_headers=HEADERS) as websocket:
-        hello_frame = {
-            "type": "hello",
-            "data": {
-                "entryType": "free"
-            }
-        }
-        await websocket.send(json.dumps(hello_frame))
         print("Connected to WebSocket. Waiting for welcome frame...")
         
         async for message in websocket:
             frame = json.loads(message)
             frame_type = frame.get("type")
-            data = frame.get("data", {}) if "data" in frame else frame.get("view", {})
-            decision = data.get("decision") if isinstance(data, dict) else None
+            data = frame.get("data", {})
             
             if frame_type == "welcome":
-                decision_val = data.get("decision")
-                print(f"Welcome frame received. Decision: {decision_val}")
+                decision = data.get("decision")
+                print(f"Welcome frame received. Decision: {decision}")
                 
-                if decision_val == "ALREADY_IN_GAME":
+                if decision == "ALREADY_IN_GAME":
                     print("Reconnected to running game.")
                     await play_game(websocket)
                     return
-                elif decision_val in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
-                    if decision_val == "ASK_ENTRY_TYPE":
+                elif decision in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
+                    if decision == "ASK_ENTRY_TYPE":
                         entry_frame = {
                             "type": "entry_type",
                             "data": {

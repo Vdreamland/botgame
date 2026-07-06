@@ -1,4 +1,4 @@
-from src.utils.zone_helper import get_adjacent_safe_zones, find_shortest_path
+from src.utils.zone_helper import get_adjacent_safe_zones, find_shortest_path, calculate_region_distances
 
 class NavigationStrategy:
     def evaluate(self, manager, raw_data):
@@ -16,25 +16,27 @@ class NavigationStrategy:
         if current_region.get("isDeathZone"):
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
             if safe_targets:
-                return 95, {"action_type": "move", "destination": safe_zones[0]}
+                return 95, {"action_type": "move", "destination": safe_targets[0]}
             return 95, {"action_type": "move", "destination": connections[0]}
             
-        elif current_region_id in pending_ids:
-            safe_zones = get_adjacent_safe_zones(connections, gas_ids)
+        elif current_region_id in gas_ids:
+            safe_targets = get_adjacent_safe_zones(connections, gas_ids)
             if safe_targets:
                 return 91, {"action_type": "move", "destination": safe_targets[0]}
             return 91, {"action_type": "move", "destination": connections[0]}
             
         visible_regions = view.get("visibleRegions", [])
-        region_map = {r.get("id"): r for r in visible_regions if r.get("id")}
-        
+        all_connections = {r.get("id"): r.get("connections", []) for r in visible_regions if r.get("id")}
+        if current_region_id not in all_connections:
+            all_connections[current_region_id] = connections
+            
         distances = calculate_region_distances(current_region, visible_regions)
         
         safe_regions = [r_id for r_id, dist in distances.items() if r_id and r_id not in gas_ids]
         
         if safe_regions:
             for target in safe_regions:
-                path = find_shortest_path(current_region_id, target, region_map)
+                path = find_shortest_path(current_region_id, target, all_connections)
                 if len(path) > 1:
                     return 55, {"action_type": "move", "destination": path[1]}
                     

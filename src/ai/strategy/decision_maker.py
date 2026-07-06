@@ -37,15 +37,52 @@ class DecisionMaker:
         }
 
     def make_decision(self, manager, raw_data):
+        view = raw_data.get("view", {})
+        self_data = view.get("self", {})
+        my_id = self_data.get("id")
+        hp = self_data.get("hp", 100)
+        current_region = view.get("currentRegion", {})
+        current_region_id = current_region.get("id")
+        
+        in_deadzone = current_region.get("isDeathZone", False)
+        
+        has_layer_0_enemies = False
+        for agent in view.get("visibleAgents", []):
+            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
+                has_layer_0_enemies = True
+                break
+        if not has_layer_0_enemies:
+            for monster in view.get("visibleMonsters", []):
+                if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
+                    has_layer_0_enemies = True
+                    break
+                    
+        is_emergency = in_deadzone or (hp < 30 and has_layer_0_enemies)
+        
         best_score = -1
         best_action = None
         
         for priority in self.priorities:
             score, action = priority.evaluate(manager, raw_data)
-            if score > best_score and action:
+            if not action:
+                continue
+                
+            action_type = action.get("action_type")
+            
+            if is_emergency:
+                if action_type in ["loot", "interact", "search", "rest", "discard"]:
+                    score = 0
+            elif has_layer_0_enemies:
+                if action_type in ["search", "rest", "interact"]:
+                    score = 0
+                elif action_type in ["loot", "discard"]:
+                    if score < 80:
+                        score = 0
+                        
+            if score > best_score:
                 best_score = score
                 best_action = action
-                
+        
         if not best_action:
             self.last_decision = {"action": "SEARCH", "score": 22, "target": "None"}
             return create_search_action()

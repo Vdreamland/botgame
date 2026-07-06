@@ -4,7 +4,7 @@ class EquippedPriority:
     def evaluate(self, manager, raw_data):
         view = raw_data.get("view", {})
         self_data = view.get("self", {})
-        inventory = view.get("inventory", [])
+        inventory = self_data.get("inventory", [])
         
         equipped_weapon = self_data.get("equippedWeapon")
         equipped_armor = self_data.get("equippedArmor")

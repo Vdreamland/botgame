@@ -4,7 +4,7 @@ class GroundLootPriority:
     def evaluate(self, manager, raw_data):
         view = raw_data.get("view", {})
         self_data = view.get("self", {})
-        inventory = view.get("inventory", [])
+        inventory = self_data.get("inventory", [])
         
         if len(inventory) >= 10:
             return 0, None

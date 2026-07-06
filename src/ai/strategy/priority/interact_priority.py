@@ -4,7 +4,7 @@ class InteractPriority:
         self_data = view.get("self", {})
         hp = self_data.get("hp", 100)
         max_hp = self_data.get("maxHp", 100)
-        inventory = view.get("inventory", [])
+        inventory = self_data.get("inventory", [])
         
         current_region = view.get("currentRegion", {})
         current_region_id = current_region.get("id")
@@ -37,9 +37,9 @@ class InteractPriority:
                 enemy_status = getattr(manager, "enemy_status", {})
                 for dist, layer_data in enemy_status.get("layers", {}).items():
                     if dist > 0:
-                        if layer_data.get("counts", {}).get("P", 0) > 0:
-                              has_outer_players = True
-                              break
+                        for agent in layer_data.get("agents", []):
+                            has_outer_players = True
+                            break
                 if has_outer_players:
                     return 45, {"action_type": "interact", "facility_id": facility_id or name, "facility_name": name}
                     

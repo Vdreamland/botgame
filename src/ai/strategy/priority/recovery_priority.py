@@ -8,7 +8,7 @@ class RecoveryPriority:
         max_hp = self_data.get("maxHp", 100)
         ep = self_data.get("ep", 10)
         
-        inventory = view.get("inventory", [])
+        inventory = self_data.get("inventory", [])
         
         hp_ratio = hp / max_hp if max_hp > 0 else 1.0
         
@@ -17,7 +17,7 @@ class RecoveryPriority:
                 name = item.get("name")
                 item_id = item.get("id")
                 if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
-                    return 94, {"action_type": "use_item", "item_id": item_id}
+                    return 96, {"action_type": "use_item", "item_id": item_id}
                     
         if ep < 3:
             for item in inventory:

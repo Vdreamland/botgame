@@ -13,6 +13,11 @@ class NavigationStrategy:
         gas_zones = view.get("pendingDeathzones", [])
         gas_ids = {g.get("id") for g in gas_zones if g.get("id")}
         
+        visible_regions = view.get("visibleRegions", [])
+        region_map = {r.get("id"): r for r in visible_regions if r.get("id")}
+        if current_region_id not in region_map:
+            region_map[current_region_id] = current_region
+            
         visible_agents = view.get("visibleAgents", [])
         visible_monsters = view.get("visibleMonsters", [])
         
@@ -38,17 +43,18 @@ class NavigationStrategy:
                         
         if current_region.get("isDeathZone"):
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
+            safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
             if safe_targets:
-                return 95, {"action_type": "move", "destination": safe_targets[0]}
-            return 95, {"action_type": "move", "destination": connections[0]}
+                return 98, {"action_type": "move", "destination": safe_targets[0]}
+            return 98, {"action_type": "move", "destination": connections[0]}
             
         elif current_region_id in gas_ids:
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
+            safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
             if safe_targets:
                 return 91, {"action_type": "move", "destination": safe_targets[0]}
             return 91, {"action_type": "move", "destination": connections[0]}
             
-        visible_regions = view.get("visibleRegions", [])
         all_connections = {r.get("id"): r.get("connections", []) for r in visible_regions if r.get("id")}
         if current_region_id not in all_connections:
             all_connections[current_region_id] = connections
@@ -60,7 +66,10 @@ class NavigationStrategy:
                 return 84, {"action_type": "move", "destination": path[1]}
                 
         distances = calculate_region_distances(current_region, visible_regions)
-        safe_regions = [r_id for r_id, dist in distances.items() if r_id and r_id not in gas_ids]
+        safe_regions = [
+            r_id for r_id, dist in distances.items()
+            if r_id and r_id not in gas_ids and not region_map.get(r_id, {}).get("isDeathZone")
+        ]
         
         if safe_regions:
             for target in safe_regions:

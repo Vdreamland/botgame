@@ -11,7 +11,7 @@ from src.utils.action_helper import (
     create_move_action,
     create_attack_action,
     create_loot_action,
-    create_search_action,
+    create_explore_action,
     create_use_item_action,
     create_equip_action,
     create_rest_action,
@@ -73,10 +73,10 @@ class DecisionMaker:
                 if action_type not in ["move", "flee"]:
                     score = 0
             elif is_emergency:
-                if action_type in ["loot", "interact", "search", "rest", "discard"]:
+                if action_type in ["loot", "interact", "explore", "rest", "discard"]:
                     score = 0
             elif has_layer_0_enemies:
-                if action_type in ["search", "rest", "interact"]:
+                if action_type in ["explore", "rest", "interact"]:
                     score = 0
                 elif action_type in ["loot", "discard"]:
                     if score < 80:
@@ -87,8 +87,8 @@ class DecisionMaker:
                 best_action = action
         
         if not best_action:
-            self.last_decision = {"action": "SEARCH", "score": 22, "target": "None"}
-            return create_search_action()
+            self.last_decision = {"action": "EXPLORE", "score": 22, "target": "None"}
+            return create_explore_action()
             
         action_type = best_action.get("action_type")
         target_name = "None"
@@ -121,16 +121,22 @@ class DecisionMaker:
         elif action_type == "use_item":
             return create_use_item_action(best_action["item_id"])
         elif action_type == "attack":
+            target_region_id = best_action.get("target_region_id")
+            current_region_id = raw_data.get("view", {}).get("currentRegion", {}).get("id")
+            if target_region_id and current_region_id and target_region_id != current_region_id:
+                if hasattr(manager, "pending_loot_regions"):
+                    if target_region_id not in manager.pending_loot_regions:
+                        manager.pending_loot_regions.append(target_region_id)
             return create_attack_action(best_action["target_id"], best_action["target_type"])
         elif action_type == "move":
             return create_move_action(best_action["destination"])
         elif action_type == "rest":
             return create_rest_action()
-        elif action_type == "search":
+        elif action_type == "explore":
             current_region_id = raw_data.get("view", {}).get("currentRegion", {}).get("id")
             if current_region_id and hasattr(manager, "searched_regions"):
                 manager.searched_regions.add(current_region_id)
-            return create_search_action()
+            return create_explore_action()
         elif action_type == "discard":
             return create_discard_action(best_action["item_id"])
         elif action_type == "flee":
@@ -171,7 +177,7 @@ class DecisionMaker:
                     return create_move_action(safe_targets[0])
                 else:
                     return create_move_action(connections[0])
-            return create_search_action()
+            return create_explore_action()
         elif action_type == "interact":
             current_region_id = raw_data.get("view", {}).get("currentRegion", {}).get("id")
             facility_name = best_action.get("facility_name")
@@ -187,4 +193,4 @@ class DecisionMaker:
                 }
             }
             
-        return create_search_action()
+        return create_explore_action()

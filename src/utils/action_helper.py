@@ -1,9 +1,9 @@
-def create_move_action(destination_id):
+def create_move_action(region_id):
     return {
         "type": "action",
         "data": {
             "type": "move",
-            "regionId": destination_id
+            "regionId": region_id
         }
     }
 
@@ -21,12 +21,12 @@ def create_loot_action(item_id):
     return {
         "type": "action",
         "data": {
-            "type": "pickup",
+            "type": "loot",
             "itemId": item_id
         }
     }
 
-def create_search_action():
+def create_explore_action():
     return {
         "type": "action",
         "data": {
@@ -38,7 +38,7 @@ def create_use_item_action(item_id):
     return {
         "type": "action",
         "data": {
-            "type": "use_item",
+            "type": "useItem",
             "itemId": item_id
         }
     }
@@ -61,10 +61,10 @@ def create_rest_action():
     }
 
 def create_discard_action(item_id):
- return {
- "type": "action",
- "data": {
- "type": "drop",
- "itemId": item_id
- }
- }
+    return {
+        "type": "action",
+        "data": {
+            "type": "drop",
+            "itemId": item_id
+        }
+    }

@@ -2,7 +2,8 @@
 ├── .env                           # Berkas konfigurasi variabel lingkungan seperti token bot, URL, dan API key
 ├── requirements.txt               # Daftar pustaka/dependencies Python yang dibutuhkan proyek
 ├── download_references.py         # Skrip utilitas untuk mengunduh dokumen referensi permainan secara lokal
-├── rungame.py                     # Skrip utama untuk menjalankan bot secara berulang (auto-requeue)
+├── rungame.py                     # Skrip utama peluncur bot konkuren dengan sistem Gerbang Sinkronisasi Tim
+├── shared_team_memory.json        # Berkas memori tim bersama tempat koordinat, target, dan status bot ditulis secara live
 ├── docs/                          # (Tidak ditambahkan keterangan sesuai instruksi Anda)
 │   ├── game-knowledge/
 │   │   └── strategy.md
@@ -38,14 +39,14 @@
 │
 └── src/                           # Folder utama seluruh kode sumber aplikasi bot
     ├── __init__.py                # Berkas inisialisasi paket src
-    ├── game_data.py               # Database/kamus tunggal berisi data statis (senjata, item, terrain, cuaca)
-    ├── agent_memory.py               
-    ├── combat_handler.py              
+    ├── game_data.py               # Database/kamus tunggal berisi data statis (senjata, item, terrain, cuaca) serta peta global
     ├── config.py                  # Pengatur konfigurasi berbasis variabel lingkungan dari .env
     ├── api.py                     # Modul komunikasi HTTP API (otentikasi, klaim reward, dll)
     ├── game_log.py                # Modul pemformatan keluaran visual log turn di terminal secara rapi
     ├── state_manager.py           # Pengelola status state terintegrasi dari seluruh pesan WebSocket
-    ├── websocket_handler.py       # Handler jaringan WebSocket untuk siklus permainan dan matchmaking
+    ├── agent_memory.py            # Modul pengelola memori lokal langkah bot (visited_history) dan sinkronisasi memori tim
+    ├── combat_handler.py          # Modul pengendali pemrosesan log tempur dan pemutakhiran asinkronus (anti-mati palsu)
+    ├── websocket_handler.py       # Handler jaringan WebSocket untuk siklus permainan, matchmaking, dan reset memori
     │
     ├── ai/                        # Folder utama modul kecerdasan buatan agen
     │   ├── __init__.py            # Berkas inisialisasi paket AI
@@ -61,23 +62,24 @@
     │   │
     │   └── strategy/              # Subsistem pengambil keputusan strategis agen
     │       ├── __init__.py        # Berkas inisialisasi paket strategi
-    │       ├── decision_maker.py  # Mesin utama pengevaluasi kondisi untuk memutuskan aksi terbaik agen
-    │       ├── navigation_strategy.py # Logika penentu arah gerakan agen menuju wilayah yang diinginkan/aman
+    │       ├── decision_maker.py  # Mesin utama pemicu Gerbang Filter berbasis Konteks (Emergency vs Combat vs Exploration)
+    │       ├── navigation_strategy.py # Logika penentu arah gerakan berbasis rute global dan penarik magnet tim (Leader-Follower)
     │       ├── ruin_exploration_strategy.py # Logika khusus pencarian/eksplorasi barang di daerah ruins
     │       │
     │       └── priority/          # Subsistem pembobotan nilai aksi berdasarkan kebutuhan mendesak
     │           ├── __init__.py    # Berkas inisialisasi paket priority
-    │           ├── equipped_priority.py # Perhitungan nilai urgensi pengenaan/pergantian senjata dan pelindung
-    │           ├── ground_loot_priority.py # Perhitungan nilai urgensi pengambilan barang di tanah
+    │           ├── equipped_priority.py # Perhitungan nilai urgensi pemasangan senjata melee/ranged adaptif sesuai jarak musuh
+    │           ├── ground_loot_priority.py # Perhitungan nilai urgensi pengambilan barang dan bagi-pakai armor cadangan tim
     │           ├── interact_priority.py # Perhitungan prioritas interaksi dengan fasilitas wilayah (Medical, dll)
-    │           ├── survival_priority.py
-    │           ├── recovery_priority.py # Perhitungan prioritas penggunaan barang pemulihan HP/EP (Food, dll)
-    │           └── target_kill_priority.py # Perhitungan prioritas penyerangan target (Musuh vs Monster vs Guardian)
+    │           ├── survival_priority.py # Perhitungan kriteria kelesuan tempur (TTK PvP) dan kabur aman saat HP kritis
+    │           ├── recovery_priority.py # Perhitungan prioritas penggunaan ramuan HP/EP atau REST proaktif saat aman
+    │           └── target_kill_priority.py # Perhitungan prioritas penyerangan target dengan bonus pengeroyokan (Focus-Fire)
     │
     └── utils/                     # Folder berisi modul utilitas/helper operasional fungsional
         ├── __init__.py            # Berkas inisialisasi paket utils
-        ├── action_helper.py       # Generator pembentuk payload JSON pesan aksi (bergerak, serang, dll)
-        └── zone_helper.py         # Mesin navigasi penghitung rute terpendek dan penentu zona aman
+        ├── action_helper.py       # Generator pembentuk payload JSON pesan aksi (bergerak, serang, discard-drop, dll)
+        └── zone_helper.py         # Mesin navigasi penghitung rute terpendek di peta arena
+
 
 Github Link :
 

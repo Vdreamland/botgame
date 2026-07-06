@@ -6,9 +6,6 @@ class GroundLootPriority:
         self_data = view.get("self", {})
         inventory = self_data.get("inventory", [])
         
-        if len(inventory) >= 10:
-            return 0, None
-            
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
         
@@ -103,6 +100,47 @@ class GroundLootPriority:
                     if atk > current_best_ranged:
                         weapon_candidates.append(item_id)
                         
+        has_valuable_ground_upgrade = bool(weapon_candidates or armor_candidates or (utility_candidates and "binoculars" in [i.get("name", "").lower() for i in ground_items]))
+        
+        if len(inventory) >= 10:
+            if not has_valuable_ground_upgrade:
+                return 0, None
+                
+            lowest_val = 999
+            lowest_item_id = None
+            lowest_item_name = None
+            
+            for item in inventory:
+                name = item.get("name")
+                item_id = item.get("id")
+                if not name or not item_id:
+                    continue
+                    
+                val = 50
+                if name == "sMoltz":
+                    val = 100
+                elif name in WEAPONS:
+                    if name == eq_weapon_name:
+                        val = 90
+                    else:
+                        val = 10
+                elif name in ARMOR:
+                    if name == eq_armor_name:
+                        val = 90
+                    else:
+                        val = 10
+                elif name in RECOVERY_ITEMS:
+                    val = 20 if name == "Bandage" else 30
+                    
+                if val < lowest_val:
+                    lowest_val = val
+                    lowest_item_id = item_id
+                    lowest_item_name = name
+                    
+            if lowest_item_id and lowest_val < 90:
+                return 88, {"action_type": "discard", "item_id": lowest_item_id, "item_name": lowest_item_name}
+            return 0, None
+            
         if weapon_candidates:
             return 90, {"action_type": "loot", "item_id": weapon_candidates[0]}
         if smoltz_candidates:

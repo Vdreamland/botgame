@@ -14,7 +14,8 @@ from src.utils.action_helper import (
     create_search_action,
     create_use_item_action,
     create_equip_action,
-    create_rest_action
+    create_rest_action,
+    create_discard_action
 )
 
 class DecisionMaker:
@@ -64,6 +65,8 @@ class DecisionMaker:
             target_name = best_action.get("destination")
         elif action_type == "interact":
             target_name = best_action.get("facility_name", "Facility")
+        elif action_type == "discard":
+            target_name = best_action.get("item_name", "Item")
             
         self.last_decision = {
             "action": action_type.upper(),
@@ -85,6 +88,8 @@ class DecisionMaker:
             return create_rest_action()
         elif action_type == "search":
             return create_search_action()
+        elif action_type == "discard":
+            return create_discard_action(best_action["item_id"])
         elif action_type == "flee":
             view = raw_data.get("view", {})
             current_region = view.get("currentRegion", {})
@@ -118,7 +123,7 @@ class DecisionMaker:
                     manager.interacted_facilities.add(facility_key)
             return {
                 "type": "action",
-                "data": {
+                "action": {
                     "type": "interact",
                     "facilityId": best_action["facility_id"]
                 }

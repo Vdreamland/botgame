@@ -12,8 +12,8 @@ WEAPONS = {
 # ARMOR
 ARMOR = {
     "Leather Armor": {"def": 5},
-    "Iron Armor": {"def": 12},
-    "Steel Armor": {"def": 20}
+    "Chainmail": {"def": 12},
+    "Plate Armor": {"def": 20}
 }
 
 # RECOVERY ITEMS

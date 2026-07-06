@@ -39,9 +39,9 @@ class EquippedPriority:
                     best_armor_id = item_id
                     
         if best_weapon_id:
-            return 90, {"action_type": "equip", "item_id": best_weapon_id}
+            return 100, {"action_type": "equip", "item_id": best_weapon_id}
             
         if best_armor_id:
-            return 85, {"action_type": "equip", "item_id": best_armor_id}
+            return 99, {"action_type": "equip", "item_id": best_armor_id}
             
         return 0, None

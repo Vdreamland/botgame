@@ -16,6 +16,7 @@ class StateManager:
         self.fight_history = []
         self.region_name_map = {}
         self.current_distances = {}
+        self.pending_loot_regions = []
         self.status = {
             "name": "Unknown",
             "hp": 0,
@@ -101,6 +102,9 @@ class StateManager:
             current_region_id = current_region.get("id")
             if current_region_id and current_region.get("name"):
                 self.region_name_map[current_region_id] = current_region.get("name")
+                
+            if current_region_id in self.pending_loot_regions:
+                self.pending_loot_regions.remove(current_region_id)
                 
             self.current_distances = calculate_region_distances(current_region, visible_regions)
             
@@ -206,7 +210,18 @@ class StateManager:
                         
         elif frame_type in ["agent_died", "monster_killed"]:
             entity_id = data.get("targetId", data.get("agentId"))
+            attacker_id = data.get("attackerId")
+            
             if entity_id and entity_id in self.known_entities:
+                entity_data = self.known_entities[entity_id]
+                region_id = entity_data.get("regionId", entity_data.get("region_id"))
+                
+                if hasattr(self, "my_id") and attacker_id == self.my_id:
+                    current_region_id = self.status.get("region_id")
+                    if region_id and region_id != current_region_id:
+                        if region_id not in self.pending_loot_regions:
+                            self.pending_loot_regions.append(region_id)
+                            
                 self.known_entities[entity_id]["hp"] = 0
                 self.known_entities[entity_id]["isAlive"] = False
                 

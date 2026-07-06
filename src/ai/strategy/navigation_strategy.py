@@ -13,6 +13,29 @@ class NavigationStrategy:
         gas_zones = view.get("pendingDeathzones", [])
         gas_ids = {g.get("id") for g in gas_zones if g.get("id")}
         
+        visible_agents = view.get("visibleAgents", [])
+        visible_monsters = view.get("visibleMonsters", [])
+        
+        for agent in visible_agents:
+            if agent.get("isAlive", True):
+                region_id = agent.get("regionId")
+                if region_id and region_id in connections:
+                    hp_val = agent.get("hp", 100)
+                    max_hp_val = agent.get("maxHp", 100)
+                    hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
+                    if hp_ratio < 0.3:
+                        return 94, {"action_type": "move", "destination": region_id}
+                        
+        for monster in visible_monsters:
+            if monster.get("isAlive", True):
+                region_id = monster.get("regionId")
+                if region_id and region_id in connections:
+                    hp_val = monster.get("hp", 100)
+                    max_hp_val = monster.get("maxHp", 100)
+                    hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
+                    if hp_ratio < 0.3:
+                        return 94, {"action_type": "move", "destination": region_id}
+                        
         if current_region.get("isDeathZone"):
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
             if safe_targets:
@@ -30,8 +53,13 @@ class NavigationStrategy:
         if current_region_id not in all_connections:
             all_connections[current_region_id] = connections
             
+        if hasattr(manager, "pending_loot_regions") and manager.pending_loot_regions:
+            target_loot_region = manager.pending_loot_regions[0]
+            path = find_shortest_path(current_region_id, target_loot_region, all_connections)
+            if len(path) > 1:
+                return 84, {"action_type": "move", "destination": path[1]}
+                
         distances = calculate_region_distances(current_region, visible_regions)
-        
         safe_regions = [r_id for r_id, dist in distances.items() if r_id and r_id not in gas_ids]
         
         if safe_regions:

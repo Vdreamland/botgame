@@ -25,21 +25,42 @@ class SurvivalPriority:
         unarmed_danger = False
         layer_0_player_count = 0
         
+        has_dangerous_enemies = False
+        layer_0_armed_count = 0
+        layer_0_unarmed_count = 0
+        layer_0_monster_count = 0
+        has_guardian = False
+        
         for agent in visible_agents:
             agent_id = agent.get("id")
             region_id = agent.get("regionId")
             if agent_id and agent_id != my_id and region_id == current_region_id:
                 if agent.get("isAlive", True):
                     is_guard = (agent.get("isGuardian") or "guardian" in agent.get("name", "").lower())
-                    if not is_guard:
+                    if is_guard:
+                        has_guardian = True
+                        has_dangerous_enemies = True
+                    else:
                         layer_0_player_count += 1
+                        enemy_weapon = agent.get("weapon", "None")
+                        enemy_has_weapon = (enemy_weapon not in ["None", "Fist"])
+                        if enemy_has_weapon:
+                            layer_0_armed_count += 1
+                            has_dangerous_enemies = True
+                        else:
+                            layer_0_unarmed_count += 1
+                            if hp < 20:
+                                has_dangerous_enemies = True
+                            elif not has_weapon and agent.get("hp", 100) > hp:
+                                has_dangerous_enemies = True
+                                
                     has_layer_0_enemies = True
                     
-                    enemy_weapon = agent.get("weapon", "None")
-                    enemy_has_weapon = (enemy_weapon not in ["None", "Fist"])
-                    if not has_weapon and enemy_has_weapon:
-                        unarmed_danger = True
-                        
+                enemy_weapon = agent.get("weapon", "None")
+                enemy_has_weapon = (enemy_weapon not in ["None", "Fist"])
+                if not has_weapon and enemy_has_weapon:
+                    unarmed_danger = True
+                    
         for monster in visible_monsters:
             monster_id = monster.get("id")
             region_id = monster.get("regionId")
@@ -48,17 +69,26 @@ class SurvivalPriority:
                     has_layer_0_enemies = True
                     monster_name = monster.get("name", "")
                     is_guard = (monster_name in GUARDIANS or "guardian" in monster_name.lower())
-                    
+                    if is_guard:
+                        has_guardian = True
+                        has_dangerous_enemies = True
+                    else:
+                        layer_0_monster_count += 1
+                        if hp < 30 or not has_weapon:
+                            has_dangerous_enemies = True
+                            
                     if not has_weapon:
                         if is_guard or hp < 50:
                             unarmed_danger = True
                             
         if layer_0_player_count >= 2:
-            return 97, {"action_type": "flee"}
-            
+            if layer_0_armed_count > 0 or hp < 40:
+                return 97, {"action_type": "flee"}
+                
         if hp_ratio < 0.4 and has_layer_0_enemies:
-            return 97, {"action_type": "flee"}
-            
+            if has_dangerous_enemies:
+                return 97, {"action_type": "flee"}
+                
         if unarmed_danger:
             return 92, {"action_type": "flee"}
             

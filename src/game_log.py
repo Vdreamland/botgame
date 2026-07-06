@@ -1,6 +1,6 @@
 from collections import Counter
 
-def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_status, alive_count, fight_history=None, deadzone_status=None):
+def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_status, alive_count, fight_history=None, deadzone_status=None, pending_loot_regions=None, interacted_facilities=None, ai_decision=None):
     name = status.get("name", "Unknown")
     hp = status.get("hp", 0)
     max_hp = status.get("max_hp", 100)
@@ -119,6 +119,14 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
         else:
             output.append("")
             output.append("Deadzones: None")
+            
+    if pending_loot_regions is not None or interacted_facilities is not None:
+        output.append("")
+        output.append("Memory Audit:")
+        p_loot = pending_loot_regions if pending_loot_regions else []
+        i_fac = interacted_facilities if interacted_facilities else []
+        output.append(f"  - Pending Loot Regions: {p_loot}")
+        output.append(f"  - Interacted Facilities: {i_fac}")
         
     enemy_layers = enemy_status.get("layers", {})
     output.append("")
@@ -176,6 +184,13 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
                     output.append(f"  -> [Monster] {m_name} | HP: {hp_val}/{max_hp_val}")
     else:
         output.append("Enemy: None")
+        
+    if ai_decision:
+        act = ai_decision.get("action", "UNKNOWN")
+        scr = ai_decision.get("score", 0)
+        tgt = ai_decision.get("target", "None")
+        output.append("")
+        output.append(f"AI Decision: {act} -> {tgt} [Score: {scr}]")
         
     output.append("-" * 50)
     

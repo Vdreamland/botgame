@@ -140,7 +140,8 @@ class StateManager:
                 if len(self.fight_history) > 10:
                     self.fight_history.pop(0)
             
-            print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history, deadzone_status=self.deadzone_status)
+            if frame_type == "turn_advanced":
+                print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history, deadzone_status=self.deadzone_status, pending_loot_regions=self.pending_loot_regions, interacted_facilities=list(self.interacted_facilities))
             
         elif frame_type in ["hp_changed", "agent_damaged", "monster_damaged"]:
             target_id = data.get("targetId")

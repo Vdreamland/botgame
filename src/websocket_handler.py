@@ -74,8 +74,23 @@ async def play_game(websocket):
                 
             if frame_type == "agent_view":
                 action = decision_maker.make_decision(manager, data)
-                action_type = action.get("data", {}).get("actionType", "Unknown")
-                print(f"Decision: {action_type}")
+                
+                from src.game_log import print_turn_log
+                print_turn_log(
+                    manager.current_turn,
+                    manager.status,
+                    manager.zone_status,
+                    manager.loot_status,
+                    manager.radar_status,
+                    manager.enemy_status,
+                    manager.alive_count,
+                    fight_history=manager.fight_history,
+                    deadzone_status=manager.deadzone_status,
+                    pending_loot_regions=manager.pending_loot_regions,
+                    interacted_facilities=list(manager.interacted_facilities),
+                    ai_decision=decision_maker.last_decision
+                )
+                
                 await websocket.send(json.dumps(action))
     except Exception as e:
         print(f"WebSocket connection error: {e}")

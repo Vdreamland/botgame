@@ -29,6 +29,11 @@ class DecisionMaker:
             RuinExplorationStrategy(),
             SurvivalPriority()
         ]
+        self.last_decision = {
+            "action": "NONE",
+            "score": 0,
+            "target": "None"
+        }
 
     def make_decision(self, manager, raw_data):
         best_score = -1
@@ -41,9 +46,30 @@ class DecisionMaker:
                 best_action = action
                 
         if not best_action:
+            self.last_decision = {"action": "SEARCH", "score": 22, "target": "None"}
             return create_search_action()
             
         action_type = best_action.get("action_type")
+        target_name = "None"
+        
+        if action_type == "equip":
+            target_name = best_action.get("item_id")
+        elif action_type == "loot":
+            target_name = best_action.get("item_id")
+        elif action_type == "use_item":
+            target_name = best_action.get("item_id")
+        elif action_type == "attack":
+            target_name = best_action.get("target_id")
+        elif action_type == "move":
+            target_name = best_action.get("destination")
+        elif action_type == "interact":
+            target_name = best_action.get("facility_name", "Facility")
+            
+        self.last_decision = {
+            "action": action_type.upper(),
+            "score": best_score,
+            "target": target_name
+        }
         
         if action_type == "equip":
             return create_equip_action(best_action["item_id"])

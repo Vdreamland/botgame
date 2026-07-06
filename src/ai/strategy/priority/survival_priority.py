@@ -1,3 +1,5 @@
+from src.game_data import GUARDIANS
+
 class SurvivalPriority:
     def evaluate(self, manager, raw_data):
         view = raw_data.get("view", {})
@@ -44,9 +46,13 @@ class SurvivalPriority:
             if monster_id and region_id == current_region_id:
                 if monster.get("isAlive", True):
                     has_layer_0_enemies = True
+                    monster_name = monster.get("name", "")
+                    is_guard = (monster_name in GUARDIANS or "guardian" in monster_name.lower())
+                    
                     if not has_weapon:
-                        unarmed_danger = True
-                        
+                        if is_guard or hp < 50:
+                            unarmed_danger = True
+                            
         if layer_0_player_count >= 2:
             return 97, {"action_type": "flee"}
             

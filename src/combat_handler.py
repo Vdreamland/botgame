@@ -69,6 +69,10 @@ def process_combat_message(manager, frame_type, data):
     elif frame_type in ["agent_died", "monster_killed"]:
         entity_id = data.get("targetId", data.get("agentId"))
         attacker_id = data.get("attackerId")
+        
+        if frame_type == "monster_killed":
+            entity_id = data.get("monsterId")
+            attacker_id = data.get("agentId")
     
         if entity_id and entity_id in manager.known_entities:
             entity_data = manager.known_entities[entity_id]

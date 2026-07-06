@@ -92,7 +92,7 @@ ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai
 interact_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/interact_priority.py
 recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/recovery_priority.py
 target_kill_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/target_kill_priority.py
-survival_priority.py
+survival_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/survival_priority.py
 
 
 ai/

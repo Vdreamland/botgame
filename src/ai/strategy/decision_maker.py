@@ -3,6 +3,7 @@ from src.ai.strategy.priority.ground_loot_priority import GroundLootPriority
 from src.ai.strategy.priority.interact_priority import InteractPriority
 from src.ai.strategy.priority.recovery_priority import RecoveryPriority
 from src.ai.strategy.priority.target_kill_priority import TargetKillPriority
+from src.ai.strategy.priority.survival_priority import SurvivalPriority
 from src.ai.strategy.navigation_strategy import NavigationStrategy
 from src.ai.strategy.ruin_exploration_strategy import RuinExplorationStrategy
 
@@ -25,7 +26,8 @@ class DecisionMaker:
             RecoveryPriority(),
             TargetKillPriority(),
             NavigationStrategy(),
-            RuinExplorationStrategy()
+            RuinExplorationStrategy(),
+            SurvivalPriority()
         ]
 
     def make_decision(self, manager, raw_data):
@@ -56,6 +58,30 @@ class DecisionMaker:
         elif action_type == "rest":
             return create_rest_action()
         elif action_type == "search":
+            return create_search_action()
+        elif action_type == "flee":
+            view = raw_data.get("view", {})
+            current_region = view.get("currentRegion", {})
+            connections = current_region.get("connections", [])
+            
+            if connections:
+                gas_zones = view.get("pendingDeathzones", [])
+                gas_ids = {g.get("id") for g in gas_zones if g.get("id")}
+                
+                from src.utils.zone_helper import get_adjacent_safe_zones
+                safe_targets = get_adjacent_safe_zones(connections, gas_ids)
+                
+                visible_regions = view.get("visibleRegions", [])
+                dead_ids = {r.get("id") for r in visible_regions if r.get("id") and r.get("isDeathZone")}
+                
+                truly_safe = [rid for rid in safe_targets if rid not in dead_ids]
+                
+                if truly_safe:
+                    return create_move_action(truly_safe[0])
+                elif safe_targets:
+                    return create_move_action(safe_targets[0])
+                else:
+                    return create_move_action(connections[0])
             return create_search_action()
         elif action_type == "interact":
             current_region_id = raw_data.get("view", {}).get("currentRegion", {}).get("id")

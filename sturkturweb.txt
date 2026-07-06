@@ -50,3 +50,44 @@
             ├── loot_detector.py
             ├── radar_detector.py
             └── zone_detector.py
+
+src/
+__init__.py
+config.py
+api.py
+websocket_handler.py
+
+ai/
+__init__.py
+
+ai/detector/
+__init__.py
+self_detector.py
+loot_detector.py
+radar_detector.py
+zone_detector.py
+
+
+Github Link :
+Reference :
+actions.md
+agent-memory.md
+api-summary.md
+errors.md
+free-games.md
+game-systems.md
+preseason1-quests.md
+runtime-modes.md
+setup.md
+game-guide.md
+heartbeat.md
+skill.md
+gotchas.md
+strategy.md
+
+requirements.txt
+.env
+rungame.py
+
+
+

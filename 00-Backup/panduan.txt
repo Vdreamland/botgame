@@ -14,6 +14,17 @@ cd \Games\botgame
 
 
 cd F:\Games\botgame
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+y
+.\venv\Scripts\Activate
+
+
+
+
+
+
+
+cd F:\Games\botgame
 python -m venv venv
 .\venv\Scripts\Activate
 pip install -r requirements.txt

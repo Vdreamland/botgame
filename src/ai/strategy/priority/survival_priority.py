@@ -21,12 +21,16 @@ class SurvivalPriority:
         
         has_layer_0_enemies = False
         unarmed_danger = False
+        layer_0_player_count = 0
         
         for agent in visible_agents:
             agent_id = agent.get("id")
             region_id = agent.get("regionId")
             if agent_id and agent_id != my_id and region_id == current_region_id:
                 if agent.get("isAlive", True):
+                    is_guard = (agent.get("isGuardian") or "guardian" in agent.get("name", "").lower())
+                    if not is_guard:
+                        layer_0_player_count += 1
                     has_layer_0_enemies = True
                     
                     enemy_weapon = agent.get("weapon", "None")
@@ -43,6 +47,9 @@ class SurvivalPriority:
                     if not has_weapon:
                         unarmed_danger = True
                         
+        if layer_0_player_count >= 2:
+            return 97, {"action_type": "flee"}
+            
         if hp_ratio < 0.4 and has_layer_0_enemies:
             return 97, {"action_type": "flee"}
             

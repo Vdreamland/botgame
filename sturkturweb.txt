@@ -68,6 +68,7 @@
     │           ├── equipped_priority.py # Perhitungan nilai urgensi pengenaan/pergantian senjata dan pelindung
     │           ├── ground_loot_priority.py # Perhitungan nilai urgensi pengambilan barang di tanah
     │           ├── interact_priority.py # Perhitungan prioritas interaksi dengan fasilitas wilayah (Medical, dll)
+    │           ├── survival_priority.py
     │           ├── recovery_priority.py # Perhitungan prioritas penggunaan barang pemulihan HP/EP (Food, dll)
     │           └── target_kill_priority.py # Perhitungan prioritas penyerangan target (Musuh vs Monster vs Guardian)
     │
@@ -91,6 +92,7 @@ ground_loot_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai
 interact_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/interact_priority.py
 recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/recovery_priority.py
 target_kill_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/target_kill_priority.py
+survival_priority.py
 
 
 ai/

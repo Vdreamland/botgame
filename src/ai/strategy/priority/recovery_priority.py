@@ -15,8 +15,9 @@ class RecoveryPriority:
             name = item.get("name")
             item_id = item.get("id")
             if name in UTILITY_ITEMS:
-                use_type = UTILITY_ITEMS[name].get("useType", "active")
-                if use_type != "passive":
+                server_use_type = item.get("useType", "active")
+                static_use_type = UTILITY_ITEMS[name].get("use_type", "active")
+                if server_use_type != "passive" and static_use_type == "active":
                     return 100, {"action_type": "use_item", "item_id": item_id}
         
         hp_ratio = hp / max_hp if max_hp > 0 else 1.0

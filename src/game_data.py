@@ -26,10 +26,10 @@ RECOVERY_ITEMS = {
 
 # UTILITY ITEMS
 UTILITY_ITEMS = {
-    "Megaphone": {"effect": "broadcast"},
-    "Map": {"effect": "reveal_map"},
-    "Binoculars": {"effect": "vision_boost_1"},
-    "Radio": {"effect": "communication"}
+    "Megaphone": {"effect": "broadcast", "use_type": "active"},
+    "Map": {"effect": "reveal_map", "use_type": "active"},
+    "Binoculars": {"effect": "vision_boost_1", "use_type": "passive"},
+    "Radio": {"effect": "communication", "use_type": "passive"}
 }
 
 # MONSTERS

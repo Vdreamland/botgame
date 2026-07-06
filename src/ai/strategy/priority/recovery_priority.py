@@ -84,14 +84,14 @@ class RecoveryPriority:
                     name = item.get("name")
                     item_id = item.get("id")
                     if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
-                        return 96, {"action_type": "use_item", "item_id": item_id}
+                        return 74, {"action_type": "use_item", "item_id": item_id}
             if ep < 7:
                 for item in inventory:
                     name = item.get("name")
                     item_id = item.get("id")
                     if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("ep_heal", 0) > 0:
-                        return 96, {"action_type": "use_item", "item_id": item_id}
-                return 96, {"action_type": "rest"}
+                        return 74, {"action_type": "use_item", "item_id": item_id}
+                return 74, {"action_type": "rest"}
         
         if not has_nearby_enemies and ep < 8:
             return 60, {"action_type": "rest"}

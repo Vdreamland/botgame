@@ -56,7 +56,7 @@ class TargetKillPriority:
         for agent in visible_agents:
             agent_id = agent.get("id")
             region_id = agent.get("regionId")
-            if agent_id and agent_id != my_id and region_id == current_region_id:
+            if agent_id and agent_id != my_id:
                 agent_name = agent.get("name", "")
                 if agent_name in ally_names:
                     continue

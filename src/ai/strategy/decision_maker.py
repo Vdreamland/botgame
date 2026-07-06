@@ -121,12 +121,6 @@ class DecisionMaker:
         elif action_type == "use_item":
             return create_use_item_action(best_action["item_id"])
         elif action_type == "attack":
-            target_region_id = best_action.get("target_region_id")
-            current_region_id = raw_data.get("view", {}).get("currentRegion", {}).get("id")
-            if target_region_id and current_region_id and target_region_id != current_region_id:
-                if hasattr(manager, "pending_loot_regions"):
-                    if target_region_id not in manager.pending_loot_regions:
-                        manager.pending_loot_regions.append(target_region_id)
             return create_attack_action(best_action["target_id"], best_action["target_type"])
         elif action_type == "move":
             return create_move_action(best_action["destination"])

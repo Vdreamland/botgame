@@ -223,11 +223,11 @@ class GroundLootPriority:
             return 0, None
             
         if weapon_candidates:
-            return 90, {"action_type": "loot", "item_id": weapon_candidates[0]}
+            return 97, {"action_type": "loot", "item_id": weapon_candidates[0]}
         if smoltz_candidates:
-            return 85, {"action_type": "loot", "item_id": smoltz_candidates[0]}
+            return 97, {"action_type": "loot", "item_id": smoltz_candidates[0]}
         if armor_candidates:
-            return 80, {"action_type": "loot", "item_id": armor_candidates[0]}
+            return 97, {"action_type": "loot", "item_id": armor_candidates[0]}
         if utility_candidates:
             return 75, {"action_type": "loot", "item_id": utility_candidates[0]}
         if consumable_candidates:

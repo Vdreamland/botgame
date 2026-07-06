@@ -40,6 +40,7 @@
     ├── __init__.py                # Berkas inisialisasi paket src
     ├── game_data.py               # Database/kamus tunggal berisi data statis (senjata, item, terrain, cuaca)
     ├── agent_memory.py               
+    ├── combat_handler.py              
     ├── config.py                  # Pengatur konfigurasi berbasis variabel lingkungan dari .env
     ├── api.py                     # Modul komunikasi HTTP API (otentikasi, klaim reward, dll)
     ├── game_log.py                # Modul pemformatan keluaran visual log turn di terminal secara rapi
@@ -123,7 +124,7 @@ websocket_handler.py https://github.com/Vdreamland/botgame/blob/master/src/webso
 game_log.py https://github.com/Vdreamland/botgame/blob/master/src/game_log.py
 state_manager.py https://github.com/Vdreamland/botgame/blob/master/src/state_manager.py
 agent_memory.py https://github.com/Vdreamland/botgame/blob/master/src/agent_memory.py
-
+combat_handler.py
 
 Reference :
 actions.md https://github.com/Vdreamland/botgame/blob/master/docs/references/actions.md

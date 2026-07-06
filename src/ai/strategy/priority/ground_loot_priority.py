@@ -15,14 +15,23 @@ class GroundLootPriority:
         equipped_armor = self_data.get("equippedArmor")
         eq_armor_name = equipped_armor.get("name") if isinstance(equipped_armor, dict) else (equipped_armor if equipped_armor else "None")
         
-        current_best_weapon_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0)
+        melee_names = ["Fist", "Dagger", "Sword", "Katana"]
+        ranged_names = ["Bow", "Pistol", "Sniper rifle"]
+        
+        current_best_melee = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in melee_names else 0
+        current_best_ranged = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names else 0
+        
         for item in inventory:
             name = item.get("name")
             if name in WEAPONS:
                 atk = WEAPONS[name].get("atk", 0)
-                if atk > current_best_weapon_atk:
-                    current_best_weapon_atk = atk
-                    
+                if name in melee_names:
+                    if atk > current_best_melee:
+                        current_best_melee = atk
+                elif name in ranged_names:
+                    if atk > current_best_ranged:
+                        current_best_ranged = atk
+                        
         current_best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
         for item in inventory:
             name = item.get("name")
@@ -57,10 +66,6 @@ class GroundLootPriority:
                 
             if name == "sMoltz":
                 smoltz_candidates.append(item_id)
-            elif name in WEAPONS:
-                atk = WEAPONS[name].get("atk", 0)
-                if atk > current_best_weapon_atk:
-                    weapon_candidates.append(item_id)
             elif name in ARMOR:
                 defense = ARMOR[name].get("def", 0)
                 if defense > current_best_armor_def:
@@ -70,6 +75,20 @@ class GroundLootPriority:
             elif name in UTILITY_ITEMS:
                 utility_candidates.append(item_id)
                 
+        for item in ground_items:
+            name = item.get("name")
+            item_id = item.get("id")
+            if not name or not item_id:
+                continue
+            if name in WEAPONS:
+                atk = WEAPONS[name].get("atk", 0)
+                if name in melee_names:
+                    if atk > current_best_melee:
+                        weapon_candidates.append(item_id)
+                elif name in ranged_names:
+                    if atk > current_best_ranged:
+                        weapon_candidates.append(item_id)
+                        
         if weapon_candidates:
             return 90, {"action_type": "loot", "item_id": weapon_candidates[0]}
         if smoltz_candidates:

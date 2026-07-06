@@ -53,6 +53,7 @@
     │       ├── loot_detector.py   # Pengurai barang-barang yang tergeletak di lantai sekitar wilayah agen
     │       ├── radar_detector.py  # Pengurai peta radar regional sekitar wilayah agen
     │       ├── enemy_detector.py  # Pengurai status, jarak, dan statistik musuh atau monster secara live
+    │       ├── deadzone_detector.py  
     │       └── zone_detector.py   # Pengurai wilayah agen, cuaca, jenis terrain, serta gas/radiasi berbahaya
     │
     └── utils/                     # Folder berisi modul utilitas/helper operasional fungsional

@@ -12,6 +12,13 @@ class RecoveryPriority:
         
         hp_ratio = hp / max_hp if max_hp > 0 else 1.0
         
+        if hp_ratio < 0.4:
+            for item in inventory:
+                name = item.get("name")
+                item_id = item.get("id")
+                if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
+                    return 99, {"action_type": "use_item", "item_id": item_id}
+                    
         if hp_ratio < 0.7:
             for item in inventory:
                 name = item.get("name")

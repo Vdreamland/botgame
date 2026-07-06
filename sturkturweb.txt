@@ -1,8 +1,8 @@
 /botgame
-├── .env
-├── requirements.txt
-├── download_references.py
-├── rungame.py
+├── .env                           # Berkas konfigurasi variabel lingkungan seperti token bot, URL, dan API key
+├── requirements.txt               # Daftar pustaka/dependencies Python yang dibutuhkan proyek
+├── download_references.py         # Skrip utilitas untuk mengunduh dokumen referensi permainan secara lokal
+├── rungame.py                     # Skrip utama untuk menjalankan bot secara berulang (auto-requeue)
 ├── docs/
 │   ├── game-knowledge/
 │   │   └── strategy.md
@@ -35,25 +35,51 @@
 │   ├── skill.md
 │   ├── x402-quickstart.md
 │   └── x402-skill.md
-└── src/
-    ├── __init__.py
-    ├── config.py
-    ├── api.py
-    ├── game_log.py
-    ├── state_manager.py
-    ├── websocket_handler.py
-    └── ai/
-        ├── __init__.py
-        └── detector/
-            ├── __init__.py
-            ├── self_detector.py
-            ├── loot_detector.py
-            ├── radar_detector.py
-            ├── enemy_detector.py
-            └── zone_detector.py
-
+│
+├── game_data/                     # Folder penyimpan database/kamus data statis permainan
+│   ├── __init__.py                # Berkas inisialisasi modul game_data
+│   ├── items.py                   # Kamus senjata (Bow, Sniper, dll), armor, dan consumables
+│   ├── monsters.py                # Kamus data dasar monster biasa serta monster bos/guardian
+│   └── regions.py                 # Kamus data wilayah, jenis medan (terrain), dan pengaruh cuaca
+│
+└── src/                           # Folder utama kode sumber aplikasi bot
+    ├── __init__.py                # Berkas inisialisasi paket src
+    ├── config.py                  # Pengatur konfigurasi berbasis variabel lingkungan dari .env
+    ├── api.py                     # Modul komunikasi HTTP API (otentikasi, klaim reward, dll)
+    ├── game_log.py                # Modul pemformatan keluaran visual log turn di terminal secara rapi
+    ├── state_manager.py           # Pengelola status state terintegrasi dari seluruh pesan WebSocket
+    ├── websocket_handler.py       # Handler jaringan WebSocket untuk siklus permainan dan matchmaking
+    │
+    ├── ai/                        # Folder modul kecerdasan buatan agen
+    │   ├── __init__.py            # Berkas inisialisasi paket AI
+    │   └── detector/              # Subsistem pengurai status lingkungan dari data masukan mentah server
+    │       ├── __init__.py        # Berkas inisialisasi paket detector
+    │       ├── self_detector.py   # Pengurai statistik diri agen seperti HP, EP, inventaris, dan peralatan
+    │       ├── loot_detector.py   # Pengurai barang-barang yang tergeletak di lantai sekitar wilayah agen
+    │       ├── radar_detector.py  # Pengurai peta radar regional sekitar wilayah agen
+    │       ├── enemy_detector.py  # Pengurai status, jarak, dan statistik musuh atau monster secara live
+    │       └── zone_detector.py   # Pengurai wilayah agen, cuaca, jenis terrain, serta gas/radiasi berbahaya
+    │
+    └── utils/                     # Folder berisi modul utilitas/helper operasional fungsional
+        ├── __init__.py            # Berkas inisialisasi paket utils
+        ├── action_helper.py       # Generator pembentuk payload JSON pesan aksi (bergerak, serang, dll)
+        └── zone_helper.py         # Mesin navigasi penghitung rute terpendek dan penentu zona aman
 
 Github Link :
+
+utils/
+__init__.py
+zone_helper.py
+action_helper.py
+
+game_data/
+__init__.py
+action_helper.py
+items.py
+monsters.py
+zone_helper.py
+
+
 
 src/
 __init__.py https://github.com/Vdreamland/botgame/blob/master/src/__init__.py

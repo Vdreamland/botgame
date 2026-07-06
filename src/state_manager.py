@@ -54,13 +54,13 @@ class StateManager:
         self_id = view_data.get("self", {}).get("id")
         if self_id:
             self.my_id = self_id
-        
+            
         for agent in view_data.get("visibleAgents", []):
             agent_id = agent.get("id")
             if agent_id:
                 agent["entity_type"] = "agent"
                 self.known_entities[agent_id] = agent
-        
+                
         if self_id and self_id not in self.known_entities:
             self_agent = view_data.get("self", {})
             self_agent["entity_type"] = "agent"
@@ -71,7 +71,7 @@ class StateManager:
             if monster_id:
                 monster["entity_type"] = "monster"
                 self.known_entities[monster_id] = monster
-        
+                
         for npc in view_data.get("visibleNPCs", []):
             npc_id = npc.get("id")
             if npc_id:
@@ -79,7 +79,7 @@ class StateManager:
                 self.known_entities[npc_id] = npc
 
     def process_message(self, frame_type, data):
-        if frame_type == "agent_view":
+        if frame_type in ["agent_view", "turn_advanced"]:
             view_data = data.get("view", {})
             self._update_entities(view_data)
             
@@ -94,27 +94,23 @@ class StateManager:
             
             print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count)
             
-        elif frame_type == "turn_advanced":
-            self.current_turn = data.get("turn", self.current_turn + 1)
-            self.alive_count = data.get("aliveCount", self.alive_count)
-            
         elif frame_type in ["hp_changed", "agent_damaged", "monster_damaged"]:
             entity_id = data.get("targetId", data.get("agentId"))
             if entity_id and entity_id in self.known_entities:
                 self.known_entities[entity_id]["hp"] = data.get("hp", data.get("currentHp", 0))
-            
+                
             if hasattr(self, "my_id") and entity_id == self.my_id:
                 new_hp = data.get("hp", data.get("currentHp", 0))
                 self.status["hp"] = new_hp
                 if new_hp == 0:
                     self.status["is_alive"] = False
-                
+                    
         elif frame_type in ["agent_died", "monster_killed"]:
             entity_id = data.get("targetId", data.get("agentId"))
             if entity_id and entity_id in self.known_entities:
                 self.known_entities[entity_id]["hp"] = 0
                 self.known_entities[entity_id]["isAlive"] = False
-            
+                
             if hasattr(self, "my_id") and entity_id == self.my_id:
                 self.status["hp"] = 0
                 self.status["is_alive"] = False

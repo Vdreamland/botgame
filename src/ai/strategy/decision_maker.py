@@ -110,7 +110,23 @@ class DecisionMaker:
                 
                 truly_safe = [rid for rid in safe_targets if rid not in dead_ids]
                 
-                if truly_safe:
+                # Check for enemies in safe regions
+                visible_agents = view.get("visibleAgents", [])
+                visible_monsters = view.get("visibleMonsters", [])
+                
+                enemy_occupied_regions = set()
+                for agent in visible_agents:
+                    if agent.get("isAlive", True):
+                        enemy_occupied_regions.add(agent.get("regionId"))
+                for monster in visible_monsters:
+                    if monster.get("isAlive", True):
+                        enemy_occupied_regions.add(monster.get("regionId"))
+                        
+                perfect_safe = [rid for rid in truly_safe if rid not in enemy_occupied_regions]
+                
+                if perfect_safe:
+                    return create_move_action(perfect_safe[0])
+                elif truly_safe:
                     return create_move_action(truly_safe[0])
                 elif safe_targets:
                     return create_move_action(safe_targets[0])
@@ -126,7 +142,7 @@ class DecisionMaker:
                     manager.interacted_facilities.add(facility_key)
             return {
                 "type": "action",
-                "action": {
+                "data": {
                     "type": "interact",
                     "facilityId": best_action["facility_id"]
                 }

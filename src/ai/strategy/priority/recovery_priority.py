@@ -1,4 +1,4 @@
-from src.game_data import RECOVERY_ITEMS
+from src.game_data import RECOVERY_ITEMS, UTILITY_ITEMS
 
 class RecoveryPriority:
     def evaluate(self, manager, raw_data):
@@ -7,8 +7,17 @@ class RecoveryPriority:
         hp = self_data.get("hp", 100)
         max_hp = self_data.get("maxHp", 100)
         ep = self_data.get("ep", 10)
+        current_turn = manager.current_turn if hasattr(manager, "current_turn") else 1
         
         inventory = self_data.get("inventory", [])
+        
+        for item in inventory:
+            name = item.get("name")
+            item_id = item.get("id")
+            if name in UTILITY_ITEMS:
+                use_type = UTILITY_ITEMS[name].get("useType", "active")
+                if use_type != "passive":
+                    return 100, {"action_type": "use_item", "item_id": item_id}
         
         hp_ratio = hp / max_hp if max_hp > 0 else 1.0
         
@@ -18,6 +27,13 @@ class RecoveryPriority:
                 item_id = item.get("id")
                 if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
                     return 99, {"action_type": "use_item", "item_id": item_id}
+                    
+        if current_turn >= 58 and hp < max_hp:
+            for item in inventory:
+                name = item.get("name")
+                item_id = item.get("id")
+                if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
+                    return 100, {"action_type": "use_item", "item_id": item_id}
                     
         if hp_ratio < 0.7:
             for item in inventory:

@@ -21,26 +21,34 @@ class NavigationStrategy:
         visible_agents = view.get("visibleAgents", [])
         visible_monsters = view.get("visibleMonsters", [])
         
-        for agent in visible_agents:
-            if agent.get("isAlive", True):
-                region_id = agent.get("regionId")
-                if region_id and region_id in connections:
-                    hp_val = agent.get("hp", 100)
-                    max_hp_val = agent.get("maxHp", 100)
-                    hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
-                    if hp_ratio < 0.3:
-                        return 94, {"action_type": "move", "destination": region_id}
-                        
-        for monster in visible_monsters:
-            if monster.get("isAlive", True):
-                region_id = monster.get("regionId")
-                if region_id and region_id in connections:
-                    hp_val = monster.get("hp", 100)
-                    max_hp_val = monster.get("maxHp", 100)
-                    hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
-                    if hp_ratio < 0.3:
-                        return 94, {"action_type": "move", "destination": region_id}
-                        
+        self_data = view.get("self", {})
+        my_ep = self_data.get("ep", 10)
+        my_hp = self_data.get("hp", 100)
+        equipped_weapon = self_data.get("equippedWeapon")
+        eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
+        has_weapon = (eq_weapon_name not in ["None", "Fist"])
+        
+        if has_weapon and my_ep >= 4:
+            for agent in visible_agents:
+                if agent.get("isAlive", True):
+                    region_id = agent.get("regionId")
+                    if region_id and region_id in connections:
+                        hp_val = agent.get("hp", 100)
+                        max_hp_val = agent.get("maxHp", 100)
+                        hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
+                        if hp_ratio < 0.3:
+                            return 94, {"action_type": "move", "destination": region_id}
+                            
+            for monster in visible_monsters:
+                if monster.get("isAlive", True):
+                    region_id = monster.get("regionId")
+                    if region_id and region_id in connections:
+                        hp_val = monster.get("hp", 100)
+                        max_hp_val = monster.get("maxHp", 100)
+                        hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
+                        if hp_ratio < 0.3:
+                            return 94, {"action_type": "move", "destination": region_id}
+                            
         if current_region.get("isDeathZone"):
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
             safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
@@ -63,8 +71,16 @@ class NavigationStrategy:
             target_loot_region = manager.pending_loot_regions[0]
             path = find_shortest_path(current_region_id, target_loot_region, all_connections)
             if len(path) > 1:
-                return 84, {"action_type": "move", "destination": path[1]}
+                # Elevate priority to loot freshly killed enemies from far range
+                loot_score = 95 if my_hp >= 60 else 84
+                return loot_score, {"action_type": "move", "destination": path[1]}
                 
+        distances = calculate_region_distances(current_region, visible_regions)
+        safe_regions = [
+            r_id for r_id, dist in distances.items()
+            if r_id and r_id not in gas_ids and not region_map.get(r_id, {}).get("isDeathZone")
+        ]
+        
         safe_neighbors = [rid for rid in connections if rid and rid not in gas_ids and not region_map.get(rid, {}).get("isDeathZone")]
         if not safe_neighbors:
             return 50, {"action_type": "move", "destination": connections[0]}

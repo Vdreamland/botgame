@@ -1,3 +1,4 @@
+from math import ceil
 from src.game_data import MONSTERS, GUARDIANS, WEAPONS
 
 class TargetKillPriority:
@@ -11,6 +12,7 @@ class TargetKillPriority:
             return 0, None
             
         my_hp = self_data.get("hp", 100)
+        my_ep = self_data.get("ep", 10)
         my_atk = self_data.get("atk", 25)
         my_def = self_data.get("def", 7)
         
@@ -19,8 +21,13 @@ class TargetKillPriority:
         has_weapon = (eq_weapon_name not in ["None", "Fist"])
         is_high_tier_weapon = (eq_weapon_name in ["Katana", "Sniper rifle"])
         
-        weapon_range = WEAPONS.get(eq_weapon_name, {}).get("range", 0)
+        weapon_data = WEAPONS.get(eq_weapon_name, {})
+        weapon_range = weapon_data.get("range", 0)
+        weapon_ep_cost = weapon_data.get("ep_cost", 1)
         
+        if my_ep < weapon_ep_cost:
+            return 0, None
+            
         visible_agents = view.get("visibleAgents", [])
         visible_monsters = view.get("visibleMonsters", [])
         

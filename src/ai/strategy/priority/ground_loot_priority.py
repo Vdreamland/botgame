@@ -19,6 +19,8 @@ class GroundLootPriority:
         current_best_melee = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in melee_names else 0
         current_best_ranged = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names else 0
         
+        inventory_item_names = {item.get("name") for item in inventory}
+        
         for item in inventory:
             name = item.get("name")
             if name in WEAPONS:
@@ -145,7 +147,9 @@ class GroundLootPriority:
             elif name_lower in recovery_lower:
                 consumable_candidates.append(item_id)
             elif name_lower in utility_lower:
-                utility_candidates.append(item_id)
+                orig_name = utility_lower[name_lower]
+                if orig_name not in inventory_item_names:
+                    utility_candidates.append(item_id)
         
         if ground_armors:
             ground_armors.sort(key=lambda x: x[1], reverse=True)

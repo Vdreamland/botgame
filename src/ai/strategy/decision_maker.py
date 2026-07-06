@@ -69,7 +69,10 @@ class DecisionMaker:
                 
             action_type = action.get("action_type")
             
-            if is_emergency:
+            if in_deadzone:
+                if action_type not in ["move", "flee"]:
+                    score = 0
+            elif is_emergency:
                 if action_type in ["loot", "interact", "search", "rest", "discard"]:
                     score = 0
             elif has_layer_0_enemies:

@@ -19,6 +19,20 @@ class NavigationStrategy:
         if current_region_id not in region_map:
             region_map[current_region_id] = current_region
             
+        if current_region.get("isDeathZone"):
+            safe_targets = get_adjacent_safe_zones(connections, gas_ids)
+            safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
+            if safe_targets:
+                return 100, {"action_type": "move", "destination": safe_targets[0]}
+            return 100, {"action_type": "move", "destination": connections[0]}
+            
+        elif current_region_id in gas_ids:
+            safe_targets = get_adjacent_safe_zones(connections, gas_ids)
+            safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
+            if safe_targets:
+                return 91, {"action_type": "move", "destination": safe_targets[0]}
+            return 91, {"action_type": "move", "destination": connections[0]}
+            
         visible_agents = view.get("visibleAgents", [])
         visible_monsters = view.get("visibleMonsters", [])
         
@@ -52,20 +66,6 @@ class NavigationStrategy:
                         if hp_ratio < 0.3:
                             return 94, {"action_type": "move", "destination": region_id}
                             
-        if current_region.get("isDeathZone"):
-            safe_targets = get_adjacent_safe_zones(connections, gas_ids)
-            safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
-            if safe_targets:
-                return 100, {"action_type": "move", "destination": safe_targets[0]}
-            return 100, {"action_type": "move", "destination": connections[0]}
-            
-        elif current_region_id in gas_ids:
-            safe_targets = get_adjacent_safe_zones(connections, gas_ids)
-            safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
-            if safe_targets:
-                return 91, {"action_type": "move", "destination": safe_targets[0]}
-            return 91, {"action_type": "move", "destination": connections[0]}
-            
         all_connections = dict(GLOBAL_MAP)
         if hasattr(manager, "accumulated_connections"):
             all_connections.update(manager.accumulated_connections)

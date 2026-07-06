@@ -18,6 +18,7 @@ class StateManager:
         self.fight_history = []
         self.region_name_map = {}
         self.current_distances = {}
+        self.accumulated_connections = {}
         self.memory = AgentMemory()
         self.pending_loot_regions = self.memory.pending_loot_regions
         self.interacted_facilities = self.memory.interacted_facilities
@@ -105,6 +106,9 @@ class StateManager:
                 r_name = r.get("name")
                 if r_id and r_name:
                     self.region_name_map[r_id] = r_name
+                r_connections = r.get("connections", [])
+                if r_id and r_connections:
+                    self.accumulated_connections[r_id] = r_connections
         
             current_region = view_data.get("currentRegion", {})
             current_region_id = current_region.get("id")

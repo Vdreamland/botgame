@@ -64,9 +64,11 @@ class NavigationStrategy:
                 return 91, {"action_type": "move", "destination": safe_targets[0]}
             return 91, {"action_type": "move", "destination": connections[0]}
             
-        all_connections = {r.get("id"): r.get("connections", []) for r in visible_regions if r.get("id")}
-        if current_region_id not in all_connections:
-            all_connections[current_region_id] = connections
+        all_connections = getattr(manager, "accumulated_connections", {})
+        if not all_connections:
+            all_connections = {r.get("id"): r.get("connections", []) for r in visible_regions if r.get("id")}
+            if current_region_id not in all_connections:
+                all_connections[current_region_id] = connections
             
         if hasattr(manager, "pending_loot_regions") and manager.pending_loot_regions:
             target_loot_region = manager.pending_loot_regions[0]
@@ -100,6 +102,11 @@ class NavigationStrategy:
                 if t_reg_id:
                     teammate_regions.append(t_reg_id)
                     
+        path_to_teammate = []
+        if teammate_regions and not is_leader:
+            target_teammate_region = teammate_regions[0]
+            path_to_teammate = find_shortest_path(current_region_id, target_teammate_region, all_connections)
+            
         for rid in safe_neighbors:
             score = 50
             r_data = region_map.get(rid, {})
@@ -128,15 +135,9 @@ class NavigationStrategy:
             if r_data.get("terrain", "").lower() == "ruins":
                 score += 10
                 
-            if teammate_regions and not is_leader:
-                if rid in teammate_regions:
+            if path_to_teammate and len(path_to_teammate) > 1:
+                if rid == path_to_teammate[1]:
                     score += 25
-                else:
-                    for t_reg in teammate_regions:
-                        t_connections = all_connections.get(t_reg, [])
-                        if rid in t_connections:
-                            score += 10
-                            break
                             
             if score > best_neighbor_score:
                 best_neighbor_score = score
@@ -145,4 +146,4 @@ class NavigationStrategy:
         if best_neighbor:
             return 55, {"action_type": "move", "destination": best_neighbor}
             
-        return 50, {"action_type": "move", "destination": connections[0]}
+        return 0, None

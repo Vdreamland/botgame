@@ -48,7 +48,8 @@ class SurvivalPriority:
                         layer_0_player_count += 1
                     has_layer_0_enemies = True
                 
-                enemy_weapon = agent.get("weapon", "None")
+                eq_w = agent.get("equippedWeapon")
+                enemy_weapon = eq_w.get("name", "None") if isinstance(eq_w, dict) else (eq_w if eq_w else "None")
                 enemy_has_weapon = (enemy_weapon not in ["None", "Fist"])
                 if not has_weapon and enemy_has_weapon:
                     unarmed_danger = True

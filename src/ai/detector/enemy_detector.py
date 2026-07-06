@@ -33,7 +33,7 @@ def is_guardian_or_monster(entity_data):
         
     return False
 
-def parse_enemy_status(agent_view_data, known_entities):
+def parse_enemy_status(agent_view_data, known_entities, distances=None):
     view = agent_view_data.get("view", {})
     self_data = view.get("self", {})
     my_name = self_data.get("name", "Unknown")
@@ -45,10 +45,12 @@ def parse_enemy_status(agent_view_data, known_entities):
     
     visible_regions = view.get("visibleRegions", [])
     
-    distances = calculate_region_distances(current_region, visible_regions)
+    if distances is None:
+        distances = calculate_region_distances(current_region, visible_regions)
                 
+    max_dist = max(distances.values()) if distances else 0
     layers = {}
-    for i in range(4):
+    for i in range(max_dist + 1):
         layers[i] = {
             "counts": {"P": 0, "M": 0, "A": 0},
             "agents": [],

@@ -1,6 +1,6 @@
 from src.utils import calculate_region_distances
 
-def parse_radar_status(agent_view_data):
+def parse_radar_status(agent_view_data, distances=None):
     view = agent_view_data.get("view", {})
     current_region = view.get("currentRegion", {})
     current_region_id = current_region.get("id")
@@ -11,9 +11,11 @@ def parse_radar_status(agent_view_data):
     if current_region_id not in region_map and current_region_id:
         region_map[current_region_id] = current_region
         
-    distances = calculate_region_distances(current_region, visible_regions)
-    
-    layers = {i: [] for i in range(1, 4)}
+    if distances is None:
+        distances = calculate_region_distances(current_region, visible_regions)
+        
+    max_dist = max(distances.values()) if distances else 0
+    layers = {i: [] for i in range(1, max_dist + 1)}
     max_layer = 0
     
     for r_id, dist in distances.items():

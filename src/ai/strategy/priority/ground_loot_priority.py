@@ -5,6 +5,7 @@ class GroundLootPriority:
         view = raw_data.get("view", {})
         self_data = view.get("self", {})
         inventory = self_data.get("inventory", [])
+        my_name = self_data.get("name", "Unknown")
         
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
@@ -46,6 +47,47 @@ class GroundLootPriority:
             my_region_data = current_region
             
         ground_items = my_region_data.get("items", [])
+        
+        team_states = manager.memory.get_team_states() if hasattr(manager, "memory") else {}
+        teammates_in_region = []
+        for name, t_state in team_states.items():
+            if name != my_name:
+                if t_state.get("region_id") == current_region_id:
+                    teammate_weapon = t_state.get("weapon", "None")
+                    has_no_good_weapon = (teammate_weapon in ["None", "Fist", "Bow"])
+                    teammates_in_region.append({
+                        "name": name,
+                        "unarmed": has_no_good_weapon,
+                        "state": t_state
+                    })
+                    
+        equipped_count = {}
+        if eq_weapon_name in WEAPONS:
+            equipped_count[eq_weapon_name] = 1
+        if eq_armor_name in ARMOR:
+            equipped_count[eq_armor_name] = 1
+            
+        spare_weapons = []
+        for item in inventory:
+            name = item.get("name")
+            item_id = item.get("id")
+            if name in WEAPONS:
+                needed_for_self = equipped_count.get(name, 0)
+                if needed_for_self > 0:
+                    equipped_count[name] -= 1
+                else:
+                    spare_weapons.append((item_id, name))
+                    
+        if spare_weapons and teammates_in_region:
+            for teammate in teammates_in_region:
+                if teammate["unarmed"]:
+                    best_spare_id, best_spare_name = spare_weapons[0]
+                    for item_id, name in spare_weapons:
+                        if name == "Katana" or name == "Sniper rifle":
+                            best_spare_id, best_spare_name = item_id, name
+                            break
+                    return 76, {"action_type": "discard", "item_id": best_spare_id, "item_name": best_spare_name}
+                    
         if not ground_items:
             return 0, None
             

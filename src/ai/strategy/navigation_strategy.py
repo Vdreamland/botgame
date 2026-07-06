@@ -24,6 +24,7 @@ class NavigationStrategy:
         self_data = view.get("self", {})
         my_ep = self_data.get("ep", 10)
         my_hp = self_data.get("hp", 100)
+        my_name = self_data.get("name", "Unknown")
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
         has_weapon = (eq_weapon_name not in ["None", "Fist"])
@@ -71,7 +72,6 @@ class NavigationStrategy:
             target_loot_region = manager.pending_loot_regions[0]
             path = find_shortest_path(current_region_id, target_loot_region, all_connections)
             if len(path) > 1:
-                # Elevate priority to loot freshly killed enemies from far range
                 loot_score = 95 if my_hp >= 60 else 84
                 return loot_score, {"action_type": "move", "destination": path[1]}
                 
@@ -88,6 +88,14 @@ class NavigationStrategy:
         best_neighbor = None
         best_neighbor_score = -999
         
+        team_states = manager.memory.get_team_states() if hasattr(manager, "memory") else {}
+        teammate_regions = []
+        for teammate, state in team_states.items():
+            if teammate != my_name:
+                t_reg_id = state.get("region_id")
+                if t_reg_id:
+                    teammate_regions.append(t_reg_id)
+                    
         for rid in safe_neighbors:
             score = 50
             r_data = region_map.get(rid, {})
@@ -109,6 +117,16 @@ class NavigationStrategy:
             if r_data.get("terrain", "").lower() == "ruins":
                 score += 10
                 
+            if teammate_regions:
+                if rid in teammate_regions:
+                    score += 25
+                else:
+                    for t_reg in teammate_regions:
+                        t_connections = all_connections.get(t_reg, [])
+                        if rid in t_connections:
+                            score += 10
+                            break
+                            
             if score > best_neighbor_score:
                 best_neighbor_score = score
                 best_neighbor = rid

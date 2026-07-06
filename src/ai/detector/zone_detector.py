@@ -1,3 +1,5 @@
+from src.game_data import FACILITIES
+
 def parse_zone_status(agent_view_data):
     view = agent_view_data.get("view", {})
     current_region = view.get("currentRegion", {})
@@ -15,7 +17,7 @@ def parse_zone_status(agent_view_data):
     vision_modifier = my_region_data.get("visionModifier", 0)
     
     interactables = current_region.get("interactables", [])
-    facility_names = [fac.get("name", "Unknown Facility") for fac in interactables]
+    facility_names = [fac.get("name") for fac in interactables if fac.get("name") in FACILITIES]
     
     connections = current_region.get("connections", [])
     

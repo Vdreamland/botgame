@@ -2,30 +2,11 @@ import asyncio
 import json
 import websockets
 from src.config import WS_JOIN_URL, HEADERS, ROOM_PREFERENCE
-from src.game_log import print_turn_log
-from src.ai.detector.self_detector import parse_self_status
+from src.state_manager import StateManager
 
 async def play_game(websocket):
     print("Starting gameplay loop...")
-    
-    current_turn = 1
-    alive_count = 0
-    status = {
-        "name": "Unknown",
-        "hp": 0,
-        "max_hp": 0,
-        "ep": 0,
-        "max_ep": 0,
-        "is_alive": True,
-        "region_id": None,
-        "has_weapon": False,
-        "equipped_weapon": None,
-        "has_armor": False,
-        "equipped_armor": None,
-        "inventory_count": 0,
-        "inventory_free_slots": 10
-    }
-    
+    manager = StateManager()
     try:
         async for message in websocket:
             data = json.loads(message)
@@ -37,16 +18,10 @@ async def play_game(websocket):
                 print("========================================\n")
                 break
                 
-            elif frame_type == "agent_view":
-                view_data = data.get("view", {})
-                status = parse_self_status(data)
-                
-                current_turn = data.get("turn", current_turn)
-                alive_count = view_data.get("aliveCount", alive_count)
-                
-                print_turn_log(current_turn, status, alive_count)
-                
-                if status["hp"] == 0 or not status["is_alive"]:
+            manager.process_message(frame_type, data)
+            
+            if frame_type == "agent_view":
+                if manager.is_agent_dead():
                     print("\n========================================")
                     print("Your agent has died. Terminating loop.")
                     print("========================================\n")
@@ -54,22 +29,6 @@ async def play_game(websocket):
                 
                 pong_frame = {"type": "ping"}
                 await websocket.send(json.dumps(pong_frame))
-                
-            elif frame_type == "turn_advanced":
-                current_turn = data.get("turn", current_turn + 1)
-                alive_count = data.get("aliveCount", alive_count)
-                
-                print_turn_log(current_turn, status, alive_count)
-                
-            elif frame_type == "hp_changed":
-                new_hp = data.get("hp", data.get("currentHp", status.get("hp", 0)))
-                status["hp"] = new_hp
-                if new_hp == 0:
-                    status["is_alive"] = False
-                    
-            elif frame_type == "ep_changed":
-                new_ep = data.get("ep", data.get("currentEp", status.get("ep", 0)))
-                status["ep"] = new_ep
                 
     except Exception as e:
         print(f"Error in gameplay loop: {e}")

@@ -10,6 +10,9 @@ class SurvivalPriority:
         max_hp = self_data.get("maxHp", 100)
         hp_ratio = hp / max_hp if max_hp > 0 else 1.0
         
+        my_atk = self_data.get("atk", 25)
+        my_def = self_data.get("def", 5)
+        
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
         has_weapon = (eq_weapon_name not in ["None", "Fist"])
@@ -44,14 +47,28 @@ class SurvivalPriority:
                         layer_0_player_count += 1
                         enemy_weapon = agent.get("weapon", "None")
                         enemy_has_weapon = (enemy_weapon not in ["None", "Fist"])
+                        
+                        target_atk = agent.get("atk", 25) if agent.get("atk") is not None else 25
+                        target_def = agent.get("def", 5) if agent.get("def") is not None else 5
+                        target_hp = agent.get("hp", 100)
+                        
+                        my_dmg = max(1, my_atk - target_def)
+                        enemy_dmg = max(1, target_atk - my_def)
+                        
+                        turns_to_kill_enemy = (target_hp + my_dmg - 1) // my_dmg
+                        turns_to_kill_me = (hp + enemy_dmg - 1) // enemy_dmg
+                        
+                        is_combat_feasible = (turns_to_kill_enemy < turns_to_kill_me) or (turns_to_kill_enemy <= 1)
+                        
                         if enemy_has_weapon:
                             layer_0_armed_count += 1
-                            has_dangerous_enemies = True
+                            if not is_combat_feasible:
+                                has_dangerous_enemies = True
                         else:
                             layer_0_unarmed_count += 1
-                            if hp < 20:
+                            if hp < 20 and not is_combat_feasible:
                                 has_dangerous_enemies = True
-                            elif not has_weapon and agent.get("hp", 100) > hp:
+                            elif not has_weapon and target_hp > hp:
                                 has_dangerous_enemies = True
                                 
                     has_layer_0_enemies = True

@@ -8,7 +8,7 @@ async def run_ws_loop(active_game=None, headers=None):
     use_headers = headers if headers else HEADERS
     if active_game:
         print(f"Active game found: {active_game.get('gameId')}. Resuming directly...")
-        
+    
     async with websockets.connect(WS_JOIN_URL, additional_headers=use_headers) as websocket:
         print("Connected to WebSocket. Waiting for welcome frame...")
         
@@ -43,6 +43,8 @@ async def run_ws_loop(active_game=None, headers=None):
 async def play_game(websocket):
     print("Starting gameplay loop...")
     manager = StateManager()
+    manager.memory.reset_shared()
+    manager.memory.reset_local()
     decision_maker = DecisionMaker()
     try:
         async for message in websocket:

@@ -16,7 +16,9 @@ class AgentMemory:
         for _ in range(5):
             try:
                 if os.path.exists(self.shared_file):
-                    os.remove(self.shared_file)
+                    mtime = os.path.getmtime(self.shared_file)
+                    if time.time() - mtime > 15:
+                        os.remove(self.shared_file)
                 break
             except Exception:
                 time.sleep(0.05)

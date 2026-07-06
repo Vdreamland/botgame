@@ -12,15 +12,6 @@ load_dotenv()
 
 active_bots = {}
 
-def get_all_bot_keys():
-    bots = []
-    for i in range(1, 10):
-        api_key = os.getenv(f"BOT{i}_API_KEY")
-        bot_name = os.getenv(f"BOT{i}_NAME")
-        if api_key and bot_name:
-            bots.append((bot_name, api_key))
-    return bots
-
 async def run_bot(bot_name, api_key):
     headers = get_headers(api_key)
     first_run = True
@@ -42,6 +33,7 @@ async def run_bot(bot_name, api_key):
 
         if not active_game:
             active_bots[bot_name] = "idle"
+            wait_logged = False
             while True:
                 if all(status == "idle" for status in active_bots.values()):
                     for name in active_bots:
@@ -50,10 +42,18 @@ async def run_bot(bot_name, api_key):
                 if active_bots[bot_name] == "queued":
                     active_bots[bot_name] = "playing"
                     break
-                await asyncio.sleep(1)
+                    
+                if not wait_logged:
+                    print(f"[{bot_name}] Ready for matchmaking. Waiting for teammates to finish their games...")
+                    wait_logged = True
+                    
+                await asyncio.sleep(2)
 
         try:
+            active_bots[bot_name] = "playing"
             await run_ws_loop(active_game=active_game, headers=headers)
+        except asyncio.CancelledError:
+            break
         except Exception as e:
             print(f"[{bot_name}] Error in connection loop: {e}")
 
@@ -79,7 +79,11 @@ def main():
     for bot_name, api_key in bots:
         tasks.append(run_bot(bot_name, api_key))
 
-    asyncio.run(amain(tasks))
+    try:
+        asyncio.run(amain(tasks))
+    except KeyboardInterrupt:
+        print("\nShutting down bot safely...")
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()

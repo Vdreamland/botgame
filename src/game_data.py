@@ -18,7 +18,7 @@ RECOVERY_ITEMS = {
  "Emergency Food": {"hp_heal": 20, "ep_heal": 0},
  "Bandage": {"hp_heal": 10, "ep_heal": 0},
  "Medkit": {"hp_heal": 30, "ep_heal": 5},
- "Energy Drink": {"hp_heal": 0, "ep_heal": 5}
+ "Energy drink": {"hp_heal": 0, "ep_heal": 5}
 }
 
 UTILITY_ITEMS = {
@@ -29,13 +29,13 @@ UTILITY_ITEMS = {
 }
 
 MONSTERS = {
- "Wolf": {"hp": 25, "atk": 15, "def": 1},
+ "Wolf": {"hp": 25, "atk": 15, "def": 2},
  "Bear": {"hp": 30, "atk": 12, "def": 3},
  "Bandit": {"hp": 40, "atk": 25, "def": 5}
 }
 
 GUARDIANS = {
- "Guardian": {"hp": 150, "atk": 20, "def": 34, "ep": 10, "vision": 1}
+ "Guardian": {"hp": 150, "atk": 12, "def": 120, "ep": 10, "vision": 1}
 }
 
 TERRAINS = {

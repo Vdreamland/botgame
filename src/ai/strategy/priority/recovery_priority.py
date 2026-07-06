@@ -11,6 +11,8 @@ class RecoveryPriority:
         
         inventory = self_data.get("inventory", [])
         
+        recovery_lower = {k.lower(): v for k, v in RECOVERY_ITEMS.items()}
+        
         for item in inventory:
             name = item.get("name")
             item_id = item.get("id")
@@ -26,28 +28,32 @@ class RecoveryPriority:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
-                if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
+                name_lower = name.lower() if name else ""
+                if name_lower in recovery_lower and recovery_lower[name_lower].get("hp_heal", 0) > 0:
                     return 99, {"action_type": "use_item", "item_id": item_id}
         
         if current_turn >= 58 and hp < max_hp:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
-                if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
+                name_lower = name.lower() if name else ""
+                if name_lower in recovery_lower and recovery_lower[name_lower].get("hp_heal", 0) > 0:
                     return 100, {"action_type": "use_item", "item_id": item_id}
         
         if hp_ratio < 0.7:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
-                if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
+                name_lower = name.lower() if name else ""
+                if name_lower in recovery_lower and recovery_lower[name_lower].get("hp_heal", 0) > 0:
                     return 96, {"action_type": "use_item", "item_id": item_id}
         
         if ep < 3:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
-                if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("ep_heal", 0) > 0:
+                name_lower = name.lower() if name else ""
+                if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
                     return 75, {"action_type": "use_item", "item_id": item_id}
             return 70, {"action_type": "rest"}
         
@@ -83,13 +89,15 @@ class RecoveryPriority:
                 for item in inventory:
                     name = item.get("name")
                     item_id = item.get("id")
-                    if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("hp_heal", 0) > 0:
+                    name_lower = name.lower() if name else ""
+                    if name_lower in recovery_lower and recovery_lower[name_lower].get("hp_heal", 0) > 0:
                         return 74, {"action_type": "use_item", "item_id": item_id}
             if ep < 7:
                 for item in inventory:
                     name = item.get("name")
                     item_id = item.get("id")
-                    if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("ep_heal", 0) > 0:
+                    name_lower = name.lower() if name else ""
+                    if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
                         return 74, {"action_type": "use_item", "item_id": item_id}
                 return 74, {"action_type": "rest"}
         
@@ -97,7 +105,8 @@ class RecoveryPriority:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
-                if name in RECOVERY_ITEMS and RECOVERY_ITEMS[name].get("ep_heal", 0) > 0:
+                name_lower = name.lower() if name else ""
+                if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
                     return 65, {"action_type": "use_item", "item_id": item_id}
             return 60, {"action_type": "rest"}
         

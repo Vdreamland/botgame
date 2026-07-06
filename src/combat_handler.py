@@ -3,6 +3,10 @@ def process_combat_message(manager, frame_type, data):
         target_id = data.get("targetId")
         attacker_id = data.get("attackerId", data.get("agentId"))
         damage = data.get("damage", 0)
+        
+        if frame_type == "monster_damaged":
+            target_id = data.get("monsterId")
+            attacker_id = data.get("agentId")
     
         entity_id = target_id if target_id else data.get("agentId")
         if entity_id and entity_id in manager.known_entities:

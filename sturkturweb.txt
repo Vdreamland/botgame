@@ -124,7 +124,7 @@ websocket_handler.py https://github.com/Vdreamland/botgame/blob/master/src/webso
 game_log.py https://github.com/Vdreamland/botgame/blob/master/src/game_log.py
 state_manager.py https://github.com/Vdreamland/botgame/blob/master/src/state_manager.py
 agent_memory.py https://github.com/Vdreamland/botgame/blob/master/src/agent_memory.py
-combat_handler.py
+combat_handler.py https://github.com/Vdreamland/botgame/blob/master/src/combat_handler.py
 
 Reference :
 actions.md https://github.com/Vdreamland/botgame/blob/master/docs/references/actions.md

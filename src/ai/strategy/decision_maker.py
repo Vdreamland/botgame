@@ -78,7 +78,7 @@ class DecisionMaker:
         elif action_type == "use_item":
             return create_use_item_action(best_action["item_id"])
         elif action_type == "attack":
-            return create_attack_action(best_action["target_id"])
+            return create_attack_action(best_action["target_id"], best_action["target_type"])
         elif action_type == "move":
             return create_move_action(best_action["destination"])
         elif action_type == "rest":
@@ -118,7 +118,7 @@ class DecisionMaker:
                     manager.interacted_facilities.add(facility_key)
             return {
                 "type": "action",
-                "action": {
+                "data": {
                     "type": "interact",
                     "facilityId": best_action["facility_id"]
                 }

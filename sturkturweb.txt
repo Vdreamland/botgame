@@ -1,4 +1,48 @@
 /botgame
 ├── .env
 ├── requirements.txt
-├── rungame.py
+├── download_references.py
+├── rungame.py             <-- Eksekutor utama (di root)
+└── docs/
+    ├── game-knowledge/
+    │   └── strategy.md
+    ├── references/
+    │   ├── actions.md
+    │   ├── agent-memory.md
+    │   ├── agent-token.md
+    │   ├── api-summary.md
+    │   ├── contracts.md
+    │   ├── economy.md
+    │   ├── errors.md
+    │   ├── free-games.md
+    │   ├── game-loop.md
+    │   ├── game-systems.md
+    │   ├── gotchas.md
+    │   ├── identity.md
+    │   ├── limits.md
+    │   ├── owner-guidance.md
+    │   ├── paid-games.md
+    │   ├── preseason1-quests.md
+    │   ├── reforge.md
+    │   ├── runtime-modes.md
+    │   ├── sc-wallet-policy.md
+    │   ├── setup.md
+    │   └── shop.md
+    ├── cross-forge-trade.md
+    ├── forge-token-deployer.md
+    ├── game-guide.md
+    ├── heartbeat.md
+    ├── skill.md
+    ├── x402-quickstart.md
+    └── x402-skill.md
+└── src/
+    ├── __init__.py
+    ├── config.py
+    ├── api.py
+    ├── game_log.py
+    ├── websocket_handler.py
+    └── ai/                             <-- Folder baru
+        ├── __init__.py                 <-- Berkas kosong
+        └── detector/                   <-- Folder baru
+            ├── __init__.py             <-- Berkas kosong
+            └── self_detector.py        <-- Berkas di atas

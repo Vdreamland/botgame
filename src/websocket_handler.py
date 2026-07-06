@@ -21,7 +21,7 @@ async def play_game(websocket):
             manager.process_message(frame_type, data)
             
             if frame_type == "agent_view":
-                if manager.is_agent_dead():
+                if manager.is_agent_dead(data):
                     print("\n========================================")
                     print("Your agent has died. Terminating loop.")
                     print("========================================\n")

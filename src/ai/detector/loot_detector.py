@@ -6,6 +6,9 @@ def parse_loot_status(agent_view_data):
     visible_regions = view.get("visibleRegions", [])
     my_region_data = next((r for r in visible_regions if r.get("id") == current_region_id), {})
     
+    if not my_region_data and current_region_id:
+        my_region_data = current_region
+        
     ground_items = my_region_data.get("items", [])
     ground_item_names = [item.get("name", "Unknown Item") for item in ground_items]
     

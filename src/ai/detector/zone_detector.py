@@ -6,6 +6,9 @@ def parse_zone_status(agent_view_data):
     visible_regions = view.get("visibleRegions", [])
     my_region_data = next((r for r in visible_regions if r.get("id") == current_region_id), {})
     
+    if not my_region_data and current_region_id:
+        my_region_data = current_region
+        
     location = current_region.get("name", "Unknown")
     terrain = current_region.get("terrain", my_region_data.get("terrain", "plains"))
     weather = view.get("weather", current_region.get("weather", "clear"))

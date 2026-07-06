@@ -1,6 +1,6 @@
 from collections import Counter
 
-def print_turn_log(turn, status, zone_status, loot_status, radar_status, alive_count):
+def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_status, alive_count):
     name = status.get("name", "Unknown")
     hp = status.get("hp", 0)
     max_hp = status.get("max_hp", 100)
@@ -67,9 +67,62 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, alive_c
     output.append(f"Weapon: {weapon_name} | Armor: {armor_name}")
     output.append(f"Inventory ({slots_used}/10): {inventory_str}")
     output.append("")
-    output.append(f"Location: {location} | Terrain: {terrain} | Weather: {weather} | Vision Modifier: {vision_modifier} | Agent Sight Range: {agent_sight_range} | Links: {links}")
+    output.append(f"Location: {location} | Terrain: {terrain} | Weather: {weather} | Vision: {vision_modifier} | Agent Sight Range: {agent_sight_range} | Links: {links}")
     output.append(f"Facilities: {facilities_str}")
     output.append(f"Ground Items ({ground_items_count}): {ground_items_str}")
+    
+    layers = radar_status.get("layers", {})
+    has_layers = any(dist > 0 for dist in layers.keys())
+    
+    if has_layers:
+        output.append("Radar:")
+        for dist in sorted(layers.keys()):
+            if dist == 0:
+                continue
+            region_names = ", ".join(layers[dist])
+            output.append(f"Layer {dist}: {region_names}")
+    else:
+        output.append("Radar: None")
+        
+    enemy_layers = enemy_status.get("layers", {})
+    output.append("")
+    output.append("Enemy:")
+    for dist in sorted(enemy_layers.keys()):
+        if dist > 3:
+            continue
+        layer_data = enemy_layers[dist]
+        c = layer_data.get("counts", {"P": 0, "M": 0, "A": 0})
+        output.append(f"Layer {dist} : P: {c['P']} | M: {c['M']} | A: {c['A']}")
+        
+        for agent in layer_data.get("agents", []):
+            a_name = agent.get("name")
+            hp_val = agent.get("hp")
+            max_hp_val = agent.get("max_hp")
+            ep_val = agent.get("ep")
+            max_ep_val = agent.get("max_ep")
+            atk_val = agent.get("atk")
+            def_val = agent.get("def")
+            kills_val = agent.get("kills")
+            w_name = agent.get("weapon")
+            arm_name = agent.get("armor")
+            role = "Ally" if agent.get("is_ally") else "Enemy"
+            
+            output.append(f"  -> [{role}] {a_name} | HP: {hp_val}/{max_hp_val} | EP: {ep_val}/{max_ep_val} | ATK: {atk_val} | DEF: {def_val} | Kills: {kills_val} | Weapon: {w_name} | Armor: {arm_name}")
+            
+        for monster in layer_data.get("monsters", []):
+            m_name = monster.get("name")
+            hp_val = monster.get("hp")
+            max_hp_val = monster.get("max_hp")
+            is_npc = monster.get("is_npc", False)
+            
+            if is_npc:
+                m_atk = monster.get("atk", 12)
+                m_def = monster.get("def", 120)
+                m_kills = monster.get("kills", 0)
+                output.append(f"  -> [Guardian] {m_name} | HP: {hp_val}/{max_hp_val} | ATK: {m_atk} | DEF: {m_def} | Kills: {m_kills}")
+            else:
+                output.append(f"  -> [Monster] {m_name} | HP: {hp_val}/{max_hp_val}")
+            
     output.append("-" * 50)
     
     print("\n".join(output))

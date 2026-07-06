@@ -32,7 +32,14 @@ class GroundLootPriority:
                     current_best_armor_def = defense
                     
         current_region = view.get("currentRegion", {})
-        ground_items = current_region.get("visibleItems", [])
+        current_region_id = current_region.get("id")
+        visible_regions = view.get("visibleRegions", [])
+        
+        my_region_data = next((r for r in visible_regions if r.get("id") == current_region_id), {})
+        if not my_region_data:
+            my_region_data = current_region
+            
+        ground_items = my_region_data.get("items", [])
         if not ground_items:
             return 0, None
             
@@ -47,12 +54,12 @@ class GroundLootPriority:
             if not name or not item_id:
                 continue
                 
-            if name in WEAPONS:
+            if name == "sMoltz":
+                smoltz_candidates.append(item_id)
+            elif name in WEAPONS:
                 atk = WEAPONS[name].get("atk", 0)
                 if atk > current_best_weapon_atk:
                     weapon_candidates.append(item_id)
-            elif name == "sMoltz":
-                smoltz_candidates.append(item_id)
             elif name in ARMOR:
                 defense = ARMOR[name].get("def", 0)
                 if defense > current_best_armor_def:

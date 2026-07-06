@@ -103,6 +103,12 @@ class TargetKillPriority:
                         
                         is_guard = (monster_name in GUARDIANS or max_hp_val >= 50 or "guardian" in monster_name.lower())
                         
+                        if is_guard:
+                            is_focus_target = (monster_id in teammate_targets)
+                            if hp_ratio >= 0.2:
+                                if not is_focus_target or my_hp < 60:
+                                    continue
+                        
                         if not has_weapon:
                             if is_guard or my_hp < 50 or hp_ratio >= 0.3:
                                 continue

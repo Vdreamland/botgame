@@ -1,5 +1,6 @@
 import os
 from collections import deque
+from src.game_data import MONSTERS, GUARDIANS
 
 def get_ally_names(my_name):
     allies = set()
@@ -13,9 +14,12 @@ def is_guardian_or_monster(entity_data):
     entity_type = entity_data.get("entity_type")
     if entity_type in ["monster", "npc"]:
         return True
-    
+        
     name = entity_data.get("name", "")
-    if name.lower() == "guardian" or name.lower() == "hermit" or name.lower().startswith("guardian"):
+    if name in MONSTERS or name in GUARDIANS:
+        return True
+        
+    if any(k in name.lower() for k in ["guardian", "hermit"]):
         return True
         
     if entity_data.get("typeId") in ["guardian", "monster", "npc"]:
@@ -49,16 +53,16 @@ def parse_enemy_status(agent_view_data, known_entities):
     distances = {}
     if current_region_id:
         distances[current_region_id] = 0
-        queue = deque([current_region_id])
-        while queue:
-            curr = queue.popleft()
-            curr_dist = distances[curr]
-            region_data = region_map.get(curr, {})
-            for conn in region_data.get("connections", []):
-                if conn in region_map and conn not in distances:
-                    distances[conn] = curr_dist + 1
-                    queue.append(conn)
-                    
+    queue = deque([current_region_id])
+    while queue:
+        curr = queue.popleft()
+        curr_dist = distances[curr]
+        region_data = region_map.get(curr, {})
+        for conn in region_data.get("connections", []):
+            if conn in region_map and conn not in distances:
+                distances[conn] = curr_dist + 1
+                queue.append(conn)
+                
     layers = {}
     for i in range(4):
         layers[i] = {
@@ -66,26 +70,25 @@ def parse_enemy_status(agent_view_data, known_entities):
             "agents": [],
             "monsters": []
         }
-    
+        
     visible_agent_ids = {a.get("id") for a in view.get("visibleAgents", []) if a.get("id")}
     visible_monster_ids = {m.get("id") for m in view.get("visibleMonsters", []) if m.get("id")}
     visible_npc_ids = {n.get("id") for n in view.get("visibleNPCs", []) if n.get("id")}
     visible_ids = visible_agent_ids | visible_monster_ids | visible_npc_ids
-
+    
     for entity_id, entity_data in known_entities.items():
         if entity_id not in visible_ids:
             continue
         if not entity_data.get("isAlive", True):
             continue
-
+            
         region_id = entity_data.get("regionId", entity_data.get("region_id"))
         dist = distances.get(region_id)
         
         if dist is None:
             continue
-        
+            
         entity_name = entity_data.get("name", "Unknown")
-        entity_type = entity_data.get("entity_type", "agent")
         
         is_monster_or_npc = is_guardian_or_monster(entity_data)
         is_agent = ("atk" in entity_data) and not is_monster_or_npc
@@ -96,7 +99,7 @@ def parse_enemy_status(agent_view_data, known_entities):
                 layers[dist]["counts"]["A"] += 1
             else:
                 layers[dist]["counts"]["P"] += 1
-            
+                
             hp = entity_data.get("hp", 0)
             max_hp = entity_data.get("maxHp", 100)
             ep = entity_data.get("ep", 0)
@@ -128,9 +131,14 @@ def parse_enemy_status(agent_view_data, known_entities):
             layers[dist]["counts"]["M"] += 1
             
             hp_val = entity_data.get("hp", 0)
-            is_guardian = "guardian" in entity_name.lower() or "hermit" in entity_name.lower() or entity_data.get("def", 0) == 120 or entity_data.get("maxHp") == 150
-            m_type = "Guardian" if is_guardian else "Monster"
+            is_guardian = entity_name in GUARDIANS or "guardian" in entity_name.lower() or "hermit" in entity_name.lower() or entity_data.get("def", 0) == 120 or entity_data.get("maxHp") == 150
+            
             default_max = 150 if is_guardian else 100
+            if entity_name in GUARDIANS:
+                default_max = GUARDIANS[entity_name].get("hp", 150)
+            elif entity_name in MONSTERS:
+                default_max = MONSTERS[entity_name].get("hp", 100)
+                
             max_hp_val = entity_data.get("maxHp", default_max)
             
             layers[dist]["monsters"].append({

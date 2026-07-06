@@ -4,7 +4,8 @@ import time
 import asyncio
 import requests
 from dotenv import load_dotenv
-from src.api import get_headers, get_account_state, redeem_welcome_code
+from src.config import get_headers, get_all_bot_keys
+from src.api import get_account_state, redeem_welcome_code
 from src.websocket_handler import run_ws_loop
 
 load_dotenv()

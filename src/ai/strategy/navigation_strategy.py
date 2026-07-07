@@ -133,6 +133,9 @@ class NavigationStrategy:
                     has_layer_0_enemies = True
                     break
         
+        visible_ruins = view.get("visibleRuins", [])
+        active_ruin_ids = {r.get("ruinId") for r in visible_ruins if r.get("ruinId") and not r.get("isEmpty", False)}
+        
         for rid in safe_neighbors:
             score = 50
             r_data = region_map.get(rid, {})
@@ -160,6 +163,9 @@ class NavigationStrategy:
             
             if r_data.get("terrain", "").lower() == "ruins":
                 score += 10
+                
+            if rid in active_ruin_ids:
+                score += 30
             
             if path_to_teammate and len(path_to_teammate) > 1:
                 if rid == path_to_teammate[1]:

@@ -43,6 +43,6 @@ di powershel :
 python rungame.py
 
 lalu di browser :
-http://localhost:8080
+http://localhost:8080 / http://localhost:8000/
 
 reset relic : relic unequip python tools/setup_loadout.py

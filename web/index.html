@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bot Game Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <div class="title-container">
+        <h1>Bot Game Live Dashboard</h1>
+        <span class="status" id="ws-status">Disconnected</span>
+        <div id="room-link-container">
+          Spectate:
+          <a id="room-link" href="#" target="_blank">No active game</a>
+        </div>
+      </div>
+      <div class="selector-container">
+        <label for="bot-select">Select Bot:</label>
+        <select id="bot-select">
+          <option value="">No Bots Active</option>
+        </select>
+      </div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="panel stats-panel">
+        <h2>Bot Status</h2>
+        <div class="stat-group">
+          <span class="label">HP</span>
+          <div class="progress-bar">
+            <div
+              class="progress hp-progress"
+              id="stat-hp-bar"
+              style="width: 0%"
+            ></div>
+          </div>
+          <span class="value" id="stat-hp">0/100</span>
+        </div>
+        <div class="stat-group">
+          <span class="label">EP</span>
+          <div class="progress-bar">
+            <div
+              class="progress ep-progress"
+              id="stat-ep-bar"
+              style="width: 0%"
+            ></div>
+          </div>
+          <span class="value" id="stat-ep">0/10</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Weapon</span>
+          <span class="value highlighted" id="stat-weapon">None</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Armor</span>
+          <span class="value highlighted" id="stat-armor">None</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Kills</span>
+          <span class="value highlighted" id="stat-kills">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Location</span>
+          <span class="value highlighted" id="stat-location">Unknown</span>
+        </div>
+        <h3>Inventory</h3>
+        <div class="inventory-grid" id="inventory-list"></div>
+      </div>
+      <div class="panel map-panel">
+        <h2>Radar & Surroundings</h2>
+        <div class="terrain-weather">
+          <div>Terrain: <span id="stat-terrain">Unknown</span></div>
+          <div>Weather: <span id="stat-weather">Unknown</span></div>
+        </div>
+        <div class="radar-layers" id="radar-list"></div>
+        <h3>Ground Items</h3>
+        <div class="ground-items" id="ground-items-list"></div>
+      </div>
+      <div class="panel log-panel">
+        <div class="panel-header">
+          <h2>Event Log</h2>
+          <button id="copy-log-btn" class="copy-btn">Copy Log</button>
+        </div>
+        <div class="log-output" id="log-output"></div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -92,6 +92,7 @@ web/
 index.html https://github.com/Vdreamland/botgame/blob/master/web/index.html
 style.css https://github.com/Vdreamland/botgame/blob/master/web/style.css
 app.js https://github.com/Vdreamland/botgame/blob/master/web/app.js
+web_server.py https://github.com/Vdreamland/botgame/blob/master/web/web_server.py
 
 ai/strategy/
 __init__.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/__init__.py

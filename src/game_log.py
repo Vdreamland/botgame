@@ -1,6 +1,7 @@
 from collections import Counter
+from web.web_server import broadcast
 
-def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_status, alive_count, fight_history=None, deadzone_status=None, pending_loot_regions=None, interacted_facilities=None, ai_decision=None):
+def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_status, alive_count, fight_history=None, deadzone_status=None, pending_loot_regions=None, interacted_facilities=None, ai_decision=None, game_id=None):
     name = status.get("name", "Unknown")
     hp = status.get("hp", 0)
     max_hp = status.get("max_hp", 100)
@@ -26,17 +27,17 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
     slots_used = sum(1 for item in inventory_list if item != "sMoltz")
     if "sMoltz" in inventory_list:
         slots_used += 1
-        
+    
     counts = Counter(inventory_list)
     grouped_items = []
     for item_name, count in counts.items():
         grouped_items.append(f"{item_name} [{count}]")
-        
+    
     if grouped_items:
         inventory_str = ", ".join(grouped_items)
     else:
         inventory_str = "Empty"
-        
+    
     terrain = zone_status.get("terrain", "plains").capitalize()
     weather = zone_status.get("weather", "clear").capitalize()
     links = zone_status.get("links_count", 0)
@@ -53,12 +54,12 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
     grouped_ground = []
     for item_name, count in ground_counts.items():
         grouped_ground.append(f"{item_name} [{count}]")
-        
+    
     if grouped_ground:
         ground_items_str = ", ".join(grouped_ground)
     else:
         ground_items_str = "None"
-        
+    
     output = []
     output.append("\n" + "-" * 50)
     output.append(f"Turn: {turn} | {name} [{is_alive}]")
@@ -75,8 +76,8 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
         output.append("")
         output.append("Fight History:")
         for log_entry in fight_history:
-            output.append(f"  -> {log_entry}")
-            
+            output.append(f" -> {log_entry}")
+    
     layers = radar_status.get("layers", {})
     has_visible_layers = any(len(layers[dist]) > 0 for dist in layers if dist > 0)
     
@@ -91,7 +92,7 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
                 output.append(f"Layer {dist}: {region_names}")
     else:
         output.append("Radar: None")
-        
+    
     if deadzone_status:
         current_status = deadzone_status.get("current_region_status", "Safe")
         active_list = deadzone_status.get("active_deadzones", [])
@@ -103,31 +104,31 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
             output.append("")
             output.append("Deadzones:")
             if current_status == "Deadzone":
-                output.append(f"  - Current Location ({location}): Deadzone!")
+                output.append(f" - Current Location ({location}): Deadzone!")
             elif current_status == "Pending":
-                output.append(f"  - Current Location ({location}): Pending Collapse!")
+                output.append(f" - Current Location ({location}): Pending Collapse!")
             else:
-                output.append(f"  - Current Location ({location}): Safe")
-                
+                output.append(f" - Current Location ({location}): Safe")
+            
             if active_list:
                 active_strs = [f"{item['name']} (Layer {item['layer']})" for item in active_list]
-                output.append(f"  - Active Deadzones: {', '.join(active_strs)}")
-                
+                output.append(f" - Active Deadzones: {', '.join(active_strs)}")
+            
             if pending_list:
                 pending_strs = [f"{item['name']} (Layer {item['layer']})" for item in pending_list]
-                output.append(f"  - Pending Collapse: {', '.join(pending_strs)}")
+                output.append(f" - Pending Collapse: {', '.join(pending_strs)}")
         else:
             output.append("")
             output.append("Deadzones: None")
-            
+    
     if pending_loot_regions is not None or interacted_facilities is not None:
         output.append("")
         output.append("Memory Audit:")
         p_loot = pending_loot_regions if pending_loot_regions else []
         i_fac = interacted_facilities if interacted_facilities else []
-        output.append(f"  - Pending Loot Regions: {p_loot}")
-        output.append(f"  - Interacted Facilities: {i_fac}")
-        
+        output.append(f" - Pending Loot Regions: {p_loot}")
+        output.append(f" - Interacted Facilities: {i_fac}")
+    
     enemy_layers = enemy_status.get("layers", {})
     output.append("")
     
@@ -138,7 +139,7 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
         if c["P"] > 0 or c["M"] > 0 or c["A"] > 0:
             has_any_enemies = True
             break
-            
+    
     if has_any_enemies:
         output.append("Enemy:")
         for dist in sorted(enemy_layers.keys()):
@@ -146,7 +147,7 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
             c = layer_data.get("counts", {"P": 0, "M": 0, "A": 0})
             if c["P"] == 0 and c["M"] == 0 and c["A"] == 0:
                 continue
-                
+            
             output.append(f"Layer {dist} : P: {c['P']} | M: {c['M']} | A: {c['A']}")
             
             for agent in layer_data.get("agents", []):
@@ -162,8 +163,8 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
                 arm_name = agent.get("armor")
                 role = "Ally" if agent.get("is_ally") else "Enemy"
                 
-                output.append(f"  -> [{role}] {a_name} | HP: {hp_val}/{max_hp_val} | EP: {ep_val}/{max_ep_val} | ATK: {atk_val} | DEF: {def_val} | Kills: {kills_val} | Weapon: {w_name} | Armor: {arm_name}")
-                
+                output.append(f" -> [{role}] {a_name} | HP: {hp_val}/{max_hp_val} | EP: {ep_val}/{max_ep_val} | ATK: {atk_val} | DEF: {def_val} | Kills: {kills_val} | Weapon: {w_name} | Armor: {arm_name}")
+            
             for monster in layer_data.get("monsters", []):
                 m_name = monster.get("name")
                 hp_val = monster.get("hp")
@@ -179,19 +180,46 @@ def print_turn_log(turn, status, zone_status, loot_status, radar_status, enemy_s
                     def_str = str(m_def) if m_def is not None else "?"
                     kills_str = str(m_kills) if m_kills is not None else "0"
                     
-                    output.append(f"  -> [Guardian] {m_name} | HP: {hp_val}/{max_hp_val} | ATK: {atk_str} | DEF: {def_str} | Kills: {kills_str}")
+                    output.append(f" -> [Guardian] {m_name} | HP: {hp_val}/{max_hp_val} | ATK: {atk_str} | DEF: {def_str} | Kills: {kills_str}")
                 else:
-                    output.append(f"  -> [Monster] {m_name} | HP: {hp_val}/{max_hp_val}")
+                    output.append(f" -> [Monster] {m_name} | HP: {hp_val}/{max_hp_val}")
     else:
         output.append("Enemy: None")
-        
+    
     if ai_decision:
         act = ai_decision.get("action", "UNKNOWN")
         scr = ai_decision.get("score", 0)
         tgt = ai_decision.get("target", "None")
         output.append("")
         output.append(f"AI Decision: {act} -> {tgt} [Score: {scr}]")
-        
+    
     output.append("-" * 50)
     
-    print("\n".join(output))
+    raw_text = "\n".join(output)
+    print(raw_text)
+    
+    formatted_radar = {}
+    for dist in sorted(layers.keys()):
+        if dist > 0 and layers[dist]:
+            formatted_radar[str(dist)] = ", ".join(layers[dist])
+            
+    broadcast({
+        "type": "state_update",
+        "bot_name": name,
+        "data": {
+            "turn": turn,
+            "hp": hp,
+            "ep": ep,
+            "weapon": weapon_name,
+            "armor": armor_name,
+            "kills": kills,
+            "location": location,
+            "terrain": terrain,
+            "weather": weather,
+            "inventory": grouped_items,
+            "radar": formatted_radar,
+            "ground_items": grouped_ground,
+            "logs": raw_text,
+            "game_id": game_id
+        }
+    })

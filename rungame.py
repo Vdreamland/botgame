@@ -42,11 +42,11 @@ async def run_bot(bot_name, api_key):
                 if active_bots[bot_name] == "queued":
                     active_bots[bot_name] = "playing"
                     break
-                    
+                
                 if not wait_logged:
                     print(f"[{bot_name}] Ready for matchmaking. Waiting for teammates to finish their games...")
                     wait_logged = True
-                    
+                
                 await asyncio.sleep(2)
 
         try:
@@ -85,5 +85,8 @@ def main():
         print("\nShutting down bot safely...")
         sys.exit(0)
 
+from web.web_server import start_server
+
 if __name__ == "__main__":
+    start_server()
     main()

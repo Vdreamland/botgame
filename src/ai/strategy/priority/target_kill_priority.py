@@ -21,7 +21,7 @@ class TargetKillPriority:
         
         if not current_region_id:
             return 0, None
-            
+        
         my_hp = self_data.get("hp", 100)
         my_atk = self_data.get("atk", 25)
         my_def = self_data.get("def", 7)
@@ -31,7 +31,6 @@ class TargetKillPriority:
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
         has_weapon = (eq_weapon_name not in ["None", "Fist"])
-        is_high_tier_weapon = (eq_weapon_name in ["Katana", "Sniper rifle"])
         
         weapon_data = WEAPONS.get(eq_weapon_name, {})
         weapon_range = weapon_data.get("range", 0)
@@ -41,7 +40,7 @@ class TargetKillPriority:
         
         if self_data.get("ep", 10) < weapon_ep_cost:
             return 0, None
-            
+        
         visible_agents = view.get("visibleAgents", [])
         visible_monsters = view.get("visibleMonsters", [])
         
@@ -52,7 +51,10 @@ class TargetKillPriority:
                 t_id = state.get("target_id")
                 if t_id:
                     teammate_targets.add(t_id)
-                    
+        
+        candidates = []
+        effective_range = min(1, weapon_range)
+        
         for agent in visible_agents:
             agent_id = agent.get("id")
             region_id = agent.get("regionId")
@@ -60,9 +62,9 @@ class TargetKillPriority:
                 agent_name = agent.get("name", "")
                 if agent_name in ally_names:
                     continue
-                    
+                
                 dist = manager.current_distances.get(region_id, 999) if manager.current_distances else (0 if region_id == current_region_id else 999)
-                if dist <= weapon_range:
+                if dist <= effective_range:
                     if agent.get("isAlive", True):
                         is_guard = (agent.get("isGuardian") or "guardian" in agent_name.lower())
                         
@@ -84,28 +86,30 @@ class TargetKillPriority:
                             continue
                         
                         if hp_ratio < 0.3:
-                            manager.last_attack_target_id = agent_id
-                            return 98, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
-                            
-                        is_focus_target = (agent_id in teammate_targets)
-                        if is_focus_target:
-                            manager.last_attack_target_id = agent_id
-                            score = 89 if is_guard else 96
-                            return score, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
-                            
-                        if is_guard:
-                            manager.last_attack_target_id = agent_id
-                            return 85, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
-                            
-                        manager.last_attack_target_id = agent_id
-                        return 93, {"action_type": "attack", "target_id": agent_id, "target_type": "agent"}
+                            score = 98
+                        else:
+                            is_focus_target = (agent_id in teammate_targets)
+                            if is_focus_target:
+                                score = 89 if is_guard else 96
+                            elif is_guard:
+                                score = 85
+                            else:
+                                score = 93
                         
+                        candidates.append({
+                            "score": score,
+                            "target_id": agent_id,
+                            "target_type": "agent",
+                            "region_id": region_id,
+                            "dist": dist
+                        })
+        
         for monster in visible_monsters:
             monster_id = monster.get("id")
             region_id = monster.get("regionId")
             dist = manager.current_distances.get(region_id, 999) if manager.current_distances else (0 if region_id == current_region_id else 999)
             
-            if dist <= weapon_range:
+            if dist <= effective_range:
                 monster_name = monster.get("name", "")
                 if monster_id:
                     if monster.get("isAlive", True):
@@ -124,7 +128,7 @@ class TargetKillPriority:
                         if not has_weapon:
                             if is_guard or my_hp < 50 or hp_ratio >= 0.3:
                                 continue
-                                
+                        
                         base_stats = MONSTERS.get(monster_name, GUARDIANS.get(monster_name, {"atk": 25, "def": 5}))
                         target_atk = monster.get("atk") if monster.get("atk") is not None else base_stats.get("atk", 25)
                         target_def = monster.get("def") if monster.get("def") is not None else base_stats.get("def", 5)
@@ -138,22 +142,44 @@ class TargetKillPriority:
                         combat_feasible = (turns_to_kill_target < turns_to_kill_me) or (turns_to_kill_target <= 2)
                         if not combat_feasible:
                             continue
-                            
-                        if hp_ratio < 0.3:
-                            manager.last_attack_target_id = monster_id
-                            return 98, {"action_type": "attack", "target_id": monster_id, "target_type": "monster", "target_region_id": region_id}
-                            
-                        is_focus_target = (monster_id in teammate_targets)
-                        if is_focus_target:
-                            manager.last_attack_target_id = monster_id
-                            score = 89 if is_guard else 82
-                            return score, {"action_type": "attack", "target_id": monster_id, "target_type": "monster", "target_region_id": region_id}
-                            
-                        if is_guard:
-                            manager.last_attack_target_id = monster_id
-                            return 85, {"action_type": "attack", "target_id": monster_id, "target_type": "monster", "target_region_id": region_id}
-                            
-                        manager.last_attack_target_id = monster_id
-                        return 77, {"action_type": "attack", "target_id": monster_id, "target_type": "monster", "target_region_id": region_id}
                         
+                        if hp_ratio < 0.3:
+                            score = 98
+                        else:
+                            is_focus_target = (monster_id in teammate_targets)
+                            if is_focus_target:
+                                score = 89 if is_guard else 82
+                            elif is_guard:
+                                score = 85
+                            else:
+                                score = 77
+                        
+                        candidates.append({
+                            "score": score,
+                            "target_id": monster_id,
+                            "target_type": "monster",
+                            "region_id": region_id,
+                            "dist": dist
+                        })
+        
+        layer_0_candidates = [c for c in candidates if c["dist"] == 0]
+        if layer_0_candidates:
+            layer_0_candidates.sort(key=lambda x: x["score"], reverse=True)
+            best_target = layer_0_candidates[0]
+            manager.last_attack_target_id = best_target["target_id"]
+            if best_target["target_type"] == "agent":
+                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent"}
+            else:
+                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "monster", "target_region_id": best_target["region_id"]}
+        
+        layer_1_candidates = [c for c in candidates if c["dist"] == 1]
+        if layer_1_candidates:
+            layer_1_candidates.sort(key=lambda x: x["score"], reverse=True)
+            best_target = layer_1_candidates[0]
+            manager.last_attack_target_id = best_target["target_id"]
+            if best_target["target_type"] == "agent":
+                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent"}
+            else:
+                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "monster", "target_region_id": best_target["region_id"]}
+        
         return 0, None

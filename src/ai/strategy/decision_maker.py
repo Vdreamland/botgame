@@ -56,7 +56,13 @@ class DecisionMaker:
                 if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
                     has_layer_0_enemies = True
                     break
-                    
+        
+        has_layer_0_agents = False
+        for agent in view.get("visibleAgents", []):
+            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
+                has_layer_0_agents = True
+                break
+        
         is_emergency = in_deadzone or (hp < 30 and has_layer_0_enemies)
         
         best_score = -1
@@ -66,7 +72,7 @@ class DecisionMaker:
             score, action = priority.evaluate(manager, raw_data)
             if not action:
                 continue
-                
+            
             action_type = action.get("action_type")
             
             if in_deadzone:
@@ -79,9 +85,13 @@ class DecisionMaker:
                 if action_type in ["explore", "rest", "interact"]:
                     score = 0
                 elif action_type in ["loot", "discard"]:
-                    if score < 80:
-                        score = 0
-                        
+                    if has_layer_0_agents:
+                        if score < 80:
+                            score = 0
+                    else:
+                        if score < 70:
+                            score = 0
+            
             if score > best_score:
                 best_score = score
                 best_action = action
@@ -89,7 +99,7 @@ class DecisionMaker:
         if not best_action:
             self.last_decision = {"action": "EXPLORE", "score": 22, "target": "None"}
             return create_explore_action()
-            
+        
         action_type = best_action.get("action_type")
         target_name = "None"
         
@@ -107,7 +117,7 @@ class DecisionMaker:
             target_name = best_action.get("facility_name", "Facility")
         elif action_type == "discard":
             target_name = best_action.get("item_name", "Item")
-            
+        
         self.last_decision = {
             "action": action_type.upper(),
             "score": best_score,
@@ -166,7 +176,7 @@ class DecisionMaker:
                 for monster in visible_monsters:
                     if monster.get("isAlive", True):
                         enemy_occupied_regions.add(monster.get("regionId"))
-                        
+                
                 perfect_safe = [rid for rid in truly_safe if rid not in enemy_occupied_regions]
                 
                 if perfect_safe:
@@ -192,5 +202,5 @@ class DecisionMaker:
                     "facilityId": best_action["facility_id"]
                 }
             }
-            
+        
         return create_explore_action()

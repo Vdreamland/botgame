@@ -22,6 +22,13 @@ class TargetKillPriority:
         if not current_region_id:
             return 0, None
         
+        visible_regions = view.get("visibleRegions", [])
+        my_region_data = next((r for r in visible_regions if r.get("id") == current_region_id), {})
+        if not my_region_data:
+            my_region_data = view.get("currentRegion", {})
+        ground_items = my_region_data.get("items", [])
+        has_ground_loot = len(ground_items) > 0
+        
         my_hp = self_data.get("hp", 100)
         my_atk = self_data.get("atk", 25)
         my_def = self_data.get("def", 7)
@@ -174,12 +181,16 @@ class TargetKillPriority:
         
         layer_1_candidates = [c for c in candidates if c["dist"] == 1]
         if layer_1_candidates:
+            if has_ground_loot:
+                for c in layer_1_candidates:
+                    c["score"] = max(0, c["score"] - 15)
             layer_1_candidates.sort(key=lambda x: x["score"], reverse=True)
             best_target = layer_1_candidates[0]
-            manager.last_attack_target_id = best_target["target_id"]
-            if best_target["target_type"] == "agent":
-                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent"}
-            else:
-                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "monster", "target_region_id": best_target["region_id"]}
+            if best_target["score"] > 0:
+                manager.last_attack_target_id = best_target["target_id"]
+                if best_target["target_type"] == "agent":
+                    return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent"}
+                else:
+                    return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "monster", "target_region_id": best_target["region_id"]}
         
         return 0, None

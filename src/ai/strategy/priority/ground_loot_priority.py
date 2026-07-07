@@ -93,6 +93,13 @@ class GroundLootPriority:
                 else:
                     spare_armors.append((item_id, name))
         
+        my_id = self_data.get("id")
+        has_layer_0_agents = False
+        for agent in view.get("visibleAgents", []):
+            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
+                has_layer_0_agents = True
+                break
+        
         if spare_weapons and teammates_in_region:
             for teammate in teammates_in_region:
                 if teammate["unarmed"]:
@@ -101,7 +108,8 @@ class GroundLootPriority:
                         if name == "Katana" or name == "Sniper rifle":
                             best_spare_id, best_spare_name = item_id, name
                             break
-                    return 76, {"action_type": "discard", "item_id": best_spare_id, "item_name": best_spare_name}
+                    discard_score = 76 if has_layer_0_agents else 94
+                    return discard_score, {"action_type": "discard", "item_id": best_spare_id, "item_name": best_spare_name}
         
         if not is_leader and spare_armors and team_states:
             for name, t_state in team_states.items():
@@ -112,7 +120,8 @@ class GroundLootPriority:
                         if "Plate Armor" not in leader_item_names:
                             for s_id, s_name in spare_armors:
                                 if s_name == "Plate Armor":
-                                    return 76, {"action_type": "discard", "item_id": s_id, "item_name": s_name}
+                                    discard_score = 76 if has_layer_0_agents else 94
+                                    return discard_score, {"action_type": "discard", "item_id": s_id, "item_name": s_name}
         
         if not ground_items:
             return 0, None
@@ -235,18 +244,24 @@ class GroundLootPriority:
                     lowest_item_name = name
             
             if lowest_item_id and lowest_val < 90:
-                return 88, {"action_type": "discard", "item_id": lowest_item_id, "item_name": lowest_item_name}
+                discard_score = 92 if has_layer_0_agents else 98
+                return discard_score, {"action_type": "discard", "item_id": lowest_item_id, "item_name": lowest_item_name}
             return 0, None
         
         if weapon_candidates:
-            return 97, {"action_type": "loot", "item_id": weapon_candidates[0]}
+            loot_score = 97 if has_layer_0_agents else 99
+            return loot_score, {"action_type": "loot", "item_id": weapon_candidates[0]}
         if smoltz_candidates:
-            return 97, {"action_type": "loot", "item_id": smoltz_candidates[0]}
+            loot_score = 97 if has_layer_0_agents else 99
+            return loot_score, {"action_type": "loot", "item_id": smoltz_candidates[0]}
         if armor_candidates:
-            return 97, {"action_type": "loot", "item_id": armor_candidates[0]}
+            loot_score = 97 if has_layer_0_agents else 99
+            return loot_score, {"action_type": "loot", "item_id": armor_candidates[0]}
         if utility_candidates:
-            return 75, {"action_type": "loot", "item_id": utility_candidates[0]}
+            loot_score = 75 if has_layer_0_agents else 95
+            return loot_score, {"action_type": "loot", "item_id": utility_candidates[0]}
         if consumable_candidates:
-            return 70, {"action_type": "loot", "item_id": consumable_candidates[0]}
+            loot_score = 70 if has_layer_0_agents else 95
+            return loot_score, {"action_type": "loot", "item_id": consumable_candidates[0]}
         
         return 0, None

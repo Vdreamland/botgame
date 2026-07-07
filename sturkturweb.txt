@@ -7,6 +7,7 @@
 ├── web/                           # Folder khusus untuk visualisasi browser (baru rencana)
 │   ├── index.html                 # Struktur utama halaman dashboard (Layout Grid/Flexbox) (baru rencana)
 │   ├── style.css                  # Tampilan UI bertema game (Dark mode, neon, health bar, dsb) (baru rencana)
+│   ├── web_server.py
 │   └── app.js                     # Logika Javascript: Koneksi WebSocket, parsing JSON, & update UI (baru rencana)
 ├── docs/                          # (Tidak ditambahkan keterangan sesuai instruksi Anda)
 │   ├── game-knowledge/
@@ -88,9 +89,9 @@
 Github Link :
 
 web/
-index.html
-style.css
-app.js
+index.html https://github.com/Vdreamland/botgame/blob/master/web/index.html
+style.css https://github.com/Vdreamland/botgame/blob/master/web/style.css
+app.js https://github.com/Vdreamland/botgame/blob/master/web/app.js
 
 ai/strategy/
 __init__.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/__init__.py

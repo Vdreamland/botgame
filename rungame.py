@@ -35,9 +35,10 @@ async def run_bot(bot_name, api_key):
             active_bots[bot_name] = "idle"
             wait_logged = False
             while True:
-                if all(status == "idle" for status in active_bots.values()):
+                if all(status in ["idle", "playing"] for status in active_bots.values()):
                     for name in active_bots:
-                        active_bots[name] = "queued"
+                        if active_bots[name] == "idle":
+                            active_bots[name] = "queued"
                 
                 if active_bots[bot_name] == "queued":
                     active_bots[bot_name] = "playing"

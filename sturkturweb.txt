@@ -70,6 +70,7 @@
     │       ├── decision_maker.py  # Mesin utama pemicu Gerbang Filter berbasis Konteks (Emergency vs Combat vs Exploration)
     │       ├── navigation_strategy.py # Logika penentu arah gerakan berbasis rute global dan penarik magnet tim (Leader-Follower)
     │       ├── ruin_exploration_strategy.py # Logika khusus pencarian/eksplorasi barang di daerah ruins
+    │       ├── whisper_sabotage.py
     │       │
     │       └── priority/          # Subsistem pembobotan nilai aksi berdasarkan kebutuhan mendesak
     │           ├── __init__.py    # Berkas inisialisasi paket priority
@@ -99,6 +100,9 @@ __init__.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/__
 decision_maker.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/decision_maker.py
 navigation_strategy.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/navigation_strategy.py
 ruin_exploration_strategy.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/ruin_exploration_strategy.py
+whisper_sabotage.py
+
+
 
 ai/strategy/priority/
 __init__.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/__init__.py

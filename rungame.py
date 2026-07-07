@@ -73,7 +73,7 @@ def main():
     print(f"Loaded {len(bots)} bots. Starting concurrent gameplay loop...")
 
     global active_bots
-    active_bots = {bot_name: "idle" for bot_name, _ in bots}
+    active_bots = {bot_name: "initializing" for bot_name, _ in bots}
 
     tasks = []
     for bot_name, api_key in bots:

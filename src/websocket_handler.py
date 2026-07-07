@@ -63,6 +63,7 @@ async def run_ws_loop(active_game=None, headers=None):
 async def play_game(websocket, game_id):
     print("Starting gameplay loop...")
     manager = StateManager()
+    manager.game_id = game_id
     manager.memory.reset_shared()
     manager.memory.reset_local()
     decision_maker = DecisionMaker()

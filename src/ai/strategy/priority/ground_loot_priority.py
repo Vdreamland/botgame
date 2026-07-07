@@ -50,7 +50,8 @@ class GroundLootPriority:
         
         ground_items = my_region_data.get("items", [])
         
-        team_states = manager.memory.get_team_states() if hasattr(manager, "memory") else {}
+        game_id = getattr(manager, "game_id", None)
+        team_states = manager.memory.get_team_states(current_game_id=game_id) if hasattr(manager, "memory") else {}
         teammates_in_region = []
         is_leader = True
         

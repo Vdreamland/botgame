@@ -21,7 +21,7 @@ class AgentMemory:
                     mtime = os.path.getmtime(self.shared_file)
                     if time.time() - mtime > 15:
                         os.remove(self.shared_file)
-                break
+                    break
             except Exception:
                 time.sleep(0.05)
 
@@ -34,7 +34,7 @@ class AgentMemory:
         if len(self.visited_history) > 5:
             self.visited_history.pop(0)
 
-    def update_my_state(self, bot_name, hp, ep, region_id, weapon, target_id, inventory):
+    def update_my_state(self, bot_name, hp, ep, region_id, weapon, target_id, inventory, game_id=None):
         if not bot_name:
             return
         for _ in range(5):
@@ -51,7 +51,8 @@ class AgentMemory:
                     "weapon": weapon,
                     "target_id": target_id,
                     "inventory": inventory,
-                    "timestamp": time.time()
+                    "timestamp": time.time(),
+                    "game_id": game_id
                 }
                 
                 with open(self.shared_file, "w") as f:
@@ -60,12 +61,19 @@ class AgentMemory:
             except Exception:
                 time.sleep(0.05)
 
-    def get_team_states(self):
+    def get_team_states(self, current_game_id=None):
         for _ in range(5):
             try:
                 if os.path.exists(self.shared_file):
                     with open(self.shared_file, "r") as f:
-                        return json.load(f)
+                        raw_data = json.load(f)
+                    if current_game_id is not None:
+                        filtered_data = {}
+                        for name, state in raw_data.items():
+                            if state.get("game_id") == current_game_id:
+                                filtered_data[name] = state
+                        return filtered_data
+                    return raw_data
                 return {}
             except Exception:
                 time.sleep(0.05)

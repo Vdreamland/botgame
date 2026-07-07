@@ -12,6 +12,7 @@ from src.combat_handler import process_combat_message
 
 class StateManager:
     def __init__(self):
+        self.game_id = None
         self.current_turn = 1
         self.alive_count = 0
         self.known_entities = {}
@@ -95,11 +96,11 @@ class StateManager:
         if frame_type in ["agent_view", "turn_advanced", "can_act_changed"]:
             view_data = data.get("view", {})
             self._update_entities(view_data)
-        
+            
             prev_hp = self.status.get("hp", 0)
             prev_region_id = self.status.get("region_id")
             prev_history_len = len(self.fight_history)
-        
+            
             visible_regions = view_data.get("visibleRegions", [])
             for r in visible_regions:
                 r_id = r.get("id")
@@ -109,34 +110,34 @@ class StateManager:
                 r_connections = r.get("connections", [])
                 if r_id and r_connections:
                     self.accumulated_connections[r_id] = r_connections
-        
+            
             current_region = view_data.get("currentRegion", {})
             current_region_id = current_region.get("id")
             if current_region_id and current_region.get("name"):
                 self.region_name_map[current_region_id] = current_region.get("name")
-        
+            
             if current_region_id in self.pending_loot_regions:
                 self.pending_loot_regions.remove(current_region_id)
-        
+            
             self.current_distances = calculate_region_distances(current_region, visible_regions)
-        
+            
             self.status = parse_self_status(data)
-        
+            
             curr_region_id = self.status.get("region_id")
             if prev_region_id and curr_region_id != prev_region_id:
                 self.last_visited_region_id = prev_region_id
                 self.memory.add_visited_region(prev_region_id)
-        
+            
             self.zone_status = parse_zone_status(data)
             self.loot_status = parse_loot_status(data)
             self.radar_status = parse_radar_status(data, self.current_distances)
             self.enemy_status = parse_enemy_status(data, self.known_entities, self.current_distances)
             self.deadzone_status = parse_deadzone_status(data, self.current_distances)
-        
+            
             self.current_turn = data.get("turn", self.current_turn)
             self.alive_count = view_data.get("aliveCount", self.alive_count)
             self.can_act = data.get("canAct", self.can_act)
-        
+            
             curr_hp = self.status.get("hp", 0)
             if curr_hp < prev_hp and prev_hp > 0 and len(self.fight_history) == prev_history_len:
                 damage_taken = prev_hp - curr_hp
@@ -146,18 +147,18 @@ class StateManager:
                     possible_attackers.append(agent.get("name"))
                 for monster in layer_0.get("monsters", []):
                     possible_attackers.append(monster.get("name"))
-        
+                
                 region_name = self.zone_status.get("location", "Unknown Region")
                 if possible_attackers:
                     attacker_name = possible_attackers[0] if len(possible_attackers) == 1 else ", ".join(possible_attackers)
                     log_msg = f"{attacker_name} attacked You for {damage_taken} damage using None from {region_name} (Same Region)"
                 else:
                     log_msg = f"You took {damage_taken} damage from an unknown source or environment in {region_name}"
-        
+                
                 self.fight_history.append(log_msg)
                 if len(self.fight_history) > 10:
                     self.fight_history.pop(0)
-        
+            
             eq_weapon = self.status.get("equipped_weapon")
             eq_weapon_name = eq_weapon.get("name") if isinstance(eq_weapon, dict) else (eq_weapon if eq_weapon else "None")
             
@@ -168,12 +169,13 @@ class StateManager:
                 region_id=self.status.get("region_id"),
                 weapon=eq_weapon_name,
                 target_id=getattr(self, "last_attack_target_id", None),
-                inventory=self.status.get("inventory", [])
+                inventory=self.status.get("inventory", []),
+                game_id=self.game_id
             )
-        
+            
             if frame_type == "turn_advanced":
                 print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history, deadzone_status=self.deadzone_status, pending_loot_regions=self.pending_loot_regions, interacted_facilities=list(self.interacted_facilities))
-        
+            
         else:
             process_combat_message(self, frame_type, data)
 

@@ -57,7 +57,7 @@ async def run_bot(bot_name, api_key):
         except Exception as e:
             print(f"[{bot_name}] Error in connection loop: {e}")
 
-        active_bots[bot_name] = "idle"
+        active_bots[bot_name] = "finished"
         print(f"\n[{bot_name}] Session finished. Checking for next match in 5 seconds...")
         await asyncio.sleep(5)
 

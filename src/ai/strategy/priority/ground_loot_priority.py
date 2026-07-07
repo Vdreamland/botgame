@@ -207,12 +207,22 @@ class GroundLootPriority:
                 if name == "sMoltz":
                     val = 100
                 elif name in WEAPONS:
-                    if name == eq_weapon_name:
+                    atk = WEAPONS[name].get("atk", 0)
+                    is_best = False
+                    if name in melee_names:
+                        if atk == current_best_melee:
+                            is_best = True
+                    elif name in ranged_names:
+                        if atk == current_best_ranged:
+                            is_best = True
+                    
+                    if name == eq_weapon_name or is_best:
                         val = 90
                     else:
                         val = 10
                 elif name in ARMOR:
-                    if name == eq_armor_name:
+                    defense = ARMOR[name].get("def", 0)
+                    if name == eq_armor_name or defense == current_best_armor_def:
                         val = 90
                     else:
                         val = 10

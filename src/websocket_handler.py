@@ -1,6 +1,6 @@
 import json
 import websockets
-from src.config import WS_JOIN_URL, HEADERS
+from src.config import WS_JOIN_URL, HEADERS, ROOM_PREFERENCE
 from src.state_manager import StateManager
 from src.ai import DecisionMaker
 
@@ -26,10 +26,10 @@ async def run_ws_loop(active_game=None, headers=None):
                         if decision == "ASK_ENTRY_TYPE":
                             entry_frame = {
                                 "type": "hello",
-                                "entryType": "free"
+                                "entryType": ROOM_PREFERENCE
                             }
                             await websocket.send(json.dumps(entry_frame))
-                            print("Sent hello frame with entryType: free")
+                            print(f"Sent hello frame with entryType: {ROOM_PREFERENCE}")
                             print("Enqueued in matchmaking. Waiting for assignment...")
                 elif frame_type == "assigned":
                     assigned_game_id = data.get("gameId")
@@ -49,10 +49,10 @@ async def run_ws_loop(active_game=None, headers=None):
                     if decision in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
                         entry_frame = {
                             "type": "hello",
-                            "entryType": "free"
+                            "entryType": ROOM_PREFERENCE
                         }
                         await websocket.send(json.dumps(entry_frame))
-                        print("Sent hello frame with entryType: free")
+                        print(f"Sent hello frame with entryType: {ROOM_PREFERENCE}")
                         print("Enqueued in matchmaking. Waiting for assignment...")
                 elif frame_type == "assigned":
                     assigned_game_id = data.get("gameId")

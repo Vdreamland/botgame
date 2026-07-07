@@ -72,7 +72,7 @@ class RecoveryPriority:
                 if monster.get("isAlive", True):
                     has_nearby_enemies = True
                     break
-                    
+        
         has_layer_0_enemies = False
         for agent in visible_agents:
             if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
@@ -83,7 +83,7 @@ class RecoveryPriority:
                 if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
                     has_layer_0_enemies = True
                     break
-                    
+        
         if not has_layer_0_enemies and has_nearby_enemies:
             if hp < 90:
                 for item in inventory:
@@ -98,8 +98,10 @@ class RecoveryPriority:
                     item_id = item.get("id")
                     name_lower = name.lower() if name else ""
                     if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
-                        return 74, {"action_type": "use_item", "item_id": item_id}
-                return 74, {"action_type": "rest"}
+                        score = 74 if ep < 3 else 48
+                        return score, {"action_type": "use_item", "item_id": item_id}
+                score = 74 if ep < 3 else 48
+                return score, {"action_type": "rest"}
         
         if not has_nearby_enemies and ep < 8:
             for item in inventory:
@@ -107,7 +109,9 @@ class RecoveryPriority:
                 item_id = item.get("id")
                 name_lower = name.lower() if name else ""
                 if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
-                    return 65, {"action_type": "use_item", "item_id": item_id}
-            return 60, {"action_type": "rest"}
+                    score = 65 if ep < 3 else 45
+                    return score, {"action_type": "use_item", "item_id": item_id}
+            score = 60 if ep < 3 else 45
+            return score, {"action_type": "rest"}
         
         return 0, None

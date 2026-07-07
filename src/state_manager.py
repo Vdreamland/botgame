@@ -96,6 +96,10 @@ class StateManager:
                 self.known_entities[monster_id] = monster
 
     def process_message(self, frame_type, data):
+        if frame_type == "action_result":
+            self.can_act = data.get("canAct", self.can_act)
+            return
+
         if frame_type in ["agent_view", "turn_advanced", "can_act_changed"]:
             view_data = data.get("view", {})
             self._update_entities(view_data)

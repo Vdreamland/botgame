@@ -203,7 +203,7 @@ class GroundLootPriority:
                     continue
                 
                 val = 50
-                if name and name.lower() == "smoltz":
+                if name == "sMoltz":
                     val = 100
                 elif name in WEAPONS:
                     if name == eq_weapon_name:

@@ -79,6 +79,11 @@ async def play_game(websocket, game_id):
                 break
             if frame_type in ["agent_view", "can_act_changed"]:
                 if manager.can_act:
+                    from src.ai.strategy.whisper_sabotage import generate_sabotage_whispers
+                    whisper_actions = generate_sabotage_whispers(manager, data)
+                    for whisper in whisper_actions:
+                        await websocket.send(json.dumps(whisper))
+                    
                     action = decision_maker.make_decision(manager, data)
                     manager.can_act = False
                     from src.game_log import print_turn_log

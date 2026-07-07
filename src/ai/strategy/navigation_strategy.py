@@ -1,5 +1,14 @@
+import os
 from src.utils.zone_helper import get_adjacent_safe_zones, find_shortest_path, calculate_region_distances
 from src.game_data import GLOBAL_MAP
+
+def get_ally_names(my_name):
+    allies = set()
+    for key, value in os.environ.items():
+        if key.startswith("BOT") and key.endswith("_NAME"):
+            if value and value != my_name:
+                allies.add(value)
+    return allies
 
 class NavigationStrategy:
     def evaluate(self, manager, raw_data):
@@ -45,16 +54,20 @@ class NavigationStrategy:
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
         has_weapon = (eq_weapon_name not in ["None", "Fist"])
         
+        ally_names = get_ally_names(my_name)
+        
         if has_weapon and my_ep >= 4:
             for agent in visible_agents:
                 if agent.get("isAlive", True):
                     region_id = agent.get("regionId")
                     if region_id and region_id in connections:
-                        hp_val = agent.get("hp", 100)
-                        max_hp_val = agent.get("maxHp", 100)
-                        hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
-                        if hp_ratio < 0.3:
-                            return 94, {"action_type": "move", "destination": region_id}
+                        agent_name = agent.get("name")
+                        if agent_name and agent_name not in ally_names:
+                            hp_val = agent.get("hp", 100)
+                            max_hp_val = agent.get("maxHp", 100)
+                            hp_ratio = hp_val / max_hp_val if max_hp_val > 0 else 1.0
+                            if hp_ratio < 0.3:
+                                return 94, {"action_type": "move", "destination": region_id}
             
             for monster in visible_monsters:
                 if monster.get("isAlive", True):
@@ -111,8 +124,9 @@ class NavigationStrategy:
         has_layer_0_enemies = False
         for agent in visible_agents:
             if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                has_layer_0_enemies = True
-                break
+                if agent.get("name") not in ally_names:
+                    has_layer_0_enemies = True
+                    break
         if not has_layer_0_enemies:
             for monster in visible_monsters:
                 if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
@@ -155,10 +169,11 @@ class NavigationStrategy:
                 has_melee_enemy_at_layer_0 = False
                 for agent in visible_agents:
                     if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                        e_weapon = agent.get("weapon", "None")
-                        if e_weapon in ["None", "Fist", "Dagger", "Sword", "Katana"]:
-                            has_melee_enemy_at_layer_0 = True
-                            break
+                        if agent.get("name") not in ally_names:
+                            e_weapon = agent.get("weapon", "None")
+                            if e_weapon in ["None", "Fist", "Dagger", "Sword", "Katana"]:
+                                has_melee_enemy_at_layer_0 = True
+                                break
                 if not has_melee_enemy_at_layer_0:
                     for monster in visible_monsters:
                         if monster.get("regionId") == current_region_id and monster.get("isAlive", True):

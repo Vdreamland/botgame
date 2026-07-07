@@ -26,6 +26,9 @@ class StateManager:
         self.searched_regions = set()
         self.last_visited_region_id = None
         self.can_act = True
+        self.has_layer_0_enemies = False
+        self.has_layer_0_agents = False
+        self.has_nearby_enemies = False
         self.status = {
             "name": "Unknown",
             "hp": 0,
@@ -116,6 +119,35 @@ class StateManager:
             if current_region_id and current_region.get("name"):
                 self.region_name_map[current_region_id] = current_region.get("name")
             
+            visible_agents = view_data.get("visibleAgents", [])
+            visible_monsters = view_data.get("visibleMonsters", [])
+            self_id = view_data.get("self", {}).get("id") or getattr(self, "my_id", None)
+            
+            self.has_layer_0_agents = False
+            if current_region_id:
+                for agent in visible_agents:
+                    if agent.get("id") != self_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
+                        self.has_layer_0_agents = True
+                        break
+            
+            self.has_layer_0_enemies = self.has_layer_0_agents
+            if not self.has_layer_0_enemies and current_region_id:
+                for monster in visible_monsters:
+                    if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
+                        self.has_layer_0_enemies = True
+                        break
+            
+            self.has_nearby_enemies = False
+            for agent in visible_agents:
+                if agent.get("id") != self_id and agent.get("isAlive", True):
+                    self.has_nearby_enemies = True
+                    break
+            if not self.has_nearby_enemies:
+                for monster in visible_monsters:
+                    if monster.get("isAlive", True):
+                        self.has_nearby_enemies = True
+                        break
+            
             if current_region_id in self.pending_loot_regions:
                 self.pending_loot_regions.remove(current_region_id)
             
@@ -176,8 +208,8 @@ class StateManager:
             if frame_type == "turn_advanced":
                 print_turn_log(self.current_turn, self.status, self.zone_status, self.loot_status, self.radar_status, self.enemy_status, self.alive_count, fight_history=self.fight_history, deadzone_status=self.deadzone_status, pending_loot_regions=self.pending_loot_regions, interacted_facilities=list(self.interacted_facilities))
             
-        else:
-            process_combat_message(self, frame_type, data)
+            else:
+                process_combat_message(self, frame_type, data)
 
     def is_agent_dead(self):
         return self.status["hp"] == 0 or not self.status["is_alive"]

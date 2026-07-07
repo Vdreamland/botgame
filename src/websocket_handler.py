@@ -6,59 +6,38 @@ from src.ai import DecisionMaker
 
 async def run_ws_loop(active_game=None, headers=None):
     use_headers = headers if headers else HEADERS
-    if active_game:
-        game_id = active_game.get("gameId")
-        print(f"Active game found: {game_id}. Resuming directly...")
-        async with websockets.connect(WS_JOIN_URL, additional_headers=use_headers) as websocket:
-            print("Connected to WebSocket. Waiting for welcome frame...")
-            async for message in websocket:
-                frame = json.loads(message)
-                frame_type = frame.get("type")
-                data = frame.get("data", {}) if "data" in frame else frame
-                if frame_type == "welcome":
-                    decision = data.get("decision")
-                    print(f"Welcome frame received. Decision: {decision}")
-                    if decision == "ALREADY_IN_GAME":
-                        print("Reconnected to running game.")
-                        await play_game(websocket, game_id)
-                        return
-                    elif decision in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
-                        if decision == "ASK_ENTRY_TYPE":
-                            entry_frame = {
-                                "type": "hello",
-                                "entryType": ROOM_PREFERENCE
-                            }
-                            await websocket.send(json.dumps(entry_frame))
-                            print(f"Sent hello frame with entryType: {ROOM_PREFERENCE}")
-                            print("Enqueued in matchmaking. Waiting for assignment...")
-                elif frame_type == "assigned":
-                    assigned_game_id = data.get("gameId")
-                    print(f"Matched successfully! Game ID: {assigned_game_id}")
-                    await play_game(websocket, assigned_game_id)
-                    break
-    else:
-        async with websockets.connect(WS_JOIN_URL, additional_headers=use_headers) as websocket:
-            print("Connected to WebSocket. Waiting for welcome frame...")
-            async for message in websocket:
-                frame = json.loads(message)
-                frame_type = frame.get("type")
-                data = frame.get("data", {}) if "data" in frame else frame
-                if frame_type == "welcome":
-                    decision = data.get("decision")
-                    print(f"Welcome frame received. Decision: {decision}")
-                    if decision in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
+    active_game_id = active_game.get("gameId") if active_game else None
+    if active_game_id:
+        print(f"Active game found: {active_game_id}. Resuming directly...")
+    
+    async with websockets.connect(WS_JOIN_URL, additional_headers=use_headers) as websocket:
+        print("Connected to WebSocket. Waiting for welcome frame...")
+        async for message in websocket:
+            frame = json.loads(message)
+            frame_type = frame.get("type")
+            data = frame.get("data", {}) if "data" in frame else frame
+            
+            if frame_type == "welcome":
+                decision = data.get("decision")
+                print(f"Welcome frame received. Decision: {decision}")
+                if decision == "ALREADY_IN_GAME" and active_game_id:
+                    print("Reconnected to running game.")
+                    await play_game(websocket, active_game_id)
+                    return
+                elif decision in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
+                    if decision == "ASK_ENTRY_TYPE":
                         entry_frame = {
                             "type": "hello",
                             "entryType": ROOM_PREFERENCE
                         }
                         await websocket.send(json.dumps(entry_frame))
                         print(f"Sent hello frame with entryType: {ROOM_PREFERENCE}")
-                        print("Enqueued in matchmaking. Waiting for assignment...")
-                elif frame_type == "assigned":
-                    assigned_game_id = data.get("gameId")
-                    print(f"Matched successfully! Game ID: {assigned_game_id}")
-                    await play_game(websocket, assigned_game_id)
-                    break
+                    print("Enqueued in matchmaking. Waiting for assignment...")
+            elif frame_type == "assigned":
+                assigned_game_id = data.get("gameId")
+                print(f"Matched successfully! Game ID: {assigned_game_id}")
+                await play_game(websocket, assigned_game_id)
+                break
 
 async def play_game(websocket, game_id):
     print("Starting gameplay loop...")
@@ -77,7 +56,7 @@ async def play_game(websocket, game_id):
                 print("Your agent has died. Terminating loop.")
                 print("========================================\n")
                 break
-            if frame_type in ["agent_view", "can_act_changed"]:
+            if frame_type in ["agent_view", "can_act_changed", "action_result"]:
                 if manager.can_act:
                     from src.ai.strategy.whisper_sabotage import generate_sabotage_whispers
                     whisper_actions = generate_sabotage_whispers(manager, data)

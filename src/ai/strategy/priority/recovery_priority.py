@@ -48,7 +48,10 @@ class RecoveryPriority:
                 if name_lower in recovery_lower and recovery_lower[name_lower].get("hp_heal", 0) > 0:
                     return 96, {"action_type": "use_item", "item_id": item_id}
         
-        if ep < 3:
+        has_layer_0_enemies = getattr(manager, "has_layer_0_enemies", False)
+        has_nearby_enemies = getattr(manager, "has_nearby_enemies", False)
+        
+        if ep < 3 and not has_layer_0_enemies:
             for item in inventory:
                 name = item.get("name")
                 item_id = item.get("id")
@@ -56,33 +59,6 @@ class RecoveryPriority:
                 if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
                     return 75, {"action_type": "use_item", "item_id": item_id}
             return 70, {"action_type": "rest"}
-        
-        current_region_id = view.get("currentRegion", {}).get("id")
-        visible_agents = view.get("visibleAgents", [])
-        visible_monsters = view.get("visibleMonsters", [])
-        my_id = self_data.get("id")
-        
-        has_nearby_enemies = False
-        for agent in visible_agents:
-            if agent.get("id") != my_id and agent.get("isAlive", True):
-                has_nearby_enemies = True
-                break
-        if not has_nearby_enemies:
-            for monster in visible_monsters:
-                if monster.get("isAlive", True):
-                    has_nearby_enemies = True
-                    break
-        
-        has_layer_0_enemies = False
-        for agent in visible_agents:
-            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                has_layer_0_enemies = True
-                break
-        if not has_layer_0_enemies:
-            for monster in visible_monsters:
-                if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
-                    has_layer_0_enemies = True
-                    break
         
         if not has_layer_0_enemies and has_nearby_enemies:
             if hp < 90:

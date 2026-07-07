@@ -39,29 +39,13 @@ class DecisionMaker:
     def make_decision(self, manager, raw_data):
         view = raw_data.get("view", {})
         self_data = view.get("self", {})
-        my_id = self_data.get("id")
         hp = self_data.get("hp", 100)
         current_region = view.get("currentRegion", {})
-        current_region_id = current_region.get("id")
         
         in_deadzone = current_region.get("isDeathZone", False)
         
-        has_layer_0_enemies = False
-        for agent in view.get("visibleAgents", []):
-            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                has_layer_0_enemies = True
-                break
-        if not has_layer_0_enemies:
-            for monster in view.get("visibleMonsters", []):
-                if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
-                    has_layer_0_enemies = True
-                    break
-        
-        has_layer_0_agents = False
-        for agent in view.get("visibleAgents", []):
-            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                has_layer_0_agents = True
-                break
+        has_layer_0_enemies = getattr(manager, "has_layer_0_enemies", False)
+        has_layer_0_agents = getattr(manager, "has_layer_0_agents", False)
         
         is_emergency = in_deadzone or (hp < 30 and has_layer_0_enemies)
         

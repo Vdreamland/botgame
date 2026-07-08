@@ -117,7 +117,8 @@ class GroundLootPriority:
                     if t_state.get("region_id") == current_region_id:
                         leader_inv = t_state.get("inventory", [])
                         leader_item_names = [item.get("name") if isinstance(item, dict) else item for item in leader_inv]
-                        if "Plate Armor" not in leader_item_names:
+                        leader_equipped_armor = t_state.get("armor", "None")
+                        if "Plate Armor" not in leader_item_names and leader_equipped_armor != "Plate Armor":
                             for s_id, s_name in spare_armors:
                                 if s_name == "Plate Armor":
                                     discard_score = 76 if has_layer_0_agents else 94
@@ -133,7 +134,7 @@ class GroundLootPriority:
         
         weapons_lower = {k.lower(): k for k in WEAPONS}
         armor_lower = {k.lower(): k for k in ARMOR}
-        recovery_lower = {k.lower(): k for k in RECOVERY_ITEMS}
+        recovery_lower = {k.lower(): v for k, v in RECOVERY_ITEMS.items()}
         utility_lower = {k.lower(): k for k in UTILITY_ITEMS}
         
         melee_names_lower = [k.lower() for k in melee_names]

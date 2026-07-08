@@ -198,12 +198,16 @@ class StateManager:
             eq_weapon = self.status.get("equipped_weapon")
             eq_weapon_name = eq_weapon.get("name") if isinstance(eq_weapon, dict) else (eq_weapon if eq_weapon else "None")
             
+            eq_armor = self.status.get("equipped_armor")
+            eq_armor_name = eq_armor.get("name") if isinstance(eq_armor, dict) else (eq_armor if eq_armor else "None")
+            
             self.memory.update_my_state(
                 bot_name=self.status.get("name", "Unknown"),
                 hp=self.status.get("hp", 0),
                 ep=self.status.get("ep", 0),
                 region_id=self.status.get("region_id"),
                 weapon=eq_weapon_name,
+                armor=eq_armor_name,
                 target_id=getattr(self, "last_attack_target_id", None),
                 inventory=self.status.get("inventory", []),
                 game_id=self.game_id

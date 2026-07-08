@@ -26,7 +26,8 @@ REFERENCES = [
     "runtime-modes.md",
     "agent-memory.md",
     "agent-token.md",
-    "sc-wallet-policy.md"
+    "sc-wallet-policy.md",
+    "combat-items.md"
 ]
 
 TOP_LEVEL_FILES = [

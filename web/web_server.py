@@ -19,16 +19,25 @@ BOTS_CACHE = {}
 async def process_request(path, request_headers):
  try:
   is_ws = False
-  if hasattr(request_headers, "get"):
-   upgrade = request_headers.get("Upgrade", "")
-   if upgrade and "websocket" in upgrade.lower():
-    is_ws = True
   
+  try:
+   for k in ["Upgrade", "upgrade"]:
+    if k in request_headers:
+     val = request_headers[k]
+     if isinstance(val, bytes) and b"websocket" in val.lower():
+      is_ws = True
+     elif isinstance(val, str) and "websocket" in val.lower():
+      is_ws = True
+  except Exception:
+   pass
+
   if not is_ws:
    try:
     headers_iterable = request_headers.items() if hasattr(request_headers, "items") else request_headers
     for k, v in headers_iterable:
-     if k.lower() == "upgrade" and "websocket" in v.lower():
+     k_str = k.decode("utf-8", errors="ignore").lower() if isinstance(k, bytes) else str(k).lower()
+     v_str = v.decode("utf-8", errors="ignore").lower() if isinstance(v, bytes) else str(v).lower()
+     if k_str == "upgrade" and "websocket" in v_str:
       is_ws = True
       break
    except Exception:
@@ -48,7 +57,7 @@ async def process_request(path, request_headers):
   real_base = os.path.realpath(base_dir)
   real_file = os.path.realpath(file_path)
   if not real_file.startswith(real_base):
-   return HTTPStatus.FORBIDDEN, [("Content-Type", "text/plain")], b"Forbidden"
+   return 403, [("Content-Type", "text/plain")], b"Forbidden"
 
   if os.path.exists(file_path) and os.path.isfile(file_path):
    content_type, _ = mimetypes.guess_type(file_path)
@@ -62,13 +71,13 @@ async def process_request(path, request_headers):
     ("Content-Type", content_type),
     ("Content-Length", str(len(body))),
    ]
-   return HTTPStatus.OK, headers, body
+   return 200, headers, body
 
-  return HTTPStatus.NOT_FOUND, [("Content-Type", "text/plain")], b"Not Found"
+  return 404, [("Content-Type", "text/plain")], b"Not Found"
 
  except Exception as e:
   print(f"Error in process_request: {e}")
-  return HTTPStatus.INTERNAL_SERVER_ERROR, [("Content-Type", "text/plain")], f"Internal Server Error: {e}".encode()
+  return 500, [("Content-Type", "text/plain")], f"Internal Server Error: {e}".encode()
 
 async def ws_handler(websocket):
  CONNECTED_CLIENTS.add(websocket)

@@ -59,32 +59,46 @@ async def play_game(websocket, game_id, is_reconnect=False):
     print("Your agent has died. Terminating loop.")
     print("========================================\n")
     return False
+   
+   trigger_decision = False
+   decision_data = data
+   
    if "view" in data:
     if manager.can_act:
-     from src.ai.strategy.whisper_sabotage import generate_sabotage_whispers
-     whisper_actions = generate_sabotage_whispers(manager, data)
-     for whisper in whisper_actions:
-      await websocket.send(json.dumps(whisper))
-     
-     action = decision_maker.make_decision(manager, data)
-     manager.can_act = False
-     from src.game_log import print_turn_log
-     print_turn_log(
-      manager.current_turn,
-      manager.status,
-      manager.zone_status,
-      manager.loot_status,
-      manager.radar_status,
-      manager.enemy_status,
-      manager.alive_count,
-      fight_history=manager.fight_history,
-      deadzone_status=manager.deadzone_status,
-      pending_loot_regions=manager.pending_loot_regions,
-      interacted_facilities=list(manager.interacted_facilities),
-      ai_decision=decision_maker.last_decision,
-      game_id=game_id
-     )
-     await websocket.send(json.dumps(action))
+     trigger_decision = True
+   elif frame_type == "can_act_changed" and manager.can_act and manager.last_view:
+    trigger_decision = True
+    decision_data = {
+     "type": "agent_view",
+     "view": manager.last_view,
+     "turn": manager.current_turn
+    }
+   
+   if trigger_decision:
+    from src.ai.strategy.whisper_sabotage import generate_sabotage_whispers
+    whisper_actions = generate_sabotage_whispers(manager, decision_data)
+    for whisper in whisper_actions:
+     await websocket.send(json.dumps(whisper))
+    
+    action = decision_maker.make_decision(manager, decision_data)
+    manager.can_act = False
+    from src.game_log import print_turn_log
+    print_turn_log(
+     manager.current_turn,
+     manager.status,
+     manager.zone_status,
+     manager.loot_status,
+     manager.radar_status,
+     manager.enemy_status,
+     manager.alive_count,
+     fight_history=manager.fight_history,
+     deadzone_status=manager.deadzone_status,
+     pending_loot_regions=manager.pending_loot_regions,
+     interacted_facilities=list(manager.interacted_facilities),
+     ai_decision=decision_maker.last_decision,
+     game_id=game_id
+    )
+    await websocket.send(json.dumps(action))
    elif frame_type == "game_ended":
     print("\n========================================")
     print("Game has ended.")

@@ -113,7 +113,7 @@ interact_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/st
 recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/recovery_priority.py
 target_kill_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/target_kill_priority.py
 survival_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/survival_priority.py
-loot_helper.py
+loot_helper.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/loot_helper.py
 
 ai/
 __init__.py https://github.com/Vdreamland/botgame/blob/master/src/ai/__init__.py

@@ -92,7 +92,9 @@ class TargetKillPriority:
       if not is_combat_feasible:
        continue
       
-      if hp_ratio < 0.3:
+      if turns_to_kill_enemy == 1:
+       score = 99
+      elif hp_ratio < 0.3:
        score = 98
       else:
        is_focus_target = (agent_id in teammate_targets)
@@ -163,7 +165,9 @@ class TargetKillPriority:
       if not combat_feasible:
        continue
       
-      if hp_ratio < 0.3:
+      if turns_to_kill_target == 1:
+       score = 99
+      elif hp_ratio < 0.3:
        score = 98
       else:
        is_focus_target = (monster_id in teammate_targets)

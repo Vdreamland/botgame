@@ -40,9 +40,9 @@ def analyze_inventory(inventory, eq_weapon_name, eq_armor_name):
                 best_armor_def = defense
                 best_armor_name = name
                 
-    keep_melee = 1 if best_melee_name and best_melee_name != eq_weapon_name else 0
-    keep_ranged = 1 if best_ranged_name and best_ranged_name != eq_weapon_name else 0
-    keep_armor = 1 if best_armor_name and best_armor_name != eq_armor_name else 0
+    keep_melee = 1 if best_melee_name else 0
+    keep_ranged = 1 if best_ranged_name else 0
+    keep_armor = 1 if best_armor_name else 0
     
     spare_weapons = []
     spare_armors = []

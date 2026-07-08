@@ -27,7 +27,7 @@ class InteractPriority:
                 continue
                 
             if name == "Medical Facility" and (hp / max_hp if max_hp > 0 else 1.0) < 0.7:
-                return 87, {"action_type": "interact", "facility_id": facility_id or name, "facility_name": name}
+                return 96, {"action_type": "interact", "facility_id": facility_id or name, "facility_name": name}
                 
             if name == "Supply Cache" and len(inventory) < 10:
                 return 83, {"action_type": "interact", "facility_id": facility_id or name, "facility_name": name}

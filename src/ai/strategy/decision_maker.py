@@ -67,9 +67,9 @@ class DecisionMaker:
                 if action_type not in ["move", "flee"]:
                     score = 0
             elif is_emergency:
-                if action_type in ["interact", "explore", "rest"]:
+                if action_type in ["explore", "rest"]:
                     score = 0
-                elif action_type in ["loot", "discard"]:
+                elif action_type in ["loot", "discard", "interact"]:
                     if score < 90:
                         score = 0
             elif has_layer_0_enemies:
@@ -92,6 +92,12 @@ class DecisionMaker:
             return create_rest_action()
         
         action_type = best_action.get("action_type")
+        
+        if self.last_decision.get("action") == "INTERACT" and action_type in ["move", "explore"] and not in_deadzone:
+            action_type = "rest"
+            best_action = {"action_type": "rest"}
+            best_score = 85
+
         target_name = "None"
         
         if action_type == "equip":

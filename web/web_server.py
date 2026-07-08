@@ -21,25 +21,26 @@ async def process_request(path, request_headers):
   is_ws = False
   
   try:
-   for k in ["Upgrade", "upgrade"]:
+   for k in ["upgrade", "Upgrade"]:
     if k in request_headers:
      val = request_headers[k]
-     if isinstance(val, bytes) and b"websocket" in val.lower():
+     val_str = val.decode("utf-8", errors="ignore") if isinstance(val, bytes) else str(val)
+     if "websocket" in val_str.lower():
       is_ws = True
-     elif isinstance(val, str) and "websocket" in val.lower():
-      is_ws = True
+      break
   except Exception:
    pass
 
   if not is_ws:
    try:
-    headers_iterable = request_headers.items() if hasattr(request_headers, "items") else request_headers
-    for k, v in headers_iterable:
-     k_str = k.decode("utf-8", errors="ignore").lower() if isinstance(k, bytes) else str(k).lower()
-     v_str = v.decode("utf-8", errors="ignore").lower() if isinstance(v, bytes) else str(v).lower()
-     if k_str == "upgrade" and "websocket" in v_str:
-      is_ws = True
-      break
+    for item in request_headers:
+     if isinstance(item, tuple) and len(item) == 2:
+      k, v = item
+      k_str = k.decode("utf-8", errors="ignore").lower() if isinstance(k, bytes) else str(k).lower()
+      v_str = v.decode("utf-8", errors="ignore").lower() if isinstance(v, bytes) else str(v).lower()
+      if k_str == "upgrade" and "websocket" in v_str:
+       is_ws = True
+       break
    except Exception:
     pass
 
@@ -76,8 +77,8 @@ async def process_request(path, request_headers):
   return 404, [("Content-Type", "text/plain")], b"Not Found"
 
  except Exception as e:
-  print(f"Error in process_request: {e}")
-  return 500, [("Content-Type", "text/plain")], f"Internal Server Error: {e}".encode()
+  print(f"Error in process_request: {e}", flush=True)
+  return 500, [("Content-Type", "text/plain")], f"Internal Error: {e}".encode()
 
 async def ws_handler(websocket):
  CONNECTED_CLIENTS.add(websocket)

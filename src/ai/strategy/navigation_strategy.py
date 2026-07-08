@@ -121,17 +121,7 @@ class NavigationStrategy:
             target_teammate_region = teammate_regions[0]
             path_to_teammate = find_shortest_path(current_region_id, target_teammate_region, all_connections)
         
-        has_layer_0_enemies = False
-        for agent in visible_agents:
-            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                if agent.get("name") not in ally_names:
-                    has_layer_0_enemies = True
-                    break
-        if not has_layer_0_enemies:
-            for monster in visible_monsters:
-                if monster.get("regionId") == current_region_id and monster.get("isAlive", True):
-                    has_layer_0_enemies = True
-                    break
+        has_layer_0_enemies = getattr(manager, "has_layer_0_enemies", False)
         
         visible_ruins = view.get("visibleRuins", [])
         active_ruin_ids = {r.get("ruinId") for r in visible_ruins if r.get("ruinId") and not r.get("isEmpty", False)}

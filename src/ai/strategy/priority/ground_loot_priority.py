@@ -93,12 +93,7 @@ class GroundLootPriority:
                 else:
                     spare_armors.append((item_id, name))
         
-        my_id = self_data.get("id")
-        has_layer_0_agents = False
-        for agent in view.get("visibleAgents", []):
-            if agent.get("id") != my_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                has_layer_0_agents = True
-                break
+        has_layer_0_agents = getattr(manager, "has_layer_0_agents", False)
         
         if spare_weapons and teammates_in_region:
             for teammate in teammates_in_region:
@@ -117,8 +112,7 @@ class GroundLootPriority:
                     if t_state.get("region_id") == current_region_id:
                         leader_inv = t_state.get("inventory", [])
                         leader_item_names = [item.get("name") if isinstance(item, dict) else item for item in leader_inv]
-                        leader_equipped_armor = t_state.get("armor", "None")
-                        if "Plate Armor" not in leader_item_names and leader_equipped_armor != "Plate Armor":
+                        if "Plate Armor" not in leader_item_names:
                             for s_id, s_name in spare_armors:
                                 if s_name == "Plate Armor":
                                     discard_score = 76 if has_layer_0_agents else 94

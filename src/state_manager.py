@@ -1,4 +1,5 @@
 import json
+import os
 from src.game_log import print_turn_log
 from src.ai.detector.self_detector import parse_self_status
 from src.ai.detector.loot_detector import parse_loot_status
@@ -126,13 +127,21 @@ class StateManager:
             visible_agents = view_data.get("visibleAgents", [])
             visible_monsters = view_data.get("visibleMonsters", [])
             self_id = view_data.get("self", {}).get("id") or getattr(self, "my_id", None)
+            my_name = view_data.get("self", {}).get("name") or self.status.get("name", "Unknown")
+            
+            ally_names = set()
+            for key, value in os.environ.items():
+                if key.startswith("BOT") and key.endswith("_NAME"):
+                    if value and value != my_name:
+                        ally_names.add(value)
             
             self.has_layer_0_agents = False
             if current_region_id:
                 for agent in visible_agents:
                     if agent.get("id") != self_id and agent.get("regionId") == current_region_id and agent.get("isAlive", True):
-                        self.has_layer_0_agents = True
-                        break
+                        if agent.get("name") not in ally_names:
+                            self.has_layer_0_agents = True
+                            break
             
             self.has_layer_0_enemies = self.has_layer_0_agents
             if not self.has_layer_0_enemies and current_region_id:
@@ -144,8 +153,9 @@ class StateManager:
             self.has_nearby_enemies = False
             for agent in visible_agents:
                 if agent.get("id") != self_id and agent.get("isAlive", True):
-                    self.has_nearby_enemies = True
-                    break
+                    if agent.get("name") not in ally_names:
+                        self.has_nearby_enemies = True
+                        break
             if not self.has_nearby_enemies:
                 for monster in visible_monsters:
                     if monster.get("isAlive", True):

@@ -44,15 +44,19 @@ function connect() {
         if (!botsData[botName]) {
           botsData[botName] = {
             logs: "",
-            last_appended_turn: -1,
+            turn_logs: {},
           };
         }
 
         const currentTurn = message.data.turn;
-        if (botsData[botName].last_appended_turn !== currentTurn) {
-          botsData[botName].logs += message.data.logs + "\n";
-          botsData[botName].last_appended_turn = currentTurn;
-        }
+        botsData[botName].turn_logs[currentTurn] = message.data.logs;
+
+        const sortedTurns = Object.keys(botsData[botName].turn_logs).sort(
+          (a, b) => Number(a) - Number(b),
+        );
+        botsData[botName].logs = sortedTurns
+          .map((t) => botsData[botName].turn_logs[t])
+          .join("\n");
 
         botsData[botName].state = message.data;
         updateSelector();

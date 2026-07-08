@@ -200,9 +200,9 @@ class StateManager:
                     region_name = self.zone_status.get("location", "Unknown Region")
                     if possible_attackers:
                         attacker_name = possible_attackers[0] if len(possible_attackers) == 1 else ", ".join(possible_attackers)
-                        log_msg = f"{attacker_name} attacked You for {damage_taken} damage using None from {region_name} (Same Region)"
+                        log_msg = f"{attacker_name} attacked You for {damage_taken} damage in {region_name}"
                     else:
-                        log_msg = f"You took {damage_taken} damage from an unknown source or environment in {region_name}"
+                        log_msg = f"You took {damage_taken} damage in {region_name} (Attacker died, concealed, or ranged)"
                     
                     self.fight_history.append(log_msg)
                     if len(self.fight_history) > 10:

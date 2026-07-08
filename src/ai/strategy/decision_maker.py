@@ -67,8 +67,11 @@ class DecisionMaker:
                 if action_type not in ["move", "flee"]:
                     score = 0
             elif is_emergency:
-                if action_type in ["loot", "interact", "explore", "rest", "discard"]:
+                if action_type in ["interact", "explore", "rest"]:
                     score = 0
+                elif action_type in ["loot", "discard"]:
+                    if score < 90:
+                        score = 0
             elif has_layer_0_enemies:
                 if action_type in ["explore", "rest", "interact"]:
                     score = 0

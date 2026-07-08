@@ -6,6 +6,9 @@ class GroundLootPriority:
         self_data = view.get("self", {})
         inventory = self_data.get("inventory", [])
         my_name = self_data.get("name", "Unknown")
+        my_hp = self_data.get("hp", 100)
+        max_hp = self_data.get("maxHp", 100)
+        hp_ratio = my_hp / max_hp if max_hp > 0 else 1.0
         
         equipped_weapon = self_data.get("equippedWeapon")
         eq_weapon_name = equipped_weapon.get("name") if isinstance(equipped_weapon, dict) else (equipped_weapon if equipped_weapon else "None")
@@ -191,7 +194,8 @@ class GroundLootPriority:
             weapon_candidates or
             armor_candidates or
             smoltz_candidates or
-            (utility_candidates and "binoculars" in [i.get("name", "").lower() for i in ground_items])
+            (utility_candidates and "binoculars" in [i.get("name", "").lower() for i in ground_items]) or
+            (consumable_candidates and hp_ratio < 0.6)
         )
         
         if len(inventory) >= 10:
@@ -241,9 +245,14 @@ class GroundLootPriority:
             
             if lowest_item_id and lowest_val < 90:
                 discard_score = 92 if has_layer_0_agents else 98
+                if consumable_candidates and hp_ratio <= 0.4:
+                    discard_score = 101
                 return discard_score, {"action_type": "discard", "item_id": lowest_item_id, "item_name": lowest_item_name}
             return 0, None
         
+        if consumable_candidates and hp_ratio <= 0.4:
+            return 101, {"action_type": "loot", "item_id": consumable_candidates[0]}
+            
         if smoltz_candidates:
             loot_score = 99 if has_layer_0_agents else 102
             return loot_score, {"action_type": "loot", "item_id": smoltz_candidates[0]}

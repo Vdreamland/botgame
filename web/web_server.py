@@ -17,41 +17,58 @@ MESSAGE_QUEUE = queue.Queue()
 BOTS_CACHE = {}
 
 async def process_request(path, request_headers):
- is_ws_upgrade = False
- for k, v in request_headers.items():
-  if k.lower() == "upgrade" and v.lower() == "websocket":
-   is_ws_upgrade = True
-   break
-
- if is_ws_upgrade:
-  return None
-
- if path == "/":
-  file_name = "index.html"
- else:
-  file_name = path.lstrip("/")
-
- base_dir = os.path.dirname(os.path.abspath(__file__))
- file_path = os.path.join(base_dir, file_name)
-
- if not os.path.realpath(file_path).startswith(os.path.realpath(base_dir)):
-  return HTTPStatus.FORBIDDEN, [("Content-Type", "text/plain")], b"Forbidden"
-
- if os.path.exists(file_path) and os.path.isfile(file_path):
-  content_type, _ = mimetypes.guess_type(file_path)
-  if not content_type:
-   content_type = "application/octet-stream"
+ try:
+  is_ws = False
+  if hasattr(request_headers, "get"):
+   upgrade = request_headers.get("Upgrade", "")
+   if upgrade and "websocket" in upgrade.lower():
+    is_ws = True
   
-  with open(file_path, "rb") as f:
-   body = f.read()
-  
-  headers = [
-   ("Content-Type", content_type),
-   ("Content-Length", str(len(body))),
-  ]
-  return HTTPStatus.OK, headers, body
+  if not is_ws:
+   try:
+    headers_iterable = request_headers.items() if hasattr(request_headers, "items") else request_headers
+    for k, v in headers_iterable:
+     if k.lower() == "upgrade" and "websocket" in v.lower():
+      is_ws = True
+      break
+   except Exception:
+    pass
 
- return HTTPStatus.NOT_FOUND, [("Content-Type", "text/plain")], b"Not Found"
+  if is_ws:
+   return None
+
+  if path == "/":
+   file_name = "index.html"
+  else:
+   file_name = path.lstrip("/")
+
+  base_dir = os.path.dirname(os.path.abspath(__file__))
+  file_path = os.path.join(base_dir, file_name)
+
+  real_base = os.path.realpath(base_dir)
+  real_file = os.path.realpath(file_path)
+  if not real_file.startswith(real_base):
+   return HTTPStatus.FORBIDDEN, [("Content-Type", "text/plain")], b"Forbidden"
+
+  if os.path.exists(file_path) and os.path.isfile(file_path):
+   content_type, _ = mimetypes.guess_type(file_path)
+   if not content_type:
+    content_type = "application/octet-stream"
+   
+   with open(file_path, "rb") as f:
+    body = f.read()
+   
+   headers = [
+    ("Content-Type", content_type),
+    ("Content-Length", str(len(body))),
+   ]
+   return HTTPStatus.OK, headers, body
+
+  return HTTPStatus.NOT_FOUND, [("Content-Type", "text/plain")], b"Not Found"
+
+ except Exception as e:
+  print(f"Error in process_request: {e}")
+  return HTTPStatus.INTERNAL_SERVER_ERROR, [("Content-Type", "text/plain")], f"Internal Server Error: {e}".encode()
 
 async def ws_handler(websocket):
  CONNECTED_CLIENTS.add(websocket)

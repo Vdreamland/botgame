@@ -22,7 +22,7 @@ async def run_ws_loop(active_game=None, headers=None):
                 print(f"Welcome frame received. Decision: {decision}")
                 if decision == "ALREADY_IN_GAME" and active_game_id:
                     print("Reconnected to running game.")
-                    await play_game(websocket, active_game_id)
+                    await play_game(websocket, active_game_id, is_reconnect=True)
                     return
                 elif decision in ["ASK_ENTRY_TYPE", "FREE_ONLY"]:
                     if decision == "ASK_ENTRY_TYPE":
@@ -36,18 +36,18 @@ async def run_ws_loop(active_game=None, headers=None):
             elif frame_type == "assigned":
                 assigned_game_id = data.get("gameId")
                 print(f"Matched successfully! Game ID: {assigned_game_id}")
-                await play_game(websocket, assigned_game_id)
+                await play_game(websocket, assigned_game_id, is_reconnect=False)
                 break
 
-async def play_game(websocket, game_id):
+async def play_game(websocket, game_id, is_reconnect=False):
     print("Starting gameplay loop...")
     manager = StateManager()
     manager.game_id = game_id
     manager.memory.set_shared_file(f"shared_team_memory_{game_id}.json")
-    manager.memory.reset_shared()
-    manager.memory.reset_local()
+    if not is_reconnect:
+        manager.memory.reset_shared()
+        manager.memory.reset_local()
     decision_maker = DecisionMaker()
-    should_cleanup = False
     try:
         async for message in websocket:
             data = json.loads(message)
@@ -57,7 +57,6 @@ async def play_game(websocket, game_id):
                 print("\n========================================")
                 print("Your agent has died. Terminating loop.")
                 print("========================================\n")
-                should_cleanup = True
                 break
             if "view" in data:
                 if manager.can_act:
@@ -89,10 +88,9 @@ async def play_game(websocket, game_id):
                 print("\n========================================")
                 print("Game has ended.")
                 print("========================================\n")
-                should_cleanup = True
                 break
     except Exception as e:
         print(f"WebSocket connection error: {e}")
+        raise e
     finally:
-        if should_cleanup:
-            manager.memory.cleanup_shared()
+        manager.memory.cleanup_shared()

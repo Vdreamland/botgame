@@ -28,6 +28,9 @@ class NavigationStrategy:
         if current_region_id not in region_map:
             region_map[current_region_id] = current_region
         
+        dead_ids = {r.get("id") for r in visible_regions if r.get("id") and r.get("isDeathZone")}
+        unsafe_regions = gas_ids.union(dead_ids)
+        
         if current_region.get("isDeathZone"):
             safe_targets = get_adjacent_safe_zones(connections, gas_ids)
             safe_targets = [rid for rid in safe_targets if not region_map.get(rid, {}).get("isDeathZone")]
@@ -85,7 +88,12 @@ class NavigationStrategy:
         
         if hasattr(manager, "pending_loot_regions") and manager.pending_loot_regions:
             target_loot_region = manager.pending_loot_regions[0]
-            path = find_shortest_path(current_region_id, target_loot_region, all_connections)
+            
+            safe_connections = {}
+            for r_id, conns in all_connections.items():
+                safe_connections[r_id] = [c for c in conns if c not in unsafe_regions]
+            
+            path = find_shortest_path(current_region_id, target_loot_region, safe_connections)
             if len(path) > 1:
                 loot_score = 95 if my_hp >= 60 else 84
                 return loot_score, {"action_type": "move", "destination": path[1]}

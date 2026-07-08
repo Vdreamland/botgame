@@ -7,6 +7,7 @@ import logging
 import mimetypes
 from http import HTTPStatus
 import websockets
+import websockets.exceptions
 
 logging.getLogger("websockets").setLevel(logging.CRITICAL)
 
@@ -19,30 +20,12 @@ BOTS_CACHE = {}
 async def process_request(path, request_headers):
  try:
   is_ws = False
-  
   try:
-   for k in ["upgrade", "Upgrade"]:
-    if k in request_headers:
-     val = request_headers[k]
-     val_str = val.decode("utf-8", errors="ignore") if isinstance(val, bytes) else str(val)
-     if "websocket" in val_str.lower():
-      is_ws = True
-      break
+   headers_str = str(request_headers).lower()
+   if "upgrade" in headers_str and "websocket" in headers_str:
+    is_ws = True
   except Exception:
    pass
-
-  if not is_ws:
-   try:
-    for item in request_headers:
-     if isinstance(item, tuple) and len(item) == 2:
-      k, v = item
-      k_str = k.decode("utf-8", errors="ignore").lower() if isinstance(k, bytes) else str(k).lower()
-      v_str = v.decode("utf-8", errors="ignore").lower() if isinstance(v, bytes) else str(v).lower()
-      if k_str == "upgrade" and "websocket" in v_str:
-       is_ws = True
-       break
-   except Exception:
-    pass
 
   if is_ws:
    return None
@@ -78,7 +61,7 @@ async def process_request(path, request_headers):
 
  except Exception as e:
   print(f"Error in process_request: {e}", flush=True)
-  return 500, [("Content-Type", "text/plain")], f"Internal Error: {e}".encode()
+  return 500, [("Content-Type", "text/plain")], b"Internal Error"
 
 async def ws_handler(websocket):
  CONNECTED_CLIENTS.add(websocket)

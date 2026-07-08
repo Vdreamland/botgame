@@ -23,7 +23,8 @@ let botsData = {};
 let activeBotName = "";
 
 function connect() {
-  const ws = new WebSocket("ws://" + window.location.hostname + ":8765");
+  const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+  const ws = new WebSocket(protocol + window.location.host);
 
   ws.onopen = function () {
     statusLabel.textContent = "Connected";

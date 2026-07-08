@@ -10,6 +10,16 @@ class AgentMemory:
         self.pending_loot_regions = []
         self.reset_local()
 
+    def set_shared_file(self, filename):
+        self.shared_file = filename
+
+    def cleanup_shared(self):
+        try:
+            if os.path.exists(self.shared_file):
+                os.remove(self.shared_file)
+        except Exception:
+            pass
+
     def reset_local(self):
         self.visited_history = []
         self.interacted_facilities.clear()

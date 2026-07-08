@@ -43,6 +43,7 @@ async def play_game(websocket, game_id):
     print("Starting gameplay loop...")
     manager = StateManager()
     manager.game_id = game_id
+    manager.memory.set_shared_file(f"shared_team_memory_{game_id}.json")
     manager.memory.reset_shared()
     manager.memory.reset_local()
     decision_maker = DecisionMaker()
@@ -89,3 +90,5 @@ async def play_game(websocket, game_id):
                 break
     except Exception as e:
         print(f"WebSocket connection error: {e}")
+    finally:
+        manager.memory.cleanup_shared()

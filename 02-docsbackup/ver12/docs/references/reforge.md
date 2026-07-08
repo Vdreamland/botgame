@@ -1,25 +1,17 @@
 ---
-tags: [reforge, relic, affix, pack, rolled_params, material, smelting, preseason]
-summary: Reforge (POST /api/reforge) — relic affix reroll/add/remove via reforge stones, plus pack rolled_params reroll (packInstanceId); outcomes, request contract, material inventory query
+tags: [reforge, relic, affix, material, smelting, preseason]
+summary: Relic reforge — consume a reforge stone to reroll/add/remove a relic's affixes; outcomes, request contract, material inventory query
 type: data
 ---
 
 # Reforge (Pre-S1)
 
-> **Lobby-only optimization via `POST /api/reforge`.** Reforge rerolls an item's
-> randomized stats to chase a better roll before you equip it — it never happens
-> in-game. The one endpoint targets **either a relic or a pack** (the two targets
-> are **mutually exclusive** — never send both ids in one call):
-> - **Relic** (`relicInstanceId`) — consume **one reforge stone** to reroll / add /
->   remove the relic's **affixes** (§1–§5 below).
-> - **Pack** (`packInstanceId`) — reroll the pack's **`rolled_params`** (§6). This
->   shifts the pack's in-combat effect magnitude — notably its damage multiplier.
+> **Lobby-only relic optimization.** Reforge consumes **one reforge stone** to
+> modify the affixes of a lobby relic — rerolling, adding, or removing affixes to
+> chase a better stat roll before you equip it. It never happens in-game.
 >
-> Either target is **random**: the server rolls the new values. You cannot choose
-> the affix, the param, or the resulting number.
->
-> **TL;DR (relic):** acquire stones from the shop (`preseason_material_bundle`, see
-> `references/shop.md` §2.4) → un-equip the target relic from its loadout slot →
+> **TL;DR:** acquire stones from the shop (`preseason_material_bundle`, see
+> `references/shop.md` §2.3) → un-equip the target relic from its loadout slot →
 > `POST /api/reforge` with the relic id + the stone's `itemKey`. Each call consumes
 > exactly one stone and is idempotent on `idempotencyKey`.
 
@@ -143,59 +135,3 @@ Empty inventory returns `{ "success": true, "data": [] }`.
 4. POST /api/reforge { relicInstanceId, itemKey, idempotencyKey }
 5. inspect afterAffixes; repeat or re-equip via PUT /api/loadout/slot/:idx
 ```
-
----
-
-# 6. Pack reforge — reroll `rolled_params` (`packInstanceId`)
-
-The **same** endpoint, `POST /api/reforge`, also reforges a **pack**: instead of a
-relic's affixes it rerolls the pack instance's **`rolled_params`**. No reforge stone
-is involved — you target the pack directly by id.
-
-**What `rolled_params` are.** Every pack **instance** carries its own deterministic
-`rolled_params`: when the pack is granted, each rollable ("ranged") effect field is
-rolled once **within that tier's `min`/`max` band** (the bands live in the
-`pack-catalog` tier `ranges`, dotted-path keyed). These rolled values set the pack's
-**in-combat effect magnitude** — notably a **damage-output multiplier** (surfaced in
-battle logs as the `dmg_mult` variant → `dmg ×N` for Scout / Steel Heart / Thorns /
-Sun Cloak). So two instances of the *same* family/tier can hit for different damage.
-
-**Reforging a pack rerolls those params** — **random, server-rolled, not
-chooseable**, the same random principle as relic reforge (§1): you cannot pick the
-resulting values. The response returns the params **before** and **after** the reroll.
-
-**Body** — send `packInstanceId` (never `relicInstanceId`; the two targets are
-**mutually exclusive**, do not send both):
-
-```json
-{
-  "packInstanceId": 66,
-  "idempotencyKey": "reforge-pack-66-a1b2c3"
-}
-```
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `packInstanceId` | int64 | the pack to reforge (must be owned; a pack currently listed on the marketplace must be un-listed first). **Mutually exclusive with `relicInstanceId`** — sending both is invalid |
-| `idempotencyKey` | string (≤64) | de-dup key, same replay semantics as the relic path (§2) |
-
-**Response 200** returns `beforeParams` / `afterParams` — the pack's `rolled_params`
-before and after the reroll (dotted-path keyed; the keys/bands below are
-**illustrative** — the authoritative key set comes from the `pack-catalog` tier
-`ranges` / `/openapi.yaml`):
-
-```json
-{ "success": true, "data": {
-  "packInstanceId": 66,
-  "beforeParams": { "effect.dmg_mult": 1.4 },
-  "afterParams":  { "effect.dmg_mult": 1.7 }
-} }
-```
-
-Because a reroll **shifts the multiplier**, it changes the damage that pack
-contributes in battle — so evaluate an **instance's** `rolled_params`, not just its
-family/tier, when choosing and reforging packs for a loadout.
-
-> A listed pack is escrowed and **cannot be reforged until the listing is cancelled**
-> (see `references/marketplace.md`). The authoritative field list, error codes, and
-> the exact `rolled_params` keys are in `/openapi.yaml`.

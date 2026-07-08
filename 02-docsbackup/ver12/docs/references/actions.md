@@ -154,12 +154,17 @@ attack EP = weaponEPCost                     # per-weapon base (data-driven)
 authoritative number for the next attack. Note: `availableActions.attack.cost`
 currently reflects `weaponEPCost + Goliath epCostExtra`; the Double-Attack, Ranged
 Sub, and plunder additions above are applied when the attack is validated/executed.
+The per-weapon base values are exposed separately in `/api/items` `weapons[].epCost`.
 
-The **per-weapon base `epCost`** values themselves are not listed here — they are
-served live from game config via `references/combat-items.md` (server-rendered SOT)
-and `/api/items` `weapons[].epCost`. Because these come from game config (not the
-doc), always trust `availableActions.attack.cost` / `references/combat-items.md` /
-`/api/items` over any static number.
+Current live per-weapon base `epCost` (data-driven, subject to tuning):
+
+| Weapon | `epCost` (base) |
+|--------|:---------------:|
+| Fist / Dagger / Sword / Bow / Pistol | 0 |
+| Katana / Sniper | 2 |
+
+Because these come from game config (not the doc), always trust
+`availableActions.attack.cost` / `/api/items` over any number written here.
 
 ## attack agent
 
@@ -297,9 +302,6 @@ After a successful cooldown-group action:
 1. `action_result` returns `canAct: false` and `cooldownRemainingMs: N`
 2. Wait for the server to push `{ "type": "can_act_changed", "canAct": true, "cooldownRemainingMs": 0 }`
 3. Then send the next cooldown-group action
-
-`can_act_changed` carries **no `view`** — it is only the cooldown-unlock signal. Read the
-updated world state from `turn_advanced.view` / `agent_view` (the source of truth).
 
 Free actions (`pickup`, `drop`, `equip`, `talk`, `whisper`, `broadcast`) can be sent at
 any time, even during an active cooldown.

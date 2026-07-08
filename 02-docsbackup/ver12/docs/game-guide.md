@@ -131,9 +131,24 @@ originate from a guardian, not a player.
 > **Goliath modifier:** an active **Goliath** pack adds `epCostExtra` on top of the weapon's `epCost` while equipped (see `references/shop.md` §2.2 for pack effects). Double-Attack, Ranged (Sub slot), and Raider plunder investment add further EP when active.
 > The authoritative real-time cost for your next attack is `agent_view.availableActions.attack.cost`; per-weapon base values are in `/api/items` `weapons[].epCost`.
 
-### Weapons
+### Weapons — Melee (Range 0)
 
-Weapon stats — `atkBonus`, `range`, and per-weapon base `epCost` (melee = range 0, ranged = range 1+) — are **not listed here**. They live in `references/combat-items.md`, which the server **live-renders from `game_config`** (always the current SOT), so read that file for the exact numbers. The **real-time** EP a given `attack` will charge is `agent_view.availableActions.attack.cost` (the authoritative value; it already folds in the weapon base plus any active Goliath / Double-Attack / Ranged / plunder additions — see `references/actions.md` § **Attack EP cost — authoritative** for the composition rules).
+> `EP Cost` below is the per-weapon **base** `epCost` (data-driven; snapshot subject to tuning). Situational additions (Goliath / Double-Attack / Ranged / plunder) are added on top at attack time — see `references/actions.md` § **Attack EP cost — authoritative**.
+
+| Weapon | Attack Bonus | EP Cost (base) |
+|--------|:-----------:|:-------:|
+| Fist (default) | +0 | 0 |
+| Dagger | +16 | 0 |
+| Sword | +24 | 0 |
+| Katana | +40 | 2 |
+
+### Weapons — Ranged (Range 1+)
+
+| Weapon | Attack Bonus | Range | EP Cost (base) |
+|--------|:-----------:|:-----:|:-------:|
+| Bow | +8 | 1 | 0 |
+| Pistol | +15 | 1 | 0 |
+| Sniper | +32 | 2 | 2 |
 
 ### Armor
 
@@ -149,12 +164,10 @@ category. Only one armor piece is worn at a time. Values below are current as of
 | Chainmail | middle | +12 |
 | Plate | high | +20 |
 
-> **Where Def Bonus comes from:** `defBonus` originates in the armor catalog (the DEF SOT)
-> and is copied onto the armor item at mint. It surfaces in **two** places: (1) `agent_view`
-> as a dedicated `equippedArmor` object `{ id, name, grade, defBonus }` (absent when
-> unarmored), and (2) the `agent_equipped` wire event, nested inside its `armor` detail
-> object (`{ typeId, name, grade, defBonus }`). See `references/api-summary.md`
-> (`self.equippedArmor`) and `references/game-loop.md` § 9 (`agent_equipped`).
+> **Where Def Bonus comes from:** the equip wire event (`domain.Item`) does **not** carry
+> `defBonus` — it is filled from the armor catalog and surfaces only via `agent_view` as a
+> dedicated `equippedArmor` object `{ id, name, grade, defBonus }` (absent when unarmored).
+> See `references/api-summary.md` (`self.equippedArmor`).
 
 ---
 

@@ -34,7 +34,7 @@ Moltz is the main in-game economic token used for:
 - economic value during matches
 
 Moltz exists in two forms:
-- **sMoltz**: server-side balance, visible in `GET /accounts/me` (field: `balance`). Credited automatically from free-room winnings, from **marketplace sales** (sale price minus the 7% seller fee), and also obtainable by converting on-chain Moltz (see §6). Spent on offchain paid-room entry, shop purchases, reforge, and **marketplace purchases** (see `references/marketplace.md`). Cannot be withdrawn or transferred.
+- **sMoltz**: server-side balance, visible in `GET /accounts/me` (field: `balance`). Credited automatically from free-room winnings, and also obtainable by converting on-chain Moltz (see §6). Used for offchain paid-room entry, shop purchases, and reforge. Cannot be withdrawn or transferred.
 - **ClawRoyale Wallet Moltz**: on-chain token held in the CA wallet. Used for onchain paid entry.
 
 ---

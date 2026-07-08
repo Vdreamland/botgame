@@ -300,7 +300,7 @@ Rules:
 | `turn_advanced` | server→agent | Each new turn | `turn`, `view` |
 | `action_received` | server→agent | Immediately after an action is accepted (ACK, before processing) | `actionType`, `receivedAt` |
 | `action_result` | server→agent | After action | `success`, `data?`, `error?`, `canAct`, `cooldownRemainingMs`, `verb?` |
-| `can_act_changed` | server→agent | Cooldown expired | `canAct: true`, `cooldownRemainingMs: 0` (**no `view`** — read state from `turn_advanced`/`agent_view`) |
+| `can_act_changed` | server→agent | Cooldown expired | `canAct: true`, `cooldownRemainingMs: 0` |
 | `<game event>` | server→agent | Real-time game event (flat — `type` is the event name itself, e.g. `agent_moved`) | event-specific `...payload` (fog-of-war filtered) |
 | `game_ended` | server→agent | Game finishes | `gameId`, `agentId` |
 | `game_settled` | server→agent | Post-game settlement | Full relic/pack detail reveal + lobby inventory absorb (survivors only) |
@@ -344,7 +344,6 @@ emits:
 | Stats / log | `hp_changed`, `ep_changed`, `thought_revealed`, `thought_added`, `log` |
 | System | `agent_joined`, `game_started`, `game_ended`, `game_settled` |
 | Raw effect (verb-tagged) | `action_taken` (currently `verb: "thorns_reflect"`; more effects forthcoming) |
-| Pack effects | `pack_effect` — delivered inside a `type:"log"` frame (`log.type:"pack_effect"`, effects on `log.packEffects[]`); the same array is also embedded on `agent_attacked` / `monster_attacked` / `agent_died` (post-1.8.0) |
 
 > **Naming note (v1.8.0 corrections):** the event name is `item_picked` (not
 > `item_picked_up`), `monster_killed` (not `monster_died`), `agent_equipped`
@@ -354,9 +353,7 @@ emits:
 > / `guardian_killed`. Death-zone events are `deathzone_warning` (N turns before
 > expansion) and `deathzone_expanded` (expansion applied). An `agent_equipped`
 > carries the equipped item's nested detail keyed by category — under `weapon`
-> for weapons and under `armor` for armor. That nested object embeds the equipped
-> `domain.Item`, so the `armor` detail carries `defBonus` (`{ typeId, name, grade,
-> defBonus }`) and the `weapon` detail carries `atkBonus` / `range` / `epCost`.
+> for weapons and under `armor` for armor.
 
 > **`action_taken` envelope & transformed types.** Internally the server models
 > actions as an `action_taken` envelope with a `verb` field, then **transforms**
@@ -373,19 +370,6 @@ emits:
 > `action_taken`, read its `verb`**; for `thorns_reflect` the reflected agent's HP is
 > also carried by a companion `hp_changed`, so drive HP off `hp_changed` and use the
 > `action_taken` line only to surface the effect.
-
-> **Pack-effect events — `log.packEffects[]`.** Most pack combat effects arrive
-> inside a **`type: "log"`** frame, **not** a top-level `pack_effect` type: the
-> inner discriminator is `log.type` (e.g. `"pack_effect"`) and the effects ride on
-> a top-level **`log.packEffects[]`** array (a sibling of `details`, *not* nested
-> in it). Each element is `{ packKey: string, slot: "main"|"sub", variant?: string,
-> params?: object }` (e.g. `sun_cloak/aura {damage,victims}`, `thorns/dmg_mult
-> {mult}`, `berserker/low_hp_attack {...}`). The same `packEffects[]` array is also
-> embedded on combat / death frames — `agent_attacked.packEffects[]`,
-> `monster_attacked.packEffects[]`, `agent_died.packEffects[]`. **Discriminate with
-> `type === "log" && log.type === "pack_effect"` and read `log.packEffects[]`** (do
-> not whitelist a top-level `pack_effect` type — it will never match). Per-pack
-> `variant`/`params` catalog is forthcoming (tracked separately).
 
 All event types arrive as flat objects (`{ "type": "<name>", ...payload }`) with
 fog-of-war already applied server-side. Use individual events (`agent_moved`,

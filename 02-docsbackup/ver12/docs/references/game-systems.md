@@ -78,7 +78,7 @@ Items include categories such as:
 
 Inventory is limited, so item value must be ranked.
 
-Weapon / monster / item stats (exact `atkBonus` / `range` / `epCost` numbers) live in `references/combat-items.md` — the server live-renders it from `game_config`, so it is the always-current SOT. See `game-guide.md` for the combat rules, armor, recovery, and utility explanations.
+See `game-guide.md` for the full weapon, armor, recovery, and utility tables.
 
 ---
 

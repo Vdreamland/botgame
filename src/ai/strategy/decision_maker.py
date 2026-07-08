@@ -37,7 +37,11 @@ class DecisionMaker:
         }
 
     def make_decision(self, manager, raw_data):
-        view = raw_data.get("view", {})
+        view = raw_data.get("view")
+        if not view:
+            view = getattr(manager, "last_view", {})
+            raw_data["view"] = view
+            
         self_data = view.get("self", {})
         hp = self_data.get("hp", 100)
         current_region = view.get("currentRegion", {})
@@ -81,8 +85,8 @@ class DecisionMaker:
                 best_action = action
         
         if not best_action:
-            self.last_decision = {"action": "EXPLORE", "score": 22, "target": "None"}
-            return create_explore_action()
+            self.last_decision = {"action": "REST", "score": 20, "target": "None"}
+            return create_rest_action()
         
         action_type = best_action.get("action_type")
         target_name = "None"

@@ -18,12 +18,21 @@ class EquippedPriority:
         melee_names = ["Fist", "Dagger", "Sword", "Katana"]
         ranged_names = ["Bow", "Pistol", "Sniper rifle"]
         
-        best_melee_id = None
-        best_melee_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in melee_names and my_ep >= current_ep_cost else 0
+        is_melee_equipped = eq_weapon_name in melee_names
+        is_ranged_equipped = eq_weapon_name in ranged_names
         
-        best_ranged_id = None
-        best_ranged_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names and my_ep >= current_ep_cost else 0
+        max_melee_atk_available = 0
+        best_melee_inv_id = None
         
+        if is_melee_equipped and my_ep >= current_ep_cost:
+            max_melee_atk_available = WEAPONS.get(eq_weapon_name, {}).get("atk", 0)
+            
+        max_ranged_atk_available = 0
+        best_ranged_inv_id = None
+        
+        if is_ranged_equipped and my_ep >= current_ep_cost:
+            max_ranged_atk_available = WEAPONS.get(eq_weapon_name, {}).get("atk", 0)
+            
         emergency_weapon_id = None
         
         for item in inventory:
@@ -41,13 +50,13 @@ class EquippedPriority:
                         emergency_weapon_id = item_id
                         
                     if name in melee_names:
-                        if atk > best_melee_atk:
-                            best_melee_atk = atk
-                            best_melee_id = item_id
+                        if atk > max_melee_atk_available:
+                            max_melee_atk_available = atk
+                            best_melee_inv_id = item_id
                     elif name in ranged_names:
-                        if atk > best_ranged_atk:
-                            best_ranged_atk = atk
-                            best_ranged_id = item_id
+                        if atk > max_ranged_atk_available:
+                            max_ranged_atk_available = atk
+                            best_ranged_inv_id = item_id
                             
         best_armor_id = None
         best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
@@ -69,16 +78,20 @@ class EquippedPriority:
                 return 100, {"action_type": "equip", "item_id": emergency_weapon_id}
                 
         if has_layer_0_enemies:
-            if best_melee_id:
-                return 100, {"action_type": "equip", "item_id": best_melee_id}
-            elif eq_weapon_name not in melee_names and best_ranged_id:
-                return 100, {"action_type": "equip", "item_id": best_ranged_id}
+            if max_melee_atk_available > 0:
+                if best_melee_inv_id:
+                    return 100, {"action_type": "equip", "item_id": best_melee_inv_id}
+            elif max_ranged_atk_available > 0:
+                if best_ranged_inv_id:
+                    return 100, {"action_type": "equip", "item_id": best_ranged_inv_id}
         else:
-            if best_ranged_id:
-                return 100, {"action_type": "equip", "item_id": best_ranged_id}
-            elif best_melee_id:
-                return 100, {"action_type": "equip", "item_id": best_melee_id}
-                
+            if max_ranged_atk_available > 0:
+                if best_ranged_inv_id:
+                    return 100, {"action_type": "equip", "item_id": best_ranged_inv_id}
+            elif max_melee_atk_available > 0:
+                if best_melee_inv_id:
+                    return 100, {"action_type": "equip", "item_id": best_melee_inv_id}
+                    
         if best_armor_id:
             return 100, {"action_type": "equip", "item_id": best_armor_id}
             

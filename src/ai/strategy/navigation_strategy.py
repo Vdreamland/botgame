@@ -132,7 +132,7 @@ class NavigationStrategy:
         has_layer_0_enemies = getattr(manager, "has_layer_0_enemies", False)
         
         visible_ruins = view.get("visibleRuins", [])
-        active_ruin_ids = {r.get("ruinId") for r in visible_ruins if r.get("ruinId") and not r.get("isEmpty", False)}
+        active_ruid_ids = {r.get("ruinId") for r in visible_ruins if r.get("ruinId") and not r.get("isEmpty", False)}
         
         enemy_occupied_regions = set()
         for agent in visible_agents:
@@ -150,7 +150,7 @@ class NavigationStrategy:
             
             visited_history = manager.memory.visited_history if hasattr(manager, "memory") else []
             if rid in visited_history:
-                idx = len(visited_history) - 1 - visited_history.index(rid)
+                idx = visited_history[::-1].index(rid)
                 if idx == 0:
                     score -= 30
                 elif idx == 1:
@@ -172,7 +172,7 @@ class NavigationStrategy:
             if r_data.get("terrain", "").lower() == "ruins":
                 score += 10
                 
-            if rid in active_ruin_ids:
+            if rid in active_ruid_ids:
                 score += 30
             
             if path_to_teammate and len(path_to_teammate) > 1:

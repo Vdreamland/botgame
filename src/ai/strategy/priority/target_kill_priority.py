@@ -136,9 +136,13 @@ class TargetKillPriority:
                             if is_guard or my_hp < 50 or hp_ratio >= 0.3:
                                 continue
                         
-                        base_stats = MONSTERS.get(monster_name, GUARDIANS.get(monster_name, {"atk": 25, "def": 5}))
-                        target_atk = monster.get("atk") if monster.get("atk") is not None else base_stats.get("atk", 25)
-                        target_def = monster.get("def") if monster.get("def") is not None else base_stats.get("def", 5)
+                        if "guardian" in monster_name.lower() or is_guard:
+                            base_stats = {"hp": 150, "atk": 12, "def": 150}
+                        else:
+                            base_stats = MONSTERS.get(monster_name, GUARDIANS.get(monster_name, {"atk": 25, "def": 5}))
+                        
+                        target_atk = monster.get("atk") if monster.get("atk") is not None else base_stats.get("atk", 12 if is_guard else 25)
+                        target_def = monster.get("def") if monster.get("def") is not None else base_stats.get("def", 150 if is_guard else 5)
                         
                         my_dmg = max(1, my_atk_total - target_def)
                         target_dmg = max(1, target_atk - my_def)
@@ -146,7 +150,16 @@ class TargetKillPriority:
                         turns_to_kill_target = (target_hp + my_dmg - 1) // my_dmg
                         turns_to_kill_me = (my_hp + target_dmg - 1) // target_dmg
                         
-                        combat_feasible = (turns_to_kill_target < turns_to_kill_me) or (turns_to_kill_target <= 2)
+                        total_ep_needed = turns_to_kill_target * weapon_ep_cost
+                        my_ep = self_data.get("ep", 10)
+                        
+                        rests_needed = 0
+                        if total_ep_needed > my_ep:
+                            rests_needed = (total_ep_needed - my_ep + 2) // 3
+                            
+                        total_turns_target_attacks = turns_to_kill_target + rests_needed
+                        
+                        combat_feasible = (total_turns_target_attacks < turns_to_kill_me) or (turns_to_kill_target <= 2)
                         if not combat_feasible:
                             continue
                         
@@ -175,7 +188,7 @@ class TargetKillPriority:
             best_target = layer_0_candidates[0]
             manager.last_attack_target_id = best_target["target_id"]
             if best_target["target_type"] == "agent":
-                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent"}
+                return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent", "target_region_id": best_target["region_id"]}
             else:
                 return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "monster", "target_region_id": best_target["region_id"]}
         
@@ -189,7 +202,7 @@ class TargetKillPriority:
             if best_target["score"] > 0:
                 manager.last_attack_target_id = best_target["target_id"]
                 if best_target["target_type"] == "agent":
-                    return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent"}
+                    return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "agent", "target_region_id": best_target["region_id"]}
                 else:
                     return best_target["score"], {"action_type": "attack", "target_id": best_target["target_id"], "target_type": "monster", "target_region_id": best_target["region_id"]}
         

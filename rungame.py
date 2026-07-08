@@ -34,26 +34,6 @@ async def run_bot(bot_name, api_key):
 
   if not active_game:
    active_bots[bot_name] = "idle"
-   wait_logged = False
-   start_wait_time = time.time()
-   while True:
-    elapsed = time.time() - start_wait_time
-    force_release = elapsed > 15
-    
-    if force_release or all(status in ["idle", "playing", "queued"] for status in active_bots.values()):
-     for name in active_bots:
-      if active_bots[name] == "idle":
-       active_bots[name] = "queued"
-     
-     if active_bots[bot_name] == "queued":
-      active_bots[bot_name] = "playing"
-      break
-    
-    if not wait_logged:
-     print(f"[{bot_name}] Ready for matchmaking. Waiting for teammates to finish their games...")
-     wait_logged = True
-    
-    await asyncio.sleep(2)
 
   try:
    active_bots[bot_name] = "playing"

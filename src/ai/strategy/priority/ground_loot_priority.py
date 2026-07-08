@@ -22,7 +22,12 @@ class GroundLootPriority:
         current_best_melee = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in melee_names else 0
         current_best_ranged = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names else 0
         
+        recovery_lower = {k.lower(): v for k, v in RECOVERY_ITEMS.items()}
+        
         inventory_item_names = {item.get("name") for item in inventory}
+        
+        hp_consumables_in_inv = 0
+        ep_consumables_in_inv = 0
         
         for item in inventory:
             name = item.get("name")
@@ -34,6 +39,13 @@ class GroundLootPriority:
                 elif name in ranged_names:
                     if atk > current_best_ranged:
                         current_best_ranged = atk
+            
+            name_lower = name.lower() if name else ""
+            if name_lower in recovery_lower:
+                if recovery_lower[name_lower].get("hp_heal", 0) > 0:
+                    hp_consumables_in_inv += 1
+                if recovery_lower[name_lower].get("ep_heal", 0) > 0:
+                    ep_consumables_in_inv += 1
         
         current_best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
         for item in inventory:
@@ -128,11 +140,12 @@ class GroundLootPriority:
         smoltz_candidates = []
         ground_armors = []
         consumable_candidates = []
+        hp_consumable_candidates = []
+        ep_consumable_candidates = []
         utility_candidates = []
         
         weapons_lower = {k.lower(): k for k in WEAPONS}
         armor_lower = {k.lower(): k for k in ARMOR}
-        recovery_lower = {k.lower(): v for k, v in RECOVERY_ITEMS.items()}
         utility_lower = {k.lower(): k for k in UTILITY_ITEMS}
         
         melee_names_lower = [k.lower() for k in melee_names]
@@ -155,6 +168,10 @@ class GroundLootPriority:
                     ground_armors.append((item_id, defense))
             elif name_lower in recovery_lower:
                 consumable_candidates.append(item_id)
+                if recovery_lower[name_lower].get("hp_heal", 0) > 0:
+                    hp_consumable_candidates.append(item_id)
+                if recovery_lower[name_lower].get("ep_heal", 0) > 0:
+                    ep_consumable_candidates.append(item_id)
             elif name_lower in utility_lower:
                 orig_name = utility_lower[name_lower]
                 if orig_name not in inventory_item_names:
@@ -190,12 +207,17 @@ class GroundLootPriority:
         else:
             weapon_candidates = []
         
+        wants_ep = bool(ep_consumable_candidates and ep_consumables_in_inv == 0)
+        wants_hp = bool(hp_consumable_candidates and hp_consumables_in_inv == 0)
+        
         has_valuable_ground_upgrade = bool(
             weapon_candidates or
             armor_candidates or
             smoltz_candidates or
             (utility_candidates and "binoculars" in [i.get("name", "").lower() for i in ground_items]) or
-            (consumable_candidates and hp_ratio < 0.6)
+            (hp_consumable_candidates and hp_ratio < 0.6) or
+            wants_ep or
+            wants_hp
         )
         
         if len(inventory) >= 10:
@@ -236,7 +258,16 @@ class GroundLootPriority:
                     else:
                         val = 10
                 elif name in RECOVERY_ITEMS:
-                    val = 20 if name == "Bandage" else 30
+                    name_lower = name.lower()
+                    is_hp_item = recovery_lower.get(name_lower, {}).get("hp_heal", 0) > 0
+                    is_ep_item = recovery_lower.get(name_lower, {}).get("ep_heal", 0) > 0
+                    
+                    if is_hp_item and hp_consumables_in_inv > 1 and wants_ep:
+                        val = 15
+                    elif is_ep_item and ep_consumables_in_inv > 1 and wants_hp:
+                        val = 15
+                    else:
+                        val = 20 if name == "Bandage" else 30
                 
                 if val < lowest_val:
                     lowest_val = val
@@ -245,13 +276,15 @@ class GroundLootPriority:
             
             if lowest_item_id and lowest_val < 90:
                 discard_score = 92 if has_layer_0_agents else 98
-                if consumable_candidates and hp_ratio <= 0.4:
+                if hp_consumable_candidates and hp_ratio <= 0.4:
                     discard_score = 101
+                elif lowest_val == 15 and (wants_ep or wants_hp):
+                    discard_score = 76 if has_layer_0_agents else 97
                 return discard_score, {"action_type": "discard", "item_id": lowest_item_id, "item_name": lowest_item_name}
             return 0, None
         
-        if consumable_candidates and hp_ratio <= 0.4:
-            return 101, {"action_type": "loot", "item_id": consumable_candidates[0]}
+        if hp_consumable_candidates and hp_ratio <= 0.4:
+            return 101, {"action_type": "loot", "item_id": hp_consumable_candidates[0]}
             
         if smoltz_candidates:
             loot_score = 99 if has_layer_0_agents else 102
@@ -262,6 +295,14 @@ class GroundLootPriority:
         if armor_candidates:
             loot_score = 97 if has_layer_0_agents else 99
             return loot_score, {"action_type": "loot", "item_id": armor_candidates[0]}
+            
+        if wants_ep:
+            loot_score = 75 if has_layer_0_agents else 96
+            return loot_score, {"action_type": "loot", "item_id": ep_consumable_candidates[0]}
+        if wants_hp:
+            loot_score = 75 if has_layer_0_agents else 96
+            return loot_score, {"action_type": "loot", "item_id": hp_consumable_candidates[0]}
+            
         if utility_candidates:
             loot_score = 75 if has_layer_0_agents else 95
             return loot_score, {"action_type": "loot", "item_id": utility_candidates[0]}

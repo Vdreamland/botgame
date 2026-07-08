@@ -74,6 +74,7 @@
     │       │
     │       └── priority/          # Subsistem pembobotan nilai aksi berdasarkan kebutuhan mendesak
     │           ├── __init__.py    # Berkas inisialisasi paket priority
+    │           ├── loot_helper.py
     │           ├── equipped_priority.py # Perhitungan nilai urgensi pemasangan senjata melee/ranged adaptif sesuai jarak musuh
     │           ├── ground_loot_priority.py # Perhitungan nilai urgensi pengambilan barang dan bagi-pakai armor cadangan tim
     │           ├── interact_priority.py # Perhitungan prioritas interaksi dengan fasilitas wilayah (Medical, dll)
@@ -112,7 +113,7 @@ interact_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/st
 recovery_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/recovery_priority.py
 target_kill_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/target_kill_priority.py
 survival_priority.py https://github.com/Vdreamland/botgame/blob/master/src/ai/strategy/priority/survival_priority.py
-
+loot_helper.py
 
 ai/
 __init__.py https://github.com/Vdreamland/botgame/blob/master/src/ai/__init__.py

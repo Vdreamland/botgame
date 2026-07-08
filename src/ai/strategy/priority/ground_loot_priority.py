@@ -19,11 +19,71 @@ class GroundLootPriority:
         melee_names = ["Fist", "Dagger", "Sword", "Katana"]
         ranged_names = ["Bow", "Pistol", "Sniper rifle"]
         
-        current_best_melee = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in melee_names else 0
-        current_best_ranged = WEAPONS.get(eq_weapon_name, {}).get("atk", 0) if eq_weapon_name in ranged_names else 0
+        # 1. Cari Status Senjata & Armor Terbaik Mutlak (Equipped + Tas)
+        best_melee_name = None
+        best_melee_atk = 0
+        best_ranged_name = None
+        best_ranged_atk = 0
+        best_armor_name = None
+        best_armor_def = 0
         
+        if eq_weapon_name in melee_names:
+            best_melee_name = eq_weapon_name
+            best_melee_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0)
+        elif eq_weapon_name in ranged_names:
+            best_ranged_name = eq_weapon_name
+            best_ranged_atk = WEAPONS.get(eq_weapon_name, {}).get("atk", 0)
+            
+        if eq_armor_name in ARMOR:
+            best_armor_name = eq_armor_name
+            best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
+            
+        for item in inventory:
+            name = item.get("name")
+            if name in melee_names:
+                atk = WEAPONS.get(name, {}).get("atk", 0)
+                if atk > best_melee_atk:
+                    best_melee_atk = atk
+                    best_melee_name = name
+            elif name in ranged_names:
+                atk = WEAPONS.get(name, {}).get("atk", 0)
+                if atk > best_ranged_atk:
+                    best_ranged_atk = atk
+                    best_ranged_name = name
+            elif name in ARMOR:
+                defense = ARMOR.get(name, {}).get("def", 0)
+                if defense > best_armor_def:
+                    best_armor_def = defense
+                    best_armor_name = name
+                    
+        # 2. Sisihkan Barang Rongsokan / Duplikat (Spare)
+        keep_melee = 1 if best_melee_name and best_melee_name != eq_weapon_name else 0
+        keep_ranged = 1 if best_ranged_name and best_ranged_name != eq_weapon_name else 0
+        keep_armor = 1 if best_armor_name and best_armor_name != eq_armor_name else 0
+        
+        spare_weapons = []
+        spare_armors = []
+        for item in inventory:
+            name = item.get("name")
+            item_id = item.get("id")
+            if name in melee_names:
+                if name == best_melee_name and keep_melee > 0:
+                    keep_melee -= 1
+                else:
+                    spare_weapons.append((item_id, name))
+            elif name in ranged_names:
+                if name == best_ranged_name and keep_ranged > 0:
+                    keep_ranged -= 1
+                else:
+                    spare_weapons.append((item_id, name))
+            elif name in ARMOR:
+                if name == best_armor_name and keep_armor > 0:
+                    keep_armor -= 1
+                else:
+                    spare_armors.append((item_id, name))
+        
+        # 3. Hitung Kebutuhan Recovery Items
         recovery_lower = {k.lower(): v for k, v in RECOVERY_ITEMS.items()}
-        
         inventory_item_names = {item.get("name") for item in inventory}
         
         hp_consumables_in_inv = 0
@@ -31,29 +91,12 @@ class GroundLootPriority:
         
         for item in inventory:
             name = item.get("name")
-            if name in WEAPONS:
-                atk = WEAPONS[name].get("atk", 0)
-                if name in melee_names:
-                    if atk > current_best_melee:
-                        current_best_melee = atk
-                elif name in ranged_names:
-                    if atk > current_best_ranged:
-                        current_best_ranged = atk
-            
             name_lower = name.lower() if name else ""
             if name_lower in recovery_lower:
                 if recovery_lower[name_lower].get("hp_heal", 0) > 0:
                     hp_consumables_in_inv += 1
                 if recovery_lower[name_lower].get("ep_heal", 0) > 0:
                     ep_consumables_in_inv += 1
-        
-        current_best_armor_def = ARMOR.get(eq_armor_name, {}).get("def", 0)
-        for item in inventory:
-            name = item.get("name")
-            if name in ARMOR:
-                defense = ARMOR[name].get("def", 0)
-                if defense > current_best_armor_def:
-                    current_best_armor_def = defense
         
         current_region = view.get("currentRegion", {})
         current_region_id = current_region.get("id")
@@ -83,33 +126,9 @@ class GroundLootPriority:
                         "state": t_state
                     })
         
-        equipped_count = {}
-        if eq_weapon_name in WEAPONS:
-            equipped_count[eq_weapon_name] = 1
-        if eq_armor_name in ARMOR:
-            equipped_count[eq_armor_name] = 1
-        
-        spare_weapons = []
-        spare_armors = []
-        
-        for item in inventory:
-            name = item.get("name")
-            item_id = item.get("id")
-            if name in WEAPONS:
-                needed_for_self = equipped_count.get(name, 0)
-                if needed_for_self > 0:
-                    equipped_count[name] -= 1
-                else:
-                    spare_weapons.append((item_id, name))
-            elif name in ARMOR:
-                needed_for_self = equipped_count.get(name, 0)
-                if needed_for_self > 0:
-                    equipped_count[name] -= 1
-                else:
-                    spare_armors.append((item_id, name))
-        
         has_layer_0_agents = getattr(manager, "has_layer_0_agents", False)
         
+        # 4. Berbagi Barang ke Tim (Bagi Pakai)
         if spare_weapons and teammates_in_region:
             for teammate in teammates_in_region:
                 if teammate["unarmed"]:
@@ -134,9 +153,19 @@ class GroundLootPriority:
                                     discard_score = 76 if has_layer_0_agents else 94
                                     return discard_score, {"action_type": "discard", "item_id": s_id, "item_name": s_name}
         
+        # 5. Pembuangan Proaktif Barang Rongsokan (Agar Tas Efektif)
+        if not has_layer_0_agents:
+            if spare_armors:
+                junk_id, junk_name = spare_armors[0]
+                return 80, {"action_type": "discard", "item_id": junk_id, "item_name": junk_name}
+            if spare_weapons:
+                junk_id, junk_name = spare_weapons[0]
+                return 80, {"action_type": "discard", "item_id": junk_id, "item_name": junk_name}
+        
         if not ground_items:
             return 0, None
         
+        # 6. Pemindaian Ground Loot (Abaikan Barang Inferior)
         smoltz_candidates = []
         ground_armors = []
         consumable_candidates = []
@@ -164,7 +193,7 @@ class GroundLootPriority:
             elif name_lower in armor_lower:
                 orig_name = armor_lower[name_lower]
                 defense = ARMOR[orig_name].get("def", 0)
-                if defense > current_best_armor_def:
+                if defense > best_armor_def:
                     ground_armors.append((item_id, defense))
             elif name_lower in recovery_lower:
                 consumable_candidates.append(item_id)
@@ -195,10 +224,10 @@ class GroundLootPriority:
                 orig_name = weapons_lower[name_lower]
                 atk = WEAPONS[orig_name].get("atk", 0)
                 if name_lower in melee_names_lower:
-                    if atk > current_best_melee:
+                    if atk > best_melee_atk:
                         ground_weapons.append((item_id, atk))
                 elif name_lower in ranged_names_lower:
-                    if atk > current_best_ranged:
+                    if atk > best_ranged_atk:
                         ground_weapons.append((item_id, atk))
         
         if ground_weapons:
@@ -220,6 +249,7 @@ class GroundLootPriority:
             wants_hp
         )
         
+        # 7. Pembuangan Khusus Saat Tas Penuh Penuh (10/10)
         if len(inventory) >= 10:
             if not has_valuable_ground_upgrade:
                 return 0, None
@@ -241,10 +271,10 @@ class GroundLootPriority:
                     atk = WEAPONS[name].get("atk", 0)
                     is_best = False
                     if name in melee_names:
-                        if atk == current_best_melee:
+                        if atk == best_melee_atk:
                             is_best = True
                     elif name in ranged_names:
-                        if atk == current_best_ranged:
+                        if atk == best_ranged_atk:
                             is_best = True
                     
                     if name == eq_weapon_name or is_best:
@@ -253,7 +283,7 @@ class GroundLootPriority:
                         val = 10
                 elif name in ARMOR:
                     defense = ARMOR[name].get("def", 0)
-                    if name == eq_armor_name or defense == current_best_armor_def:
+                    if name == eq_armor_name or defense == best_armor_def:
                         val = 90
                     else:
                         val = 10
@@ -283,6 +313,7 @@ class GroundLootPriority:
                 return discard_score, {"action_type": "discard", "item_id": lowest_item_id, "item_name": lowest_item_name}
             return 0, None
         
+        # 8. Skor Pengambilan (Loot) Barang di Lantai
         if hp_consumable_candidates and hp_ratio <= 0.4:
             return 101, {"action_type": "loot", "item_id": hp_consumable_candidates[0]}
             

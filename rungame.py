@@ -15,6 +15,7 @@ active_bots = {}
 async def run_bot(bot_name, api_key):
  headers = get_headers(api_key)
  first_run = True
+ dead_games = set()
  while True:
   account_data = get_account_state(headers=headers)
   if not account_data:
@@ -29,7 +30,7 @@ async def run_bot(bot_name, api_key):
    first_run = False
 
   current_games = account_data.get("currentGames", [])
-  active_game = next((g for g in current_games if g.get("isAlive") and g.get("gameStatus") != "finished"), None)
+  active_game = next((g for g in current_games if g.get("isAlive") and g.get("gameStatus") != "finished" and g.get("gameId") not in dead_games), None)
 
   if not active_game:
    active_bots[bot_name] = "idle"
@@ -56,7 +57,9 @@ async def run_bot(bot_name, api_key):
 
   try:
    active_bots[bot_name] = "playing"
-   await run_ws_loop(active_game=active_game, headers=headers)
+   success, played_game_id = await run_ws_loop(active_game=active_game, headers=headers)
+   if success is False and played_game_id:
+    dead_games.add(played_game_id)
    active_bots[bot_name] = "finished"
    print(f"\n[{bot_name}] Session finished. Checking for next match in 5 seconds...")
    await asyncio.sleep(5)

@@ -134,6 +134,16 @@ class NavigationStrategy:
         visible_ruins = view.get("visibleRuins", [])
         active_ruin_ids = {r.get("ruinId") for r in visible_ruins if r.get("ruinId") and not r.get("isEmpty", False)}
         
+        enemy_occupied_regions = set()
+        for agent in visible_agents:
+            if agent.get("id") != my_id and agent.get("isAlive", True):
+                name = agent.get("name", "")
+                if name not in ally_names:
+                    enemy_occupied_regions.add(agent.get("regionId"))
+        for monster in visible_monsters:
+            if monster.get("isAlive", True):
+                enemy_occupied_regions.add(monster.get("regionId"))
+        
         for rid in safe_neighbors:
             score = 50
             r_data = region_map.get(rid, {})
@@ -168,6 +178,9 @@ class NavigationStrategy:
             if path_to_teammate and len(path_to_teammate) > 1:
                 if rid == path_to_teammate[1]:
                     score += 25
+            
+            if rid in enemy_occupied_regions:
+                score -= 20
             
             if has_layer_0_enemies:
                 has_melee_enemy_at_layer_0 = False

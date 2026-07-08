@@ -51,14 +51,16 @@ class RecoveryPriority:
         has_layer_0_enemies = getattr(manager, "has_layer_0_enemies", False)
         has_nearby_enemies = getattr(manager, "has_nearby_enemies", False)
         
-        if ep < 3 and not has_layer_0_enemies:
-            for item in inventory:
-                name = item.get("name")
-                item_id = item.get("id")
-                name_lower = name.lower() if name else ""
-                if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
-                    return 75, {"action_type": "use_item", "item_id": item_id}
-            return 70, {"action_type": "rest"}
+        if not has_layer_0_enemies:
+            if ep < 5:
+                target_score = 95 if has_nearby_enemies else 70
+                for item in inventory:
+                    name = item.get("name")
+                    item_id = item.get("id")
+                    name_lower = name.lower() if name else ""
+                    if name_lower in recovery_lower and recovery_lower[name_lower].get("ep_heal", 0) > 0:
+                        return target_score + 1, {"action_type": "use_item", "item_id": item_id}
+                return target_score, {"action_type": "rest"}
         
         if not has_layer_0_enemies and has_nearby_enemies:
             if hp < 90:

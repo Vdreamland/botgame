@@ -112,7 +112,8 @@ class GroundLootPriority:
                     if t_state.get("region_id") == current_region_id:
                         leader_inv = t_state.get("inventory", [])
                         leader_item_names = [item.get("name") if isinstance(item, dict) else item for item in leader_inv]
-                        if "Plate Armor" not in leader_item_names:
+                        leader_equipped_armor = t_state.get("armor", "None")
+                        if "Plate Armor" not in leader_item_names and leader_equipped_armor != "Plate Armor":
                             for s_id, s_name in spare_armors:
                                 if s_name == "Plate Armor":
                                     discard_score = 76 if has_layer_0_agents else 94
@@ -243,12 +244,12 @@ class GroundLootPriority:
                 return discard_score, {"action_type": "discard", "item_id": lowest_item_id, "item_name": lowest_item_name}
             return 0, None
         
+        if smoltz_candidates:
+            loot_score = 99 if has_layer_0_agents else 102
+            return loot_score, {"action_type": "loot", "item_id": smoltz_candidates[0]}
         if weapon_candidates:
             loot_score = 97 if has_layer_0_agents else 99
             return loot_score, {"action_type": "loot", "item_id": weapon_candidates[0]}
-        if smoltz_candidates:
-            loot_score = 97 if has_layer_0_agents else 99
-            return loot_score, {"action_type": "loot", "item_id": smoltz_candidates[0]}
         if armor_candidates:
             loot_score = 97 if has_layer_0_agents else 99
             return loot_score, {"action_type": "loot", "item_id": armor_candidates[0]}

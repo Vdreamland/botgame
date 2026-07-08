@@ -17,6 +17,15 @@ MESSAGE_QUEUE = queue.Queue()
 BOTS_CACHE = {}
 
 async def process_request(path, request_headers):
+ is_ws_upgrade = False
+ for k, v in request_headers.items():
+  if k.lower() == "upgrade" and v.lower() == "websocket":
+   is_ws_upgrade = True
+   break
+
+ if is_ws_upgrade:
+  return None
+
  if path == "/":
   file_name = "index.html"
  else:
@@ -41,9 +50,6 @@ async def process_request(path, request_headers):
    ("Content-Length", str(len(body))),
   ]
   return HTTPStatus.OK, headers, body
-
- if "upgrade" in request_headers.get("Connection", "").lower() or "upgrade" in request_headers.get("Upgrade", "").lower():
-  return None
 
  return HTTPStatus.NOT_FOUND, [("Content-Type", "text/plain")], b"Not Found"
 

@@ -160,6 +160,7 @@ heartbeat.md https://github.com/Vdreamland/botgame/blob/master/docs/heartbeat.md
 skill.md https://github.com/Vdreamland/botgame/blob/master/docs/skill.md
 gotchas.md https://github.com/Vdreamland/botgame/blob/master/docs/references/gotchas.md
 strategy.md https://github.com/Vdreamland/botgame/blob/master/docs/game-knowledge/strategy.md
+combat-items.md https://github.com/Vdreamland/botgame/blob/master/docs/references/combat-items.md
 
 requirements.txt https://github.com/Vdreamland/botgame/blob/master/requirements.txt
 .env https://github.com/Vdreamland/botgame/blob/master/.env

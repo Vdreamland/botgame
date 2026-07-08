@@ -57,7 +57,7 @@ async def play_game(websocket, game_id):
                 print("Your agent has died. Terminating loop.")
                 print("========================================\n")
                 break
-            if frame_type in ["agent_view", "can_act_changed", "action_result"]:
+            if "view" in data:
                 if manager.can_act:
                     from src.ai.strategy.whisper_sabotage import generate_sabotage_whispers
                     whisper_actions = generate_sabotage_whispers(manager, data)

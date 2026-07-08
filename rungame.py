@@ -39,28 +39,30 @@ async def run_bot(bot_name, api_key):
                     for name in active_bots:
                         if active_bots[name] == "idle":
                             active_bots[name] = "queued"
-                
-                if active_bots[bot_name] == "queued":
-                    active_bots[bot_name] = "playing"
-                    break
-                
+                    
+                    if active_bots[bot_name] == "queued":
+                        active_bots[bot_name] = "playing"
+                        break
+                    
                 if not wait_logged:
                     print(f"[{bot_name}] Ready for matchmaking. Waiting for teammates to finish their games...")
                     wait_logged = True
-                
+                    
                 await asyncio.sleep(2)
 
         try:
             active_bots[bot_name] = "playing"
             await run_ws_loop(active_game=active_game, headers=headers)
+            active_bots[bot_name] = "finished"
+            print(f"\n[{bot_name}] Session finished. Checking for next match in 5 seconds...")
+            await asyncio.sleep(5)
         except asyncio.CancelledError:
             break
         except Exception as e:
             print(f"[{bot_name}] Error in connection loop: {e}")
-
-        active_bots[bot_name] = "finished"
-        print(f"\n[{bot_name}] Session finished. Checking for next match in 5 seconds...")
-        await asyncio.sleep(5)
+            active_bots[bot_name] = "reconnecting"
+            print(f"[{bot_name}] Reconnecting in 1 second...")
+            await asyncio.sleep(1)
 
 async def amain(tasks):
     await asyncio.gather(*tasks)

@@ -47,6 +47,7 @@ async def play_game(websocket, game_id):
     manager.memory.reset_shared()
     manager.memory.reset_local()
     decision_maker = DecisionMaker()
+    should_cleanup = False
     try:
         async for message in websocket:
             data = json.loads(message)
@@ -56,6 +57,7 @@ async def play_game(websocket, game_id):
                 print("\n========================================")
                 print("Your agent has died. Terminating loop.")
                 print("========================================\n")
+                should_cleanup = True
                 break
             if "view" in data:
                 if manager.can_act:
@@ -87,8 +89,10 @@ async def play_game(websocket, game_id):
                 print("\n========================================")
                 print("Game has ended.")
                 print("========================================\n")
+                should_cleanup = True
                 break
     except Exception as e:
         print(f"WebSocket connection error: {e}")
     finally:
-        manager.memory.cleanup_shared()
+        if should_cleanup:
+            manager.memory.cleanup_shared()
